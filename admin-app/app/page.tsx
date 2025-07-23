@@ -26,8 +26,8 @@ export default function Register() {
     try {
       await register(form.email, form.password_hash, form.role);
       setMessage('Registration successful! Check your email.');
-    } catch (err: any) {
-      setMessage(err.message || 'Error connecting to backend');
+    } catch (err: unknown) {
+      setMessage((err as Error).message || 'Error connecting to backend');
     } finally {
       setIsLoading(false);
     }
