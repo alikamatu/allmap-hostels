@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import useLiveLocation from '@/lib/hooks/useLiveLocation';
@@ -57,10 +57,8 @@ export default function LiveLocationMap({
   }, [lat, lng, marker, map]);
 
   return (
-    <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading map...</div>}>
     <div className="h-full w-full">
       <div ref={mapContainer} className="h-full w-full rounded-lg" />
     </div>
-    </Suspense>
   );
 }
