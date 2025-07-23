@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { LocateFixed, LocateOff, Loader2 } from 'lucide-react';
 
 export default function LocationIndicator() {
-  const { lat, lng, accuracy, error, loading } = useLiveLocation();
+  const { lat, lng, error, loading } = useLiveLocation();
   
   const formatCoordinate = (coord: number) => coord.toFixed(6);
   
