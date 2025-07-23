@@ -5,7 +5,6 @@ import mapboxgl from 'mapbox-gl';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import useLiveLocation from '@/lib/hooks/useLiveLocation';
 
-// Add to .env.local: NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
 export default function LiveLocationMap({ 

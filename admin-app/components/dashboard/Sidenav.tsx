@@ -21,13 +21,13 @@ interface SidenavProps {
 }
 
 const navItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Manage Hostels', href: '/admin/hostels', icon: Building },
-  { name: 'Manage Rooms', href: '/admin/rooms', icon: Bed },
-  { name: 'Bookings Calendar', href: '/admin/calendar', icon: Calendar },
-  { name: 'Reviews', href: '/admin/reviews', icon: Star },
-  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Manage Hostels', href: '/dashboard/hostels', icon: Building },
+  { name: 'Manage Rooms', href: '/dashboard/rooms', icon: Bed },
+  { name: 'Bookings Calendar', href: '/dashboard/calendar', icon: Calendar },
+  { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
+  { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export default function Sidenav({ isCollapsed, toggleSidenav }: SidenavProps) {
