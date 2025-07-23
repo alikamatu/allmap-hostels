@@ -44,7 +44,7 @@ export default function Sidenav({ isCollapsed, toggleSidenav }: SidenavProps) {
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
-          <h1 className="text-xl font-bold text-primary">HostelFinder Admin</h1>
+          <h1 className="text-xl font-bold text-primary">Admin</h1>
         )}
         <Button 
           variant="ghost" 
