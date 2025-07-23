@@ -28,7 +28,6 @@ export default function Settings() {
 
   const [idFiles, setIdFiles] = useState<File[]>([]);
   const [hostelProofFiles, setHostelProofFiles] = useState<File[]>([]);
-  const [otherIdType, setOtherIdType] = useState('');
 
   const handleIdFilesChange = (files: File[]) => {
     setIdFiles(files);
