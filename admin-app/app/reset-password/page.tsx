@@ -4,7 +4,8 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-export default function ResetPasswordPage() {
+// Move all page logic into a separate component
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { resetPassword } = useAuth();
@@ -69,38 +70,38 @@ export default function ResetPasswordPage() {
     }
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setErrors({ ...errors, submit: '' });
-  setSuccessMessage('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({ ...errors, submit: '' });
+    setSuccessMessage('');
 
-  if (!validateForm()) return;
-  if (!token) {
-    setErrors({ ...errors, submit: 'Invalid or missing reset token' });
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    const response = await resetPassword(token, formData.newPassword);
-    
-    if (response?.ok) {
-      setSuccessMessage('Your password has been successfully reset!');
-      setTimeout(() => router.push('/login'), 3000);
-    } else {
-      throw new Error('Failed to reset password. Please try again.');
+    if (!validateForm()) return;
+    if (!token) {
+      setErrors({ ...errors, submit: 'Invalid or missing reset token' });
+      return;
     }
-  } catch (error: unknown) {
-    console.error('Password reset error:', error);
-    setErrors({
-      ...errors,
-      submit: (error as Error).message || 'Failed to reset password. Please try again.'
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+    setIsLoading(true);
+
+    try {
+      const response = await resetPassword(token, formData.newPassword);
+      
+      if (response?.ok) {
+        setSuccessMessage('Your password has been successfully reset!');
+        setTimeout(() => router.push('/login'), 3000);
+      } else {
+        throw new Error('Failed to reset password. Please try again.');
+      }
+    } catch (error: unknown) {
+      console.error('Password reset error:', error);
+      setErrors({
+        ...errors,
+        submit: (error as Error).message || 'Failed to reset password. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Check password requirements
   const passwordRequirements = {
@@ -111,14 +112,9 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   return (
-        <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="loader">Loading...</div>
-      </div>
-    }>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -280,6 +276,18 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       </div>
     </div>
+  );
+}
+
+// Default export wraps content in Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="loader">Loading...</div>
+      </div>
+    }>
+      <ResetPasswordContent />
     </Suspense>
   );
 }
