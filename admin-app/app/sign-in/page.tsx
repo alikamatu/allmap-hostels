@@ -68,14 +68,14 @@ export default function LoginPage() {
       // Redirect to dashboard or intended page
       const returnUrl = searchParams.get('returnUrl') || '/dashboard';
       router.push(returnUrl);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle different error scenarios
-      if (err.message.includes('401')) {
+      if ((err as Error).message.includes('401')) {
         setErrors({ submit: 'Invalid email or password' });
-      } else if (err.message.includes('403')) {
+      } else if ((err as Error).message.includes('403')) {
         setErrors({ submit: 'Please verify your email before logging in' });
       } else {
-        setErrors({ submit: err.message || 'Login failed. Please try again.' });
+        setErrors({ submit: (err as Error).message || 'Login failed. Please try again.' });
       }
     } finally {
       setIsLoading(false);
@@ -96,8 +96,8 @@ export default function LoginPage() {
     try {
       await forgotPassword(forgotPasswordEmail); // <-- Use it here
       setForgotPasswordMessage(`Password reset instructions sent to ${forgotPasswordEmail}`);
-    } catch (err: any) {
-      setErrors({ submit: err.message || 'Failed to send reset instructions' });
+    } catch (err: unknown) {
+      setErrors({ submit: (err as Error).message || 'Failed to send reset instructions' });
     } finally {
       setIsLoading(false);
     }
@@ -115,16 +115,17 @@ export default function LoginPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
-      if (forgotPasswordMode) {
-        handleForgotPasswordSubmit(e as any);
-      } else {
-        handleLoginSubmit(e as any);
+  
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLFormElement | HTMLInputElement>) => {
+      if (e.key === 'Enter' && !isLoading) {
+        if (forgotPasswordMode) {
+          handleForgotPasswordSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+        } else {
+          handleLoginSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+        }
       }
-    }
-  };
-
+    };
+  
   const handleSignUp = () => {
     router.push('/register');
   };
@@ -191,7 +192,7 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <div className="text-sm text-gray-500">
-                  We'll send you a link to reset your password
+                  We&apos;ll send you a link to reset your password
                 </div>
               )}
 
@@ -344,7 +345,7 @@ export default function LoginPage() {
           {!forgotPasswordMode && (
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <button
                   onClick={handleSignUp}
                   className="text-blue-600 hover:text-blue-700 font-medium transition-colors"

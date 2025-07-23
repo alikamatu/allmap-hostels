@@ -91,11 +91,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     } else {
       throw new Error('Failed to reset password. Please try again.');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Password reset error:', error);
     setErrors({
       ...errors,
-      submit: error.message || 'Failed to reset password. Please try again.'
+      submit: (error as Error).message || 'Failed to reset password. Please try again.'
     });
   } finally {
     setIsLoading(false);
