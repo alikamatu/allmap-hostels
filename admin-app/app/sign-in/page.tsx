@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -138,6 +138,12 @@ export default function LoginPage() {
   };
 
   return (
+        <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="loader">Loading...</div>
+      </div>
+    }>
+
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -233,6 +239,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </form>
+            
           ) : (
             /* Login Form */
             <form className="space-y-6" onSubmit={handleLoginSubmit}>
@@ -299,7 +306,7 @@ export default function LoginPage() {
                     onChange={handleInputChange('rememberMe')}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     disabled={isLoading}
-                  />
+                    />
                   <span className="ml-2 text-sm text-gray-700">Remember me</span>
                 </label>
                 <button
@@ -307,7 +314,7 @@ export default function LoginPage() {
                   onClick={toggleForgotPasswordMode}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                   disabled={isLoading}
-                >
+                  >
                   Forgot password?
                 </button>
               </div>
@@ -325,10 +332,10 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
                   isLoading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 hover:shadow-lg'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 hover:shadow-lg'
                 } text-white`}
-              >
+                >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -350,7 +357,7 @@ export default function LoginPage() {
                   onClick={handleSignUp}
                   className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
                   disabled={isLoading}
-                >
+                  >
                   Sign up here
                 </button>
               </p>
@@ -365,7 +372,7 @@ export default function LoginPage() {
                   onClick={() => router.push('/verify-email')}
                   className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                   disabled={isLoading}
-                >
+                  >
                   Need to verify your email?
                 </button>
               </div>
@@ -383,5 +390,7 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+              </Suspense>
+
   );
 }

@@ -10,7 +10,7 @@ interface NavbarProps {
   isCollapsed?: boolean;
 }
 
-export default function Navbar({ toggleSidenav, isCollapsed }: NavbarProps) {
+export default function Navbar({ toggleSidenav }: NavbarProps) {
   const [notifications] = useState(3);
   
   return (
