@@ -1,0 +1,21 @@
+// pages/index.js
+import Head from 'next/head';
+import LuxuryEyewearCarousel from '@/components/LuxuryEyewearCarousel';
+
+export default function Home() {
+  return (
+    <div>
+      <Head>
+        <title>Visionaire Eyewear | Luxury Eyeglasses</title>
+        <meta name="description" content="Experience luxury eyewear craftsmanship" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+      </Head>
+
+      <main>
+        <LuxuryEyewearCarousel />
+      </main>
+    </div>
+  );
+}

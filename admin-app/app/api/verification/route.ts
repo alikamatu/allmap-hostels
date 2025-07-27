@@ -51,13 +51,25 @@ export async function POST(request: NextRequest) {
       }
     };
     
-    // Send to NestJS backend
-    const nestResponse = await fetch(`${process.env.NEST_API_URL}/admin/verification`, {
+    // Prepare FormData for NestJS
+    const nestFormData = new FormData();
+    nestFormData.append('firstName', firstName);
+    nestFormData.append('lastName', lastName);
+    nestFormData.append('mobileNumber', mobileNumber);
+    nestFormData.append('alternatePhone', alternatePhone);
+    nestFormData.append('idType', idType);
+    nestFormData.append('idNumber', idNumber);
+    nestFormData.append('hostelProofType', hostelProofType);
+    nestFormData.append('termsAccepted', termsAccepted ? 'true' : 'false');
+    
+    // Append files
+    idFiles.forEach(file => nestFormData.append('idDocuments', file));
+    hostelProofFiles.forEach(file => nestFormData.append('hostelProofDocuments', file));
+    
+    // Send to NestJS
+    const nestResponse = await fetch(`http://localhost:1000/auth/admin/verification`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(verificationData)
+      body: nestFormData
     });
     
     if (!nestResponse.ok) {

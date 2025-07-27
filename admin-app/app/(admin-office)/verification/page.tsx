@@ -5,7 +5,6 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
 import { Check, Loader2 } from 'lucide-react';
-
 import { adminVerificationSchema, AdminVerificationFormData } from '@/lib/validationSchemas';
 import { useState } from 'react';
 import FormInput from '@/components/dashboard/components/setting/FormInput';

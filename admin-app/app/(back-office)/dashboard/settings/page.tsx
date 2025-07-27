@@ -13,18 +13,6 @@ import FormSelect from '@/components/dashboard/components/setting/FormSelect';
 import FileUploader from '@/components/dashboard/components/setting/FileUploader';
 
 export default function Settings() {
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting }, 
-    setValue,
-    watch
-  } = useForm<AdminVerificationFormData>({
-    resolver: zodResolver(adminVerificationSchema),
-    defaultValues: {
-      termsAccepted: false
-    }
-  });
 
   const [idFiles, setIdFiles] = useState<File[]>([]);
   const [hostelProofFiles, setHostelProofFiles] = useState<File[]>([]);
@@ -38,10 +26,13 @@ export default function Settings() {
     setHostelProofFiles(files);
   };
 
-    const methods = useForm<AdminVerificationFormData>({
+  const methods = useForm<AdminVerificationFormData>({
     resolver: zodResolver(adminVerificationSchema),
     defaultValues: { termsAccepted: false }
   });
+
+    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = methods;
+   
 
   const onSubmit = async (data: AdminVerificationFormData) => {
     try {
@@ -66,7 +57,7 @@ export default function Settings() {
       });
 
       // Send to backend
-      const response = await fetch('/api/admin/verification', {
+      const response = await fetch('/api/verification', {
         method: 'POST',
         body: formData
       });

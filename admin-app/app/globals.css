@@ -4,9 +4,21 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: var(--font-inter);
+  font-family: 'Libre Baskerville', serif;
 }
 
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-baskerville {
+  font-family: 'Libre Baskerville', serif;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease;
+}
 .mapboxgl-canvas {
   position: absolute;
   top: 0;

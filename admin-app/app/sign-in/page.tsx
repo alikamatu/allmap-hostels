@@ -133,9 +133,132 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      {/* ...existing JSX code... */}
-      {/* Place all your form and UI code here, unchanged */}
-    </div>
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8"></div>
+        <h2 className="text-2xl font-bold mb-6 text-center">
+          {forgotPasswordMode ? 'Forgot Password' : 'Sign In'}
+        </h2>
+        {loginMessage && (
+          <div className="mb-4 text-green-600 text-center">{loginMessage}</div>
+        )}
+        {forgotPasswordMessage && (
+          <div className="mb-4 text-green-600 text-center">{forgotPasswordMessage}</div>
+        )}
+        <form
+          onSubmit={forgotPasswordMode ? handleForgotPasswordSubmit : handleLoginSubmit}
+          onKeyPress={handleKeyPress}
+          className="space-y-6"
+          autoComplete="off"
+        >
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={forgotPasswordMode ? forgotPasswordEmail : formData.email}
+              onChange={forgotPasswordMode
+                ? (e) => {
+                    setForgotPasswordEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+                  }
+                : handleInputChange('email')
+              }
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.email ? 'border-red-500' : ''
+              }`}
+              disabled={isLoading}
+              autoFocus
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            )}
+          </div>
+          {!forgotPasswordMode && (
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.password ? 'border-red-500' : ''
+                  }`}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-500"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+              )}
+            </div>
+          )}
+          {!forgotPasswordMode && (
+            <div className="flex items-center">
+              <input
+                id="rememberMe"
+                type="checkbox"
+                checked={formData.rememberMe}
+                onChange={handleInputChange('rememberMe')}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
+                Remember me
+              </label>
+            </div>
+          )}
+          {errors.submit && (
+            <div className="mb-2 text-center text-red-600 text-sm">{errors.submit}</div>
+          )}
+          <button
+            type="submit"
+            className={`w-full py-2 px-4 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? forgotPasswordMode
+                ? 'Sending...'
+                : 'Signing in...'
+              : forgotPasswordMode
+              ? 'Send Reset Link'
+              : 'Sign In'}
+          </button>
+          <div className="flex justify-between items-center mt-4">
+            <button
+              type="button"
+              className="text-sm text-indigo-600 hover:underline"
+              onClick={toggleForgotPasswordMode}
+              disabled={isLoading}
+            >
+              {forgotPasswordMode ? 'Back to Sign In' : 'Forgot password?'}
+            </button>
+            {!forgotPasswordMode && (
+              <button
+                type="button"
+                className="text-sm text-gray-600 hover:underline"
+                onClick={handleSignUp}
+                disabled={isLoading}
+              >
+                Sign Up
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
   );
 }
 
