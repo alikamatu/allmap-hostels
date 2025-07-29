@@ -5,6 +5,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
 import { Check, Loader2 } from 'lucide-react';
+
 import { adminVerificationSchema, AdminVerificationFormData } from '@/lib/validationSchemas';
 import { useState } from 'react';
 import FormInput from '@/components/dashboard/components/setting/FormInput';
@@ -12,18 +13,6 @@ import FormSelect from '@/components/dashboard/components/setting/FormSelect';
 import FileUploader from '@/components/dashboard/components/setting/FileUploader';
 
 export default function Settings() {
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting }, 
-    setValue,
-    watch
-  } = useForm<AdminVerificationFormData>({
-    resolver: zodResolver(adminVerificationSchema),
-    defaultValues: {
-      termsAccepted: false
-    }
-  });
 
   const [idFiles, setIdFiles] = useState<File[]>([]);
   const [hostelProofFiles, setHostelProofFiles] = useState<File[]>([]);
@@ -36,68 +25,82 @@ export default function Settings() {
     setHostelProofFiles(files);
   };
 
-    const methods = useForm<AdminVerificationFormData>({
+  const methods = useForm<AdminVerificationFormData>({
     resolver: zodResolver(adminVerificationSchema),
     defaultValues: { termsAccepted: false }
   });
 
-  const onSubmit = async (data: AdminVerificationFormData) => {
-    try {
-      // Prepare form data for file uploads
-      const formData = new FormData();
-      
-      // Append form data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'idFiles' && key !== 'hostelProofFiles') {
-          formData.append(key, value.toString());
+    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = methods;
+
+
+    const onSubmit = async (data: AdminVerificationFormData) => {
+      try {
+        // Prepare form data for file uploads
+        const formData = new FormData();
+  
+        // Append form fields
+        Object.entries(data).forEach(([key, value]) => {
+          if (key !== 'idFiles' && key !== 'hostelProofFiles') {
+            formData.append(key, value?.toString() ?? '');
+          }
+        });
+  
+        // Append ID files
+        idFiles.forEach(file => {
+          formData.append('idDocuments', file);
+        });
+  
+        // Append hostel proof files
+        hostelProofFiles.forEach(file => {
+          formData.append('hostelProofDocuments', file);
+        });
+
+        const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        console.log('Submitting verification data:', {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          mobileNumber: data.mobileNumber,
+          idFiles,
+          hostelProofFiles,
+          accessToken
+        });
+
+        // Send directly to external NestJS API
+        const response = await fetch('http://localhost:1000/admin/verification', {
+          method: 'POST',
+          body: formData,
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+  
+        if (!response.ok) {
+          throw new Error('Verification request failed');
         }
-      });
-
-      // Append ID files
-      idFiles.forEach(file => {
-        formData.append('idDocuments', file);
-      });
-
-      // Append hostel proof files
-      hostelProofFiles.forEach(file => {
-        formData.append('hostelProofDocuments', file);
-      });
-
-      // Send to backend
-      const response = await fetch('/api/admin/verification', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Verification request failed');
+  
+        Swal.fire({
+          title: 'Submitted!',
+          text: 'Your verification request has been sent to the super admin',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+      } catch (error) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'There was a problem submitting your verification request',
+          icon: 'error',
+          confirmButtonText: 'Try Again'
+        });
+        console.error('Submission error:', error);
       }
-
-      // Show success message
-      Swal.fire({
-        title: 'Submitted!',
-        text: 'Your verification request has been sent to the super admin',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
-    } catch (error) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'There was a problem submitting your verification request',
-        icon: 'error',
-        confirmButtonText: 'Try Again'
-      });
-      console.error('Submission error:', error);
-    }
-  };
-
+    };
+  
   return (
     <FormProvider {...methods}>
     <div className="max-w-4xl mx-auto p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-md overflow-hidden"
+        className="bg-white rounded-xl overflow-hidden"
       >
         <div className="p-8">
           <div className="text-center mb-8">
@@ -108,7 +111,6 @@ export default function Settings() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Personal Information Section */}
             <div className="border-b border-gray-200 pb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

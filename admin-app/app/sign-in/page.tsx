@@ -64,7 +64,7 @@ function LoginPageContent() {
 
     try {
       await login(formData.email, formData.password, formData.rememberMe);
-      const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+      const returnUrl = searchParams.get('returnUrl') || '/verification-status';
       router.push(returnUrl);
     } catch (err: unknown) {
       if ((err as Error).message.includes('401')) {

@@ -16,7 +16,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   
-  // Auto-collapse on mobile
   useEffect(() => {
     if (!isDesktop) {
       setIsCollapsed(true);
@@ -36,7 +35,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Desktop Sidenav */}
       {isDesktop && (
         <Sidenav 
           isCollapsed={isCollapsed} 
@@ -44,7 +42,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         />
       )}
       
-      {/* Mobile Menu */}
       <MobileMenu 
         isOpen={isMobileOpen} 
         toggleMenu={toggleSidenav} 
