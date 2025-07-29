@@ -32,58 +32,69 @@ export default function Settings() {
   });
 
     const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = methods;
-   
 
-  const onSubmit = async (data: AdminVerificationFormData) => {
-    try {
-      // Prepare form data for file uploads
-      const formData = new FormData();
-      
-      // Append form data
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'idFiles' && key !== 'hostelProofFiles') {
-          formData.append(key, value.toString());
+
+    const onSubmit = async (data: AdminVerificationFormData) => {
+      try {
+        // Prepare form data for file uploads
+        const formData = new FormData();
+  
+        // Append form fields
+        Object.entries(data).forEach(([key, value]) => {
+          if (key !== 'idFiles' && key !== 'hostelProofFiles') {
+            formData.append(key, value?.toString() ?? '');
+          }
+        });
+  
+        // Append ID files
+        idFiles.forEach(file => {
+          formData.append('idDocuments', file);
+        });
+  
+        // Append hostel proof files
+        hostelProofFiles.forEach(file => {
+          formData.append('hostelProofDocuments', file);
+        });
+
+        const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        console.log('Submitting verification data:', {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          mobileNumber: data.mobileNumber,
+          idFiles,
+          hostelProofFiles,
+          accessToken
+        });
+
+        // Send directly to external NestJS API
+        const response = await fetch('http://localhost:1000/admin/verification', {
+          method: 'POST',
+          body: formData,
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+  
+        if (!response.ok) {
+          throw new Error('Verification request failed');
         }
-      });
-
-      // Append ID files
-      idFiles.forEach(file => {
-        formData.append('idDocuments', file);
-      });
-
-      // Append hostel proof files
-      hostelProofFiles.forEach(file => {
-        formData.append('hostelProofDocuments', file);
-      });
-
-      // Send to backend
-      const response = await fetch('/api/verification', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Verification request failed');
+  
+        Swal.fire({
+          title: 'Submitted!',
+          text: 'Your verification request has been sent to the super admin',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+      } catch (error) {
+        Swal.fire({
+          title: 'Error!',
+          text: 'There was a problem submitting your verification request',
+          icon: 'error',
+          confirmButtonText: 'Try Again'
+        });
+        console.error('Submission error:', error);
       }
-
-      // Show success message
-      Swal.fire({
-        title: 'Submitted!',
-        text: 'Your verification request has been sent to the super admin',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
-    } catch (error) {
-      Swal.fire({
-        title: 'Error!',
-        text: 'There was a problem submitting your verification request',
-        icon: 'error',
-        confirmButtonText: 'Try Again'
-      });
-      console.error('Submission error:', error);
-    }
-  };
-
+    };
+  
   return (
     <FormProvider {...methods}>
     <div className="max-w-4xl mx-auto p-6">
