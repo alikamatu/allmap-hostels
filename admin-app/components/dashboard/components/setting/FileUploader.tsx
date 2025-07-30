@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
 import { File, Upload, X } from 'lucide-react';
+import type { FileRejection } from 'react-dropzone';
 
 export default function FileUploader({
   label,
@@ -23,23 +24,26 @@ export default function FileUploader({
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any) => {
-    setError(null);
-    
-    if (fileRejections.length > 0) {
-      const rejection = fileRejections[0];
-      if (rejection.errors[0].code === 'file-too-large') {
-        setError(`File exceeds max size of ${maxSize / (1024 * 1024)}MB`);
-      } else {
-        setError(rejection.errors[0].message);
+  const onDrop = useCallback(
+    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      setError(null);
+      
+      if (fileRejections.length > 0) {
+        const rejection = fileRejections[0];
+        if (rejection.errors[0].code === 'file-too-large') {
+          setError(`File exceeds max size of ${maxSize / (1024 * 1024)}MB`);
+        } else {
+          setError(rejection.errors[0].message);
+        }
+        return;
       }
-      return;
-    }
 
-    const newFiles = [...files, ...acceptedFiles].slice(0, maxFiles);
-    setFiles(newFiles);
-    onFilesChange(newFiles);
-  }, [files, maxFiles, maxSize]);
+      const newFiles = [...files, ...acceptedFiles].slice(0, maxFiles);
+      setFiles(newFiles);
+      onFilesChange(newFiles);
+    },
+    [files, maxFiles, maxSize, onFilesChange]
+  );
 
   const removeFile = (index: number) => {
     const newFiles = [...files];

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -32,7 +33,7 @@ export default function Register() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [heroTexts.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +63,8 @@ export default function Register() {
       setTimeout(() => {
         router.push('/verify-email');
       }, 800);
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -281,7 +282,7 @@ export default function Register() {
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="terms" className="text-gray-700">
-                    I accept the <a href="#" className="text-blue-600 hover:underline">Terms and Conditions</a>
+                    I accept the <Link href="#" className="text-blue-600 hover:underline">Terms and Conditions</Link>
                   </label>
                 </div>
               </motion.div>
@@ -361,7 +362,7 @@ export default function Register() {
             >
               <p className="text-gray-600">
                 Already have an account?{' '}
-                <a 
+                <Link 
                   href="/" 
                   className="text-blue-600 font-medium hover:underline"
                   onClick={(e) => {
@@ -370,7 +371,7 @@ export default function Register() {
                   }}
                 >
                   Sign In
-                </a>
+                </Link>
               </p>
             </motion.div>
           </motion.div>

@@ -41,7 +41,7 @@ export default function LiveLocationMap({
     setMarker(newMarker);
 
     return () => newMap.remove();
-  }, []);
+  }, [initialLat, initialLng]);
   
   // Update marker position when location changes
   useEffect(() => {

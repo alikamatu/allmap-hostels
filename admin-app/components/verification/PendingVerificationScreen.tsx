@@ -44,7 +44,7 @@ const PendingVerificationScreen = () => {
           transition={{ delay: 0.3 }}
         >
           Your hostel admin application is currently being reviewed by our team.
-          We'll notify you via email once the verification process is complete.
+          Wi&apos;ll notify you via email once the verification process is complete.
         </motion.p>
         
         <motion.div

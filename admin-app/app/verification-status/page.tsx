@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FiCheckCircle, FiClock, FiXCircle, FiLoader } from 'react-icons/fi';
+import { FiClock, FiXCircle, FiLoader } from 'react-icons/fi';
 
 interface VerificationStatus {
   status: 'pending' | 'approved' | 'rejected' | 'unverified';
@@ -16,7 +16,6 @@ export default function VerificationStatusPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [status, setStatus] = useState<VerificationStatus['status'] | 'loading'>('loading');
-  const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,8 +49,7 @@ export default function VerificationStatusPage() {
             setLastUpdated(data.lastUpdated);
           }
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+      } catch {
         setStatus('unverified');
       }
     };
@@ -172,7 +170,7 @@ const PendingState = ({ lastUpdated }: { lastUpdated: string | null }) => (
       transition={{ delay: 1 }}
       className="text-gray-500 mt-8"
     >
-      You'll be automatically redirected when approved
+      You&apos;ll be automatically redirected when approved
     </motion.p>
   </>
 );
@@ -238,7 +236,7 @@ const UnverifiedState = () => {
       <FiXCircle className="text-8xl text-gray-400 mx-auto mb-8" />
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Application Not Found</h1>
       <p className="text-xl text-gray-600 max-w-md mx-auto mb-8">
-        We couldn't find your verification application. Please submit one to become a hostel administrator.
+        We couldn&apos;t find your verification application. Please submit one to become a hostel administrator.
       </p>
       
       <p className="text-lg text-gray-500 mb-6">

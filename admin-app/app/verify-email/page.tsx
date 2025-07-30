@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCheckCircle, FiXCircle, FiClock, FiMail, FiArrowRight, FiUserPlus } from 'react-icons/fi';
+import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {
@@ -83,7 +83,7 @@ function VerifyEmailContent() {
           message: errorMessage
         });
       }
-    } catch (error) {
+    } catch {
       setVerification({
         status: 'error',
         message: 'Could not connect to the server. Please try again later.'
@@ -112,10 +112,11 @@ function VerifyEmailContent() {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to send email');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend verification email';
       setVerification({
         ...verification,
-        message: error.message || 'Failed to resend verification email'
+        message: errorMessage
       });
     } finally {
       setIsResending(false);
