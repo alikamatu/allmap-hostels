@@ -227,7 +227,7 @@ export default function Login() {
       </div>
 
       {/* Login Form */}
-      <div className="w-full md:w-1/2 bg-white m-12 md:p-12 flex flex-col justify-center items-center">
+      <div className="w-full md:w-1/2 bg-white p-6 md:p-12 flex flex-col justify-center md:items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Admin Sign In</h2>
           
