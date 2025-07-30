@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiLock, FiArrowRight, FiX, FiCheckCircle } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -362,12 +363,12 @@ export default function Login() {
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Don&apos;t have an account?{' '}
-              <a
+              <Link
                 href="/sign-up" 
                 className="text-blue-600 font-medium hover:underline focus:outline-none"
               >
                 Sign Up
-              </a>
+              </Link>
             </p>
           </div>
         </div>
