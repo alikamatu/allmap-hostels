@@ -87,7 +87,7 @@ export default function Register() {
       >
         {/* Hero Section */}
         <motion.div 
-          className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 flex flex-col justify-center relative overflow-hidden"
+          className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 hiiden md:flex flex-col justify-center relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
@@ -158,7 +158,7 @@ export default function Register() {
 
         {/* Registration Form */}
         <motion.div 
-          className="w-full md:w-1/2 bg-white p-6 md:p-12 flex flex-col justify-center items-center"
+          className="w-full md:w-1/2 bg-white p-6 md:p-12 flex flex-col justify-center md:items-center"
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -195,7 +195,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-96 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full md:w-96 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="admin@hostelhub.com"
                   required
                 />
