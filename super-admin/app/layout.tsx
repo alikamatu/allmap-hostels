@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Inter, Roboto } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeProvider";

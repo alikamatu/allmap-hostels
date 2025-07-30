@@ -249,7 +249,7 @@ const LoginPage = () => {
             transition={{ delay: 1 }}
           >
             <p>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <a 
                 href="/register" 
                 className="font-medium text-blue-400 hover:text-blue-300 transition-colors"

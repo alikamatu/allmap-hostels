@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 // Create Auth Context
 interface AuthContextType {
-  user: any;
+  user: User | null;
   register: (email: string, password: string, role: string) => Promise<void>;
     login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch (e) {
+      } catch {
         localStorage.removeItem('user');
       }
     }
