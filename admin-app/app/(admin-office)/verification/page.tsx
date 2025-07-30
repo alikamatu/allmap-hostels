@@ -30,7 +30,7 @@ export default function Settings() {
     defaultValues: { termsAccepted: false }
   });
 
-    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = methods;
+    const { register, handleSubmit, formState: { errors, isSubmitting }, watch } = methods;
 
 
     const onSubmit = async (data: AdminVerificationFormData) => {

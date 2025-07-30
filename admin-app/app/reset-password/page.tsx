@@ -89,13 +89,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     const result = await resetPassword(token, formData.newPassword);
     
     // Check for success in the response data
-    if (result?.success) {
+    if (result?.ok) {
       setSuccessMessage('Your password has been successfully reset!');
       setTimeout(() => router.push('/'), 3000);
     } else {
-      // Handle backend error message if available
-      const errorMsg = result?.message || 'Failed to reset password. Please try again.';
-      throw new Error(errorMsg);
+      throw new Error('Failed to reset password. Please try again.');
     }
   } catch (error: unknown) {
     console.error('Password reset error:', error);
