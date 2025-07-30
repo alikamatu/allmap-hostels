@@ -70,38 +70,56 @@ function ResetPasswordContent() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({ ...errors, submit: '' });
-    setSuccessMessage('');
 
-    if (!validateForm()) return;
-    if (!token) {
-      setErrors({ ...errors, submit: 'Invalid or missing reset token' });
-      return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErrors({ ...errors, submit: '' });
+  setSuccessMessage('');
+
+  if (!validateForm()) return;
+  if (!token) {
+    setErrors({ ...errors, submit: 'Invalid or missing reset token' });
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    // Call resetPassword and wait for the response
+    const result = await resetPassword(token, formData.newPassword);
+    
+    // Check for success in the response data
+    if (result?.success) {
+      setSuccessMessage('Your password has been successfully reset!');
+      setTimeout(() => router.push('/'), 3000);
+    } else {
+      // Handle backend error message if available
+      const errorMsg = result?.message || 'Failed to reset password. Please try again.';
+      throw new Error(errorMsg);
     }
-
-    setIsLoading(true);
-
-    try {
-      const response = await resetPassword(token, formData.newPassword);
-      
-      if (response?.ok) {
-        setSuccessMessage('Your password has been successfully reset!');
-        setTimeout(() => router.push('/login'), 3000);
+  } catch (error: unknown) {
+    console.error('Password reset error:', error);
+    
+    // Handle specific error cases
+    let errorMessage = 'Failed to reset password. Please try again.';
+    if (error instanceof Error) {
+      if (error.message.includes('expired')) {
+        errorMessage = 'Your reset token has expired. Please request a new password reset.';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid reset token. Please request a new password reset.';
       } else {
-        throw new Error('Failed to reset password. Please try again.');
+        errorMessage = error.message;
       }
-    } catch (error: unknown) {
-      console.error('Password reset error:', error);
-      setErrors({
-        ...errors,
-        submit: (error as Error).message || 'Failed to reset password. Please try again.'
-      });
-    } finally {
-      setIsLoading(false);
     }
-  };
+    
+    setErrors({
+      ...errors,
+      submit: errorMessage
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Check password requirements
   const passwordRequirements = {

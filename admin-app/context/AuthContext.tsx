@@ -46,7 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean) => {
+// Update the login function in AuthContext.tsx
+const login = async (email: string, password: string, rememberMe: boolean) => {
+  try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,14 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
-    }
-
     const loginData = data as LoginResponse;
     
-    // Store tokens and user
+    // Check if user is verified
+    if (!loginData.user.is_verified) {
+      // Clear any stored tokens
+      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
+      
+      // Redirect to verification page with email parameter
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      return;
+    }
+    
+    // Store tokens and user if verified
     const storage = rememberMe ? localStorage : sessionStorage;
     storage.setItem('access_token', loginData.access_token);
     if (loginData.refresh_token) {
@@ -75,7 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     localStorage.setItem('user', JSON.stringify(loginData.user));
     setUser(loginData.user);
-  };
+
+    // Redirect to verification
+    router.push('/verification-status');
+  } catch (error) {
+    throw error; // Re-throw for form handling
+  }
+};
 
   const logout = () => {
     // Clear all auth tokens
@@ -102,35 +116,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
 const resetPassword = async (token: string, newPassword: string) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, newPassword }),
-  });
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, newPassword }),
+    });
 
-  // Handle empty responses
-  if (response.status === 204) {
-    return { ok: true };
-  }
-
-  // Handle JSON responses
-  if (response.headers.get('content-type')?.includes('application/json')) {
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Password reset failed');
+    // Handle successful responses
+    if (response.status === 200 || response.status === 201) {
+      return await response.json();
     }
-    return data;
+    
+    // Handle error responses
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Password reset failed');
+  } catch (error) {
+    console.error('Password reset error:', error);
+    throw error;
   }
-
-  // Handle non-JSON responses
-  if (!response.ok) {
-    throw new Error(response.statusText || 'Password reset failed');
-  }
-
-  return response;
 };
 
-// Add register to the first AuthProvider and remove duplicate AuthContext/AuthProvider
   const register = async (email: string, password: string, role: string) => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register`, {
       method: 'POST',

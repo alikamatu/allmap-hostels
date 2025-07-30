@@ -5,15 +5,15 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
 import { Check, Loader2 } from 'lucide-react';
-import "@/style/component.css";
 import { adminVerificationSchema, AdminVerificationFormData } from '@/lib/validationSchemas';
 import { useState } from 'react';
 import FormInput from '@/components/dashboard/components/setting/FormInput';
 import FormSelect from '@/components/dashboard/components/setting/FormSelect';
 import FileUploader from '@/components/dashboard/components/setting/FileUploader';
+import { useRouter } from 'next/navigation';
 
 export default function Settings() {
-
+  const router = useRouter();
   const [idFiles, setIdFiles] = useState<File[]>([]);
   const [hostelProofFiles, setHostelProofFiles] = useState<File[]>([]);
 
@@ -83,6 +83,8 @@ export default function Settings() {
           icon: 'success',
           confirmButtonText: 'OK'
         });
+
+        router.push('/verification-status');
       } catch (error) {
         Swal.fire({
           title: 'Error!',
