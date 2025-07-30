@@ -87,7 +87,7 @@ export default function Register() {
       >
         {/* Hero Section */}
         <motion.div 
-          className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 hiiden md:flex flex-col justify-center relative overflow-hidden"
+          className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 hidden md:flex flex-col justify-center relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
