@@ -13,7 +13,6 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetStatus, setResetStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -43,7 +42,7 @@ export default function Login() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [heroTexts.length]);
 
   useEffect(() => {
     // Close modal when clicking outside
@@ -93,14 +92,14 @@ export default function Login() {
     try {
       setLoading(true);
       await login(email, password, rememberMe);
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Login failed. Please try again.';
       
-      if (err.message.includes('credentials')) {
+      if (err instanceof Error && err.message.includes('credentials')) {
         errorMessage = 'Invalid email or password';
-      } else if (err.message.includes('verified')) {
+      } else if (err instanceof Error && err.message.includes('verified')) {
         errorMessage = 'Please verify your email first';
-      } else if (err.message) {
+      } else if (err instanceof Error && err.message) {
         errorMessage = err.message;
       }
       
@@ -131,9 +130,9 @@ export default function Login() {
         setResetStatus('idle');
         setShowResetModal(false);
       }, 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setResetStatus('error');
-      setResetError(err.message || 'Failed to send reset email');
+      setResetError(err instanceof Error ? err.message || 'Failed to send reset email' : 'Failed to send reset email');
     }
   };
 
@@ -166,9 +165,9 @@ export default function Login() {
       } else {
         throw new Error('Password reset failed');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setResetStatus('error');
-      setResetError(err.message || 'Failed to reset password');
+      setResetError(err instanceof Error ? err.message || 'Failed to reset password' : 'Failed to reset password');
     }
   };
 
@@ -312,9 +311,9 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                disabled={loading || redirecting}
+                disabled={loading}
                 className={`w-full py-3 px-4 rounded-lg text-white font-medium transition flex items-center justify-center ${
-                  loading || redirecting
+                  loading
                     ? 'bg-blue-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
@@ -362,7 +361,7 @@ export default function Login() {
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <a
                 href="/sign-up" 
                 className="text-blue-600 font-medium hover:underline focus:outline-none"
@@ -425,7 +424,7 @@ export default function Login() {
                     {!showResetForm ? (
                       <div className="space-y-4">
                         <p className="text-gray-600">
-                          Enter your email and we'll send you a link to reset your password.
+                          Enter your email and we&apos;ll send you a link to reset your password.
                         </p>
                         
                         <div>
