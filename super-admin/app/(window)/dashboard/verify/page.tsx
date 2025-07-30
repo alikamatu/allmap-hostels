@@ -64,7 +64,7 @@ const getDocumentUrl = (filePath: string, bucket: string) => {
   if (error) return <ErrorState error={error} />;
 
   return (
-    <div className="flex-1 overflow-auto p-8 bg-gray-50">
+    <div className="flex-1 overflow-auto p-8">
       <Header />
       
       {verifications.length === 0 ? (
@@ -84,7 +84,7 @@ const getDocumentUrl = (filePath: string, bucket: string) => {
                   }}
                   exit={{ opacity: 0, x: -100 }}
                   layout
-                  className="bg-white rounded-2xl shadow-md overflow-hidden"
+                  className="rounded-2xl shadow-md overflow-hidden"
                 >
                   <VerificationListItem
                     verification={verification}
@@ -127,16 +127,16 @@ const VerificationListItem = ({
   return (
     <div>
       <div 
-        className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+        className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200 rounded-lg"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center">
             <FiUser className="text-blue-600 text-xl" />
           </div>
           <div>
             <h3 className="text-2xl font-bold">{verification.hostel_name}</h3>
-            <p className="text-gray-600">{verification.user.email}</p>
+            <p className="">{verification.user.email}</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -313,13 +313,13 @@ const RejectModal = ({ isOpen, reason, setReason, onConfirm, onCancel, isLoading
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="bg-white rounded-xl p-6 max-w-md w-full"
+          className="rounded-xl p-6 max-w-md w-full"
         >
           <h3 className="text-2xl font-bold mb-4">Reason for Rejection</h3>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full h-32 p-3 border border-gray-300 rounded-lg mb-4"
+            className="w-full h-32 p-3 border border-gray-600 rounded-lg mb-4"
             placeholder="Please specify the reason..."
           />
           <div className="flex justify-end space-x-3">

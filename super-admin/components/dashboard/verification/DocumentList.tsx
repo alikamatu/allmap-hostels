@@ -15,7 +15,7 @@ export const DocumentList = ({ documents, title }: { documents: string[]; title:
           rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center px-4 py-2 bg-gray-100 rounded-lg text-xl"
+          className="flex items-center px-4 py-2 rounded-lg text-xl"
         >
           <FiDownload className="mr-2" /> {title.split(' ')[0]} {index + 1}
         </motion.a>
