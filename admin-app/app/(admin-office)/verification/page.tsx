@@ -67,7 +67,7 @@ export default function Settings() {
         });
 
         // Send directly to external NestJS API
-        const response = await fetch('http://localhost:1000/admin/verification', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/verification`, {
           method: 'POST',
           body: formData,
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,

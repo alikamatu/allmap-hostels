@@ -26,7 +26,7 @@ export default function VerificationStatusPage() {
           return;
         }
 
-        const response = await fetch('http://localhost:1000/admin/status', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/status`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
