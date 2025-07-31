@@ -1,38 +1,62 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl';
+import { useState, useEffect, useRef } from 'react';
+import Map, { MapRef, Marker, NavigationControl } from 'react-map-gl/maplibre';
 import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-export default function LocationPicker({ location, address, onLocationChange, onAddressChange }: { location: { lat: number, lng: number }, address: string, onLocationChange: (location: { lng: number, lat: number }) => void, onAddressChange: (address: string) => void }) {
-  const [viewport, setViewport] = useState({
-    latitude: location.lat,
+interface Viewport {
+  longitude: number;
+  latitude: number;
+  zoom: number;
+}
+
+interface Location {
+  lng: number;
+  lat: number;
+}
+
+export default function LocationPicker({ 
+  location, 
+  address, 
+  onLocationChange, 
+  onAddressChange 
+}: { 
+  location: Location; 
+  address: string; 
+  onLocationChange: (loc: Location) => void; 
+  onAddressChange: (addr: string) => void; 
+}) {
+  const mapRef = useRef<MapRef>(null);
+  const [viewport, setViewport] = useState<Viewport>({
     longitude: location.lng,
+    latitude: location.lat,
     zoom: 14
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setViewport({
-      latitude: location.lat,
       longitude: location.lng,
+      latitude: location.lat,
       zoom: 14
     });
   }, [location]);
 
-  const handleMapClick = (e: { lngLat: [number, number] }) => {
-    const newLocation = {
-      lng: e.lngLat[0],
-      lat: e.lngLat[1]
+  const handleMapClick = (e: { lngLat: { lng: number; lat: number } }) => {
+    const newLocation: Location = {
+      lng: e.lngLat.lng,
+      lat: e.lngLat.lat
     };
     onLocationChange(newLocation);
     reverseGeocode(newLocation);
   };
 
-  const reverseGeocode = async (loc: { lng: number, lat: number }) => {
+
+  const reverseGeocode = async (loc: Location) => {
     setLoading(true);
     try {
       const response = await fetch(
@@ -42,16 +66,22 @@ export default function LocationPicker({ location, address, onLocationChange, on
       if (data.features && data.features.length > 0) {
         onAddressChange(data.features[0].place_name);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Reverse geocode error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+
   if (loading) {
-    return <div className="text-center text-gray-500">Loading map...</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="loader">loading...</div>
+      </div>
+    );
   }
+
 
   return (
     <div className="space-y-6">
@@ -66,7 +96,7 @@ export default function LocationPicker({ location, address, onLocationChange, on
         <input
           type="text"
           value={address}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onAddressChange(e.target.value)}
+          onChange={(e) => onAddressChange(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
           placeholder="Enter hostel address"
           required
@@ -79,28 +109,29 @@ export default function LocationPicker({ location, address, onLocationChange, on
         transition={{ delay: 0.2 }}
         className="h-96 rounded-xl overflow-hidden border border-gray-300 relative"
       >
-        <Map
-          {...viewport}
-          mapStyle="mapbox://styles/mapbox/streets-v11"
-          width="100%"
-          height="100%"
-          onViewportChange={setViewport}
-          onClick={handleMapClick}
-          mapboxApiAccessToken={MAPBOX_TOKEN}
-        >
-          <Marker
-            latitude={location.lat}
-            longitude={location.lng}
-            offsetLeft={-20}
-            offsetTop={-40}
-          >
+<Map
+  ref={mapRef}
+  {...viewport}
+  mapStyle="https://demotiles.maplibre.org/style.json"
+  style={{ width: '100%', height: '100%' }}
+  onMove={(evt) => setViewport(evt.viewState)}
+  onClick={handleMapClick}
+  attributionControl={false}
+>
+                     <Marker
+             longitude={location.lng}
+             latitude={location.lat}
+             anchor="bottom"
+           >
             <div className="text-red-500">
               <MapPin size={40} fill="currentColor" />
             </div>
           </Marker>
-          <div className="absolute top-4 right-4">
-            <NavigationControl showCompass={false} />
-          </div>
+          <NavigationControl 
+            position="top-right" 
+            showCompass={false}
+            showZoom={true}
+          />
         </Map>
         
         <div className="absolute bottom-4 left-4 bg-white px-4 py-2 rounded-lg shadow-md text-sm">
