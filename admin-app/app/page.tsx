@@ -189,7 +189,7 @@ export default function Login() {
           <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full bg-white"></div>
           <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-white"></div>
         </div>
-
+        
         <div className="relative z-10 text-white">
           <div className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">HostelHub Admin</h1>
@@ -247,15 +247,15 @@ export default function Login() {
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <FiMail className="text-gray-400" />
                 </div>
-                <input
-                  id="email"
-                  type="email"
+              <input
+                id="email"
+                type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full md:w-96 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="admin@hostelhub.com"
-                  required
-                />
+                required
+              />
               </div>
             </div>
             
@@ -268,15 +268,15 @@ export default function Login() {
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <FiLock className="text-gray-400" />
                 </div>
-                <input
+              <input
                   id="password"
-                  type="password"
+                type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   placeholder="••••••••"
-                  required
-                />
+                required
+              />
               </div>
             </div>
             
@@ -295,7 +295,7 @@ export default function Login() {
                 <div className="ml-3 text-sm">
                   <label htmlFor="remember" className="text-gray-700">
                     Remember me
-                  </label>
+              </label>
                 </div>
               </div>
               
@@ -306,12 +306,12 @@ export default function Login() {
               >
                 Forgot password?
               </button>
-            </div>
-            
+          </div>
+
             {/* Submit Button */}
-            <div>
-              <button
-                type="submit"
+          <div>
+            <button
+              type="submit"
                 disabled={loading}
                 className={`w-full py-3 px-4 rounded-lg text-white font-medium transition flex items-center justify-center ${
                   loading
@@ -329,10 +329,10 @@ export default function Login() {
                     Sign In <FiArrowRight className="ml-2" />
                   </>
                 )}
-              </button>
-            </div>
-          </form>
-          
+            </button>
+          </div>
+        </form>
+
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
