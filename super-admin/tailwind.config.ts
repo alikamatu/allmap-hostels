@@ -7,6 +7,7 @@ module.exports = {
         foreground: 'var(--foreground)',
         border: 'var(--border)',
         sider: 'var(--sider)',
+        icon: 'var(--icon)',
       },
     },
   },

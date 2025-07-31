@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiX,
   FiMenu,
-  FiBriefcase,
   FiUserCheck,
   FiUser,
   FiHome,
   FiMail,
+  FiBarChart,
 } from 'react-icons/fi';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeProvider';
@@ -58,12 +58,23 @@ const SidebarItem = ({
 export const DashboardSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [activeItem, setActiveItem] = useState('Work');
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const [year, setYear] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   const navItems = [
-    { id: 'Work', icon: <FiBriefcase />, href: '/work' },
+    { id: 'Home', icon: <FiBarChart />, href: '/dashboard' },
     { id: 'Verify', icon: <FiUserCheck />, href: '/dashboard/verify' },
     { id: 'About', icon: <FiUser />, href: '/about' },
     { id: 'Agency', icon: <FiHome />, href: '/agency' },
@@ -75,7 +86,7 @@ export const DashboardSidebar = () => {
       initial={{ width: 100 }}
       animate={{ width: isOpen ? 400 : 100 }}
       transition={{ type: 'spring', damping: 20 }}
-      className="h-screen border-l flex flex-col order-last"
+      className="h-screen border-l flex flex-col order-last dark:bg-sider"
     >
       <div className="p-6 flex justify-between items-center">
         <motion.h1
@@ -110,18 +121,24 @@ export const DashboardSidebar = () => {
         ))}
       </div>
 
-      <button
-        className="mb-8 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      >
-        Switch to {theme === "light" ? "Dark" : "Light"} Mode
-      </button>
-      <motion.div
-        className="p-6 text-center text-gray-500"
-        animate={{ opacity: isOpen ? 1 : 0 }}
-      >
-        © {new Date().getFullYear()} ALLMAP
-      </motion.div>
+{mounted && (
+  <button
+    className="mb-8 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+    onClick={toggleTheme}
+  >
+    Switch to {theme === "light" ? "Dark" : "Light"} Mode
+  </button>
+)}
+
+
+      {year !== null && (
+        <motion.div
+          className="p-6 text-center text-gray-500"
+          animate={{ opacity: isOpen ? 1 : 0 }}
+        >
+          © {year} ALLMAP
+        </motion.div>
+      )}
     </motion.div>
   );
 };

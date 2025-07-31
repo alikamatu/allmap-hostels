@@ -3,44 +3,66 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
-type ThemeContextType = {
+type Style = "classic" | "web3";
+
+interface ThemeContextType {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
-};
+  style: Style;
+  toggleTheme: () => void;
+  toggleStyle: () => void;
+}
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function getInitialTheme(): Theme {
-  if (typeof window !== "undefined" && window.localStorage.getItem("theme")) {
-    return window.localStorage.getItem("theme") as Theme;
-  }
-  if (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    return "dark";
-  }
-  return "light";
-}
-
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [theme, setTheme] = useState<Theme>("light");
+  const [style, setStyle] = useState<Style>("classic");
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    
+    // Get saved preferences or use system defaults
+    const savedTheme = localStorage.getItem("theme") as Theme | null;
+    const savedStyle = localStorage.getItem("style") as Style | null;
+    
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    
+    // Set initial theme
+    setTheme(savedTheme || (systemPrefersDark ? "dark" : "light"));
+    
+    // Set initial style
+    setStyle(savedStyle || "classic");
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Update document classes and localStorage
     document.documentElement.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem("theme", theme);
-    document.documentElement.style.setProperty(
-      "--background",
-      theme === "dark" ? "#0a0a0a" : "#ffffff"
-    );
-    document.documentElement.style.setProperty(
-      "--foreground",
-      theme === "dark" ? "#ededed" : "#171717"
-    );
-  }, [theme]);
+    document.documentElement.setAttribute("data-style", style);
+    
+    localStorage.setItem("theme", theme);
+    localStorage.setItem("style", style);
+    
+    // Update CSS variables based on theme+style combination
+    document.documentElement.className = `${theme} ${style}`;
+  }, [theme, style, isMounted]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+  };
+
+  const toggleStyle = () => {
+    setStyle(prev => prev === "classic" ? "web3" : "classic");
+  };
+
+  if (!isMounted) return null;
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, style, toggleTheme, toggleStyle }}>
       {children}
     </ThemeContext.Provider>
   );
