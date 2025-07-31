@@ -227,7 +227,7 @@ const EmptyState = ({ onAddHostel }: { onAddHostel: () => void }) => (
     
     <h2 className="text-2xl font-bold text-gray-800 mb-4">No Hostels Found</h2>
     <p className="text-gray-600 max-w-md mx-auto mb-8">
-      You haven't added any hostels yet. Get started by adding your first hostel property.
+      You haven&apos;t added any hostels yet. Get started by adding your first hostel property.
     </p>
     
     <motion.button
