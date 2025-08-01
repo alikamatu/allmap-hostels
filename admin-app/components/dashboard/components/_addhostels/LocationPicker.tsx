@@ -32,8 +32,8 @@ export default function LocationPicker({
 }) {
   const mapRef = useRef<MapRef>(null);
 const [viewport, setViewport] = useState<Viewport>({
-  longitude: location?.lng ?? -0.1870,
-  latitude: location?.lat ?? 5.6037,
+  longitude: -0.1870,
+  latitude: 5.6037,
   zoom: 14,
 });
 
@@ -114,14 +114,14 @@ useEffect(() => {
         <Map
           ref={mapRef}
           {...viewport}
-          mapStyle={`https://api.maptiler.com/maps/bright-v2/style.json?key=B4ViRJWe5eOxKBZcGNNv#7.6/5.47229/-0.05929`}
+          mapStyle={`https://api.maptiler.com/maps/bright-v2/style.json?key=B4ViRJWe5eOxKBZcGNNv`}
           style={{ width: '100%', height: '100%' }}
           onMove={(evt) => setViewport(evt.viewState)}
           onClick={handleMapClick}
           attributionControl={false}
         >
           <Marker
-            longitude={location.lng || 0}
+            longitude={location.lng}
             latitude={location.lat}
             anchor="bottom"
           >

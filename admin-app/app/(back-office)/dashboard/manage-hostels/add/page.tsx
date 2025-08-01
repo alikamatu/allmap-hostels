@@ -29,7 +29,7 @@ export default function AddHostelPage() {
       parking: false,
       security: false
     },
-    location: { lng: -0.1276, lat: 51.5072 }, // Default to London
+    location: { lng: -0.1969, lat: 5.6037 },
     images: [] as File[]
   });
 
