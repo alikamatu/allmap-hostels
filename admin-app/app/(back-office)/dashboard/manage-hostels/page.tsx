@@ -21,8 +21,8 @@ export default function HostelManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  
   const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-
 
   useEffect(() => {
     const fetchHostels = async () => {
