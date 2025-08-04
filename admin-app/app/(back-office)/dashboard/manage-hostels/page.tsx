@@ -21,13 +21,18 @@ export default function HostelManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+
   useEffect(() => {
     const fetchHostels = async () => {
       try {
         setLoading(true);
         // Replace with your actual API endpoint
-        const response = await fetch('/api/hostels');
-        
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`, {
+          method: 'GET',
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch hostels');
         }

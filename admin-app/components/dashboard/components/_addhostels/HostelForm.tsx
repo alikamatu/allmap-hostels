@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-export default function HostelForm({ hostelData, handleInputChange }: { hostelData: { name: string, description: string, schoolId: string }, handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void }) {
+export default function HostelForm({ hostelData, handleInputChange }: { hostelData: { name: string, description: string }, handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void }) {
   return (
     <div className="space-y-6">
       <motion.div
@@ -46,7 +46,7 @@ export default function HostelForm({ hostelData, handleInputChange }: { hostelDa
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        {/* <label className="block text-sm font-medium text-gray-700 mb-1">
           School ID
         </label>
         <input
@@ -56,7 +56,7 @@ export default function HostelForm({ hostelData, handleInputChange }: { hostelDa
           onChange={handleInputChange}
           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
           placeholder="Enter associated school ID"
-        />
+        /> */}
       </motion.div>
     </div>
   );

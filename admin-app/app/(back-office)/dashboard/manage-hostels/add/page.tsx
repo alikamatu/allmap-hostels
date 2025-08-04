@@ -21,7 +21,6 @@ export default function AddHostelPage() {
     name: '',
     description: '',
     address: '',
-    schoolId: '',
     amenities: {
       wifi: false,
       laundry: false,
@@ -29,7 +28,7 @@ export default function AddHostelPage() {
       parking: false,
       security: false
     },
-    location: { lng: -0.1969, lat: 5.6037 },
+    location: { lng: -0.1969, lat: 5.6037 }, // Default to Accra, Ghana
     images: [] as File[]
   });
 
@@ -116,7 +115,6 @@ export default function AddHostelPage() {
       formData.append('name', hostelData.name);
       formData.append('description', hostelData.description);
       formData.append('address', hostelData.address);
-      formData.append('schoolId', hostelData.schoolId);
       formData.append('location', JSON.stringify(hostelData.location));
       formData.append('amenities', JSON.stringify(hostelData.amenities));
       
@@ -124,10 +122,13 @@ export default function AddHostelPage() {
         formData.append(`images`, file);
       });
 
+      const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      
       // Submit to backend
-      await axios.post('/api/hostels', formData, {
+      await axios.post('http://localhost:1000/hostels/create', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         }
       });
 

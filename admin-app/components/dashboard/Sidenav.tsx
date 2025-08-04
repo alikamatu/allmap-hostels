@@ -23,7 +23,7 @@ interface SidenavProps {
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Manage Hostels', href: '/dashboard/manage-hostels', icon: Building },
-  { name: 'Manage Rooms', href: '/dashboard/rooms', icon: Bed },
+  { name: 'Manage Rooms', href: '/dashboard/manage-room', icon: Bed },
   { name: 'Bookings Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
