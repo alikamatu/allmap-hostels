@@ -8,11 +8,17 @@ import {
   FiMail, FiPhone, FiWifi, FiCoffee, FiCamera, FiShield, 
   FiRefreshCw, FiChevronLeft, FiChevronRight, FiInfo
 } from 'react-icons/fi';
-import img from 'next/image';
+import Image from 'next/image';
 
 interface LocationCoords {
   lng: number;
   lat: number;
+}
+
+// Type for GeoJSON Point format
+interface GeoJSONPoint {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
 }
 
 interface Hostel {
@@ -23,7 +29,7 @@ interface Hostel {
   email: string;
   phone: string;
   SecondaryNumber: string;
-  location: LocationCoords;
+  location: LocationCoords | GeoJSONPoint | string;
   images: string[];
   amenities: {
     wifi: boolean;
@@ -43,11 +49,7 @@ export default function HostelManagementPage() {
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, id: string | null}>({show: false, id: null});
 
-  useEffect(() => {
-    fetchHostels();
-  }, []);
-
-  const fetchHostels = async () => {
+  const fetchHostels = useCallback(async () => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     try {
       setLoading(true);
@@ -70,7 +72,11 @@ export default function HostelManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchHostels();
+  }, [fetchHostels]);
 
   const handleAddHostel = () => {
     router.push('/dashboard/manage-hostels/add');
@@ -195,7 +201,7 @@ export default function HostelManagementPage() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className=" rounded-2xl shadow-xl p-6 w-full max-w-md"
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
@@ -253,7 +259,7 @@ const AddHostelButton = ({ onClick }: { onClick: () => void }) => (
 );
 
 const AmenityIcon = ({ amenity, isActive }: { amenity: string; isActive: boolean }) => {
-  const icons = {
+  const icons: Record<string, React.ComponentType<{ className?: string }>> = {
     wifi: FiWifi,
     laundry: FiRefreshCw,
     cafeteria: FiCoffee,
@@ -261,7 +267,7 @@ const AmenityIcon = ({ amenity, isActive }: { amenity: string; isActive: boolean
     security: FiShield,
   };
   
-  const Icon = icons[amenity as keyof typeof icons] || FiHome;
+  const Icon = icons[amenity] || FiHome;
   
   return (
     <div className={`p-2 rounded-xl ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -285,29 +291,36 @@ const HostelCard = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const hasImages = hostel.images && hostel.images.length > 0;
-  const activeAmenities = Object.entries(hostel.amenities || {}).filter(([_, value]) => value);
+  const activeAmenities = Object.entries(hostel.amenities || {}).filter(([, value]) => value);
 
-  // Helper function to format location
-  const formatLocation = (location: LocationCoords | unknown): string => {
+  // Helper function to format location with proper typing
+  const formatLocation = (location: Hostel['location']): string => {
     if (typeof location === 'string') return location;
   
     // Handle GeoJSON Point format
     if (
       location &&
       typeof location === 'object' &&
-      (location as { type: string }).type === 'Point' &&
-      Array.isArray((location as { coordinates: [number, number] }).coordinates)
+      'type' in location &&
+      location.type === 'Point' &&
+      'coordinates' in location &&
+      Array.isArray(location.coordinates)
     ) {
-      return `Lat: ${((location as { coordinates: [number, number] }).coordinates[1]).toFixed(4)}, Lon: ${((location as { coordinates: [number, number] }).coordinates[0]).toFixed(4)}`;
+      const geoLocation = location as GeoJSONPoint;
+      return `Lat: ${geoLocation.coordinates[1].toFixed(4)}, Lon: ${geoLocation.coordinates[0].toFixed(4)}`;
     }
   
     // Handle LocationCoords format
     if (
       location &&
-      typeof (location as { lat: number, lng: number }).lat === 'number' &&
-      typeof (location as { lat: number, lng: number }).lng === 'number'
+      typeof location === 'object' &&
+      'lat' in location &&
+      'lng' in location &&
+      typeof location.lat === 'number' &&
+      typeof location.lng === 'number'
     ) {
-      return `Lat: ${((location as { lat: number }).lat).toFixed(4)}, Lon: ${((location as { lng: number }).lng).toFixed(4)}`;
+      const coordLocation = location as LocationCoords;
+      return `Lat: ${coordLocation.lat.toFixed(4)}, Lon: ${coordLocation.lng.toFixed(4)}`;
     }
   
     return 'Unknown location';
@@ -333,16 +346,17 @@ const HostelCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       whileHover={{ y: -5 }}
-      className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 "
+      className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 bg-white"
     >
-      {/* img Section */}
+      {/* Image Section */}
       <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900">
         {hasImages && !imageError ? (
           <>
-            <img
+            <Image
               src={hostel.images[currentImageIndex]}
               alt={`${hostel.name} - image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
               onError={() => setImageError(true)}
             />
             {hostel.images.length > 1 && (
