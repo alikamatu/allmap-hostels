@@ -8,7 +8,7 @@ import {
   FiMail, FiPhone, FiWifi, FiCoffee, FiCamera, FiShield, 
   FiRefreshCw, FiChevronLeft, FiChevronRight, FiInfo
 } from 'react-icons/fi';
-import Image from 'next/image';
+import img from 'next/image';
 
 interface LocationCoords {
   lng: number;
@@ -348,14 +348,13 @@ const HostelCard = ({
       whileHover={{ y: -5 }}
       className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 bg-white"
     >
-      {/* Image Section */}
+      {/* img Section */}
       <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900">
         {hasImages && !imageError ? (
           <>
-            <Image
+            <img
               src={hostel.images[currentImageIndex]}
               alt={`${hostel.name} - image ${currentImageIndex + 1}`}
-              fill
               className="object-cover"
               onError={() => setImageError(true)}
             />
