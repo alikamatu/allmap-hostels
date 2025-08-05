@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building, Bed, Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const CreateRoomTypeModal = ({ 
   isOpen, 
@@ -196,13 +196,13 @@ const handleSubmit = (e: React.FormEvent) => {
                   onChange={handleChange}
                   required
                   min="1"
-                  max="10"
+                  max="2000"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                 />
               </div>
 
                             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Rooms</label>
                 <input
                   type="number"
                   name="total_rooms"
@@ -215,8 +215,8 @@ const handleSubmit = (e: React.FormEvent) => {
                 />
               </div>
 
-                            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Available Rooms</label>
                 <input
                   type="number"
                   name="available_rooms"

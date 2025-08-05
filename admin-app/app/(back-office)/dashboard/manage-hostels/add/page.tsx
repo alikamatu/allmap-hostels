@@ -20,6 +20,9 @@ export default function AddHostelPage() {
   const [hostelData, setHostelData] = useState({
     name: '',
     description: '',
+    email: '',
+    phone: '',
+    SecondaryNumber: '',
     address: '',
     amenities: {
       wifi: false,
@@ -35,6 +38,18 @@ export default function AddHostelPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setHostelData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEmailChange = (email: string) => {
+    setHostelData(prev => ({ ...prev, email }));
+  };
+
+  const handlePhoneChange = (phone: string) => {
+    setHostelData(prev => ({ ...prev, phone }));
+  };
+
+  const handleSecondaryPhoneChange = (SecondaryNumber: string) => {
+    setHostelData(prev => ({ ...prev, SecondaryNumber }));
   };
 
   const handleAmenityChange = (amenity: string) => {
@@ -68,7 +83,7 @@ export default function AddHostelPage() {
 
   const validateStep = () => {
     if (step === 1) {
-      if (!hostelData.name.trim() || !hostelData.description.trim()) {
+      if (!hostelData.name.trim() || !hostelData.description.trim() || !hostelData.email.trim() || !hostelData.phone.trim() || !hostelData.SecondaryNumber.trim()) {
         Swal.fire({
           icon: 'error',
           title: 'Missing Information',
@@ -113,6 +128,9 @@ export default function AddHostelPage() {
       // Create FormData to handle file uploads
       const formData = new FormData();
       formData.append('name', hostelData.name);
+      formData.append('email', hostelData.email);
+      formData.append('phone', hostelData.phone);
+      formData.append('SecondaryNumber', hostelData.SecondaryNumber);
       formData.append('description', hostelData.description);
       formData.append('address', hostelData.address);
       formData.append('location', JSON.stringify(hostelData.location));
@@ -156,7 +174,7 @@ export default function AddHostelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -213,6 +231,9 @@ export default function AddHostelPage() {
             <HostelForm 
               hostelData={hostelData} 
               handleInputChange={handleInputChange} 
+              handleEmailChange={handleEmailChange}
+              handlePhoneChange={handlePhoneChange}
+              handleSecondaryPhoneChange={handleSecondaryPhoneChange}
             />
           )}
           
