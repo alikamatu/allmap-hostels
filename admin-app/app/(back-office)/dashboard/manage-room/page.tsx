@@ -19,6 +19,45 @@ import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-ty
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
+// Type definitions for form data
+interface CreateRoomFormData {
+  hostelId: string;
+  roomTypeId: string;
+  roomNumber: string;
+  floor: string;
+  maxOccupancy: string;
+  notes: string;
+}
+
+interface BulkCreateFormData {
+  hostelId: string;
+  roomTypeId: string;
+  floor: string;
+  maxOccupancy: string;
+  roomNumbers: string;
+  notes: string;
+}
+
+interface UpdateRoomFormData {
+  roomNumber: string;
+  floor: string;
+  status: RoomStatus;
+  maxOccupancy: string;
+  currentOccupancy: string;
+  notes: string;
+}
+
+interface CreateRoomTypeFormData {
+  hostelId: string;
+  name: string;
+  description?: string;
+  pricePerSemester: number;
+  pricePerMonth: number;
+  pricePerWeek?: number;
+  capacity: number;
+  amenities?: string[];
+}
+
 const RoomManagementPage = () => {
   const [selectedHostel, setSelectedHostel] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,9 +78,34 @@ const RoomManagementPage = () => {
     action: false
   });
   const [showCreateRoomTypeModal, setShowCreateRoomTypeModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRooms, setTotalRooms] = useState(0);
+
+  // Form state
+  const [createFormData, setCreateFormData] = useState<CreateRoomFormData>({
+    hostelId: '',
+    roomTypeId: '',
+    roomNumber: '',
+    floor: '',
+    maxOccupancy: '',
+    notes: ''
+  });
+
+  const [bulkFormData, setBulkFormData] = useState<BulkCreateFormData>({
+    hostelId: '',
+    roomTypeId: '',
+    floor: '',
+    maxOccupancy: '',
+    roomNumbers: '',
+    notes: ''
+  });
+
+  const [updateFormData, setUpdateFormData] = useState<UpdateRoomFormData>({
+    roomNumber: '',
+    floor: '',
+    status: RoomStatus.AVAILABLE,
+    maxOccupancy: '',
+    currentOccupancy: '',
+    notes: ''
+  });
 
   // Fetch room types function
   const fetchRoomTypes = useCallback(async (hostelId: string) => {
@@ -150,9 +214,8 @@ const RoomManagementPage = () => {
       
       if (data.rooms && data.pagination) {
         setRooms(data.rooms);
-        setCurrentPage(data.pagination.page);
-        setTotalPages(data.pagination.totalPages);
-        setTotalRooms(data.pagination.total);
+        // Note: pagination data is available but not currently used in the UI
+        // const { page, totalPages, total } = data.pagination;
       } else if (Array.isArray(data)) {
         setRooms(data);
       } else {
@@ -220,7 +283,7 @@ const RoomManagementPage = () => {
     };
     
     fetchInitialData();
-  }, []); // Only run on mount
+  }, [fetchRooms]); // Include fetchRooms dependency
 
   // Handle hostel selection changes - fetch room types when hostel changes
   useEffect(() => {
@@ -237,7 +300,21 @@ const RoomManagementPage = () => {
     fetchRooms(1); // Reset to page 1 when filters change
   }, [fetchRooms]);
 
-  const handleCreateRoom = async (formData: any) => {
+  // Reset create form when modal opens
+  useEffect(() => {
+    if (showCreateModal) {
+      setCreateFormData({
+        hostelId: selectedHostel || '', // Pre-select current hostel if available
+        roomTypeId: '',
+        roomNumber: '',
+        floor: '',
+        maxOccupancy: '',
+        notes: ''
+      });
+    }
+  }, [showCreateModal, selectedHostel]);
+
+  const handleCreateRoom = async (formData: CreateRoomFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
     if (!accessToken) {
@@ -325,7 +402,7 @@ const RoomManagementPage = () => {
     }
   };
 
-  const handleBulkCreate = async (formData: any) => {
+  const handleBulkCreate = async (formData: BulkCreateFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
     if (!accessToken) {
@@ -365,7 +442,7 @@ const RoomManagementPage = () => {
     }
   };
 
-  const handleUpdateRoom = async (roomId: string, formData: any) => {
+  const handleUpdateRoom = async (roomId: string, formData: UpdateRoomFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
     if (!accessToken) {
@@ -538,56 +615,67 @@ const RoomManagementPage = () => {
     );
   };
 
-  const selectAllRooms = () => {
-    if (selectedRooms.length === rooms.length) {
-      setSelectedRooms([]);
-    } else {
-      setSelectedRooms(rooms.map(room => room.id));
+  const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
+    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    
+    if (!accessToken) {
+      alert('You are not authenticated. Please log in again.');
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, action: true }));
+    
+    try {
+      const payload = {
+        hostelId: formData.hostelId,
+        name: formData.name,
+        description: formData.description || '',
+        pricePerSemester: formData.pricePerSemester,
+        pricePerMonth: formData.pricePerMonth,
+        ...(formData.pricePerWeek && { pricePerWeek: formData.pricePerWeek }),
+        capacity: formData.capacity,
+        amenities: formData.amenities || [],
+        images: []
+      };
+
+      const res = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        
+        if (res.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          return;
+        }
+        
+        throw new Error(errorData.message || `HTTP ${res.status}: Failed to create room type`);
+      }
+
+      // Refresh room types for the created hostel
+      await fetchRoomTypes(formData.hostelId);
+      
+      // If the created room type's hostel is currently selected, refresh the room types
+      if (formData.hostelId === selectedHostel) {
+        await fetchRoomTypes(selectedHostel);
+      }
+      
+      setShowCreateRoomTypeModal(false);
+      alert('Room type created successfully!');
+      
+    } catch (error) {
+      console.error('Error creating room type:', error);
+      alert((error as Error).message || 'Failed to create room type. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, action: false }));
     }
   };
-
-    const [createFormData, setCreateFormData] = useState({
-    hostelId: '',
-    roomTypeId: '',
-    roomNumber: '',
-    floor: '',
-    maxOccupancy: '',
-    notes: ''
-  });
-
-  // Reset create form when modal opens
-  useEffect(() => {
-    if (showCreateModal) {
-      setCreateFormData({
-        hostelId: selectedHostel || '', // Pre-select current hostel if available
-        roomTypeId: '',
-        roomNumber: '',
-        floor: '',
-        maxOccupancy: '',
-        notes: ''
-      });
-    }
-  }, [showCreateModal, selectedHostel]);
-
-  // Bulk Create Form State
-  const [bulkFormData, setBulkFormData] = useState({
-    hostelId: '',
-    roomTypeId: '',
-    floor: '',
-    maxOccupancy: '',
-    roomNumbers: '',
-    notes: ''
-  });
-
-  // Update Form State
-  const [updateFormData, setUpdateFormData] = useState({
-    roomNumber: '',
-    floor: '',
-    status: RoomStatus.AVAILABLE,
-    maxOccupancy: '',
-    currentOccupancy: '',
-    notes: ''
-  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -744,7 +832,6 @@ const RoomManagementPage = () => {
         setFormData={setBulkFormData}
         onSubmit={handleBulkCreate}
         loading={loading.action}
-        // onHostelSelect={fetchRoomTypes}
       />
 
       {/* Create Room Type Modal */}
@@ -752,69 +839,7 @@ const RoomManagementPage = () => {
         isOpen={showCreateRoomTypeModal}
         onClose={() => setShowCreateRoomTypeModal(false)}
         hostels={hostels}
-        onSubmit={async (formData) => {
-          const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-          
-          if (!accessToken) {
-            alert('You are not authenticated. Please log in again.');
-            return;
-          }
-
-          setLoading(prev => ({ ...prev, action: true }));
-          
-          try {
-            const payload = {
-              hostelId: formData.hostelId,
-              name: formData.name,
-              description: formData.description || '',
-              pricePerSemester: formData.pricePerSemester,
-              pricePerMonth: formData.pricePerMonth,
-              ...(formData.pricePerWeek && { pricePerWeek: formData.pricePerWeek }),
-              capacity: formData.capacity,
-              amenities: formData.amenities || [],
-              images: []
-            };
-
-            const res = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-              },
-              body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-              const errorData = await res.json();
-              
-              if (res.status === 401) {
-                alert('Authentication failed. Please log in again.');
-                return;
-              }
-              
-              throw new Error(errorData.message || `HTTP ${res.status}: Failed to create room type`);
-            }
-
-            const result = await res.json();
-
-            // Refresh room types for the created hostel
-            await fetchRoomTypes(formData.hostelId);
-            
-            // If the created room type's hostel is currently selected, refresh the room types
-            if (formData.hostelId === selectedHostel) {
-              await fetchRoomTypes(selectedHostel);
-            }
-            
-            setShowCreateRoomTypeModal(false);
-            alert('Room type created successfully!');
-            
-          } catch (error) {
-            console.error('Error creating room type:', error);
-            alert((error as Error).message || 'Failed to create room type. Please try again.');
-          } finally {
-            setLoading(prev => ({ ...prev, action: false }));
-          }
-        }}
+        onSubmit={handleCreateRoomType}
         loading={loading.action}
       />
 
