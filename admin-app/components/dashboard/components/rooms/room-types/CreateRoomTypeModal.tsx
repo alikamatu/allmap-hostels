@@ -4,20 +4,42 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-const CreateRoomTypeModal = ({ 
-  isOpen, 
-  onClose, 
-  hostels,
-  onSubmit,
-  loading 
-}: { 
+type HostelOption = {
+  id: string;
+  name: string;
+};
+
+type CreateRoomTypeFormData = {
+  hostelId: string;
+  name: string;
+  description: string;
+  pricePerSemester: string;
+  pricePerMonth: string;
+  pricePerWeek: string;
+  capacity: string;
+  total_rooms: string;
+  available_rooms: string;
+  images: string[];
+  amenities: string[];
+};
+
+
+interface CreateRoomTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  hostels: any[];
-  onSubmit: (data: any) => void;
+  hostels: HostelOption[];
+  onSubmit: (data: CreateRoomTypeFormData) => void;
   loading: boolean;
+}
+
+const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
+  isOpen,
+  onClose,
+  hostels,
+  onSubmit,
+  loading,
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateRoomTypeFormData>({
     hostelId: '',
     name: '',
     description: '',
@@ -27,67 +49,71 @@ const CreateRoomTypeModal = ({
     capacity: '1',
     total_rooms: '1',
     available_rooms: '1',
-    images: [] as string[],
-    amenities: [] as string[],
+    images: [],
+    amenities: [],
   });
 
   const [newAmenity, setNewAmenity] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const addAmenity = () => {
-    if (newAmenity.trim() && !formData.amenities.includes(newAmenity.trim())) {
-      setFormData(prev => ({
+    const trimmed = newAmenity.trim();
+    if (trimmed && !formData.amenities.includes(trimmed)) {
+      setFormData((prev) => ({
         ...prev,
-        amenities: [...prev.amenities, newAmenity.trim()]
+        amenities: [...prev.amenities, trimmed],
       }));
       setNewAmenity('');
     }
   };
 
   const removeAmenity = (amenity: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      amenities: prev.amenities.filter(a => a !== amenity)
+      amenities: prev.amenities.filter((a) => a !== amenity),
     }));
   };
 
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Basic validation
-  if (!formData.hostelId) {
-    alert('Please select a hostel');
-    return;
-  }
-  
-  if (!formData.name) {
-    alert('Room type name is required');
-    return;
-  }
-  
-  if (!formData.pricePerSemester || !formData.pricePerMonth) {
-    alert('Pricing information is required');
-    return;
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const data = {
-    ...formData,
-    pricePerSemester: parseFloat(formData.pricePerSemester),
-    pricePerMonth: parseFloat(formData.pricePerMonth),
-    pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : undefined,
-    capacity: parseInt(formData.capacity),
-    amenities: formData.amenities,
-    available_rooms: parseInt(formData.available_rooms),
-    total_rooms: parseInt(formData.total_rooms),
+    if (!formData.hostelId) {
+      alert('Please select a hostel');
+      return;
+    }
+
+    if (!formData.name) {
+      alert('Room type name is required');
+      return;
+    }
+
+    if (!formData.pricePerSemester || !formData.pricePerMonth) {
+      alert('Pricing information is required');
+      return;
+    }
+
+    const data: CreateRoomTypeFormData = {
+      ...formData,
+      pricePerSemester: parseFloat(formData.pricePerSemester).toString(),
+      pricePerMonth: parseFloat(formData.pricePerMonth).toString(),
+      pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek).toString() : '',
+      capacity: parseInt(formData.capacity).toString(),
+      total_rooms: parseInt(formData.total_rooms).toString(),
+      available_rooms: parseInt(formData.available_rooms).toString(),
+      amenities: formData.amenities,
+      images: formData.images,
+    };
+
+    console.log('Submitting Room Type:', data);
+    onSubmit(data);
   };
 
-  console.log('Submitting Room Type:', data);
-  onSubmit(data);
-};
   return (
     <AnimatePresence>
       {isOpen && (
@@ -115,8 +141,10 @@ const handleSubmit = (e: React.FormEvent) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                 >
                   <option value="">Select Hostel</option>
-                  {hostels.map(hostel => (
-                    <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
+                  {hostels.map((hostel) => (
+                    <option key={hostel.id} value={hostel.id}>
+                      {hostel.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -201,7 +229,7 @@ const handleSubmit = (e: React.FormEvent) => {
                 />
               </div>
 
-                            <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Total Rooms</label>
                 <input
                   type="number"
@@ -247,16 +275,16 @@ const handleSubmit = (e: React.FormEvent) => {
                     Add
                   </button>
                 </div>
-                
+
                 {formData.amenities.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {formData.amenities.map(amenity => (
-                      <span 
+                    {formData.amenities.map((amenity) => (
+                      <span
                         key={amenity}
                         className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
                       >
                         {amenity}
-                        <button 
+                        <button
                           type="button"
                           onClick={() => removeAmenity(amenity)}
                           className="text-gray-500 hover:text-gray-700"

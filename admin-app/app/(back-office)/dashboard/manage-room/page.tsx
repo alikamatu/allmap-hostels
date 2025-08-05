@@ -19,15 +19,14 @@ import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-ty
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
-// Type definitions for form data
-interface CreateRoomFormData {
+type CreateRoomFormData = {
   hostelId: string;
   roomTypeId: string;
   roomNumber: string;
-  floor: string;
+  floor?: string;
   maxOccupancy: string;
-  notes: string;
-}
+  notes?: string;
+};
 
 interface BulkCreateFormData {
   hostelId: string;
@@ -38,25 +37,26 @@ interface BulkCreateFormData {
   notes: string;
 }
 
-interface UpdateRoomFormData {
+type UpdateRoomFormData = {
   roomNumber: string;
-  floor: string;
+  floor?: string;
   status: RoomStatus;
   maxOccupancy: string;
   currentOccupancy: string;
-  notes: string;
-}
+  notes?: string;
+};
 
-interface CreateRoomTypeFormData {
+type CreateRoomTypeFormData = {
   hostelId: string;
   name: string;
   description?: string;
-  pricePerSemester: number;
-  pricePerMonth: number;
-  pricePerWeek?: number;
-  capacity: number;
+  pricePerSemester: string;
+  pricePerMonth: string;
+  pricePerWeek?: string;
+  capacity: string;
   amenities?: string[];
-}
+};
+
 
 const RoomManagementPage = () => {
   const [selectedHostel, setSelectedHostel] = useState('');
