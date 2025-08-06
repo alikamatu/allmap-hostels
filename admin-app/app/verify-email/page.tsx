@@ -61,7 +61,7 @@ function VerifyEmailContent() {
 
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify/${token}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
