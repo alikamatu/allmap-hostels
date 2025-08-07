@@ -2,15 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/context/ThemeProvider';
 
 interface HostelCard {
   id: string;
   name: string;
   imageUrl: string | null;
+  description: string;
+  address?: string;
 }
 
 export default function HomePage() {
   const [hostels, setHostels] = useState<HostelCard[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+  setMounted(true);
+}, []);
   
   useEffect(() => {
     async function fetchHostels() {
@@ -31,6 +41,8 @@ export default function HomePage() {
           id: hostel.id,
           name: hostel.name,
           imageUrl: hostel.images?.[0] || null,
+          description: hostel.description,
+          address: hostel.address || 'No address provided',
         }));
 
         setHostels(formatted);
@@ -44,7 +56,15 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Featured Hostels</h1>
+      {mounted && (
+  <button
+    className="mb-8 px-4 py-2 rounded light:bg-gray-200"
+    onClick={toggleTheme}
+  >
+    Switch to {theme === "light" ? "Dark" : "Light"} Mode
+  </button>
+)}
+      <h1 className="text-3xl font-bold mb-8 text-center icon">Featured Hostels</h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {hostels.length > 0 ? (
@@ -52,14 +72,14 @@ export default function HomePage() {
             <Link 
               key={hostel.id} 
               href={`/hostels/${hostel.id}`}
-              className="block rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+              className="block overflow-hidden hover:scale-101 transition-all duration-500"
             >
               <div className="relative aspect-square">
                 {hostel.imageUrl ? (
                   <img 
                     src={hostel.imageUrl} 
                     alt={hostel.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-2xl"
                   />
                 ) : (
                   <div className="bg-gray-100 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center">
@@ -67,8 +87,9 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
-              <div className="p-4">
+              <div className="pt-2">
                 <h2 className="text-lg font-semibold truncate">{hostel.name}</h2>
+                <p className="text-md font-thin truncate">{hostel.address}</p>
               </div>
             </Link>
           ))

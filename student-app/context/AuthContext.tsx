@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 // Create Auth Context
 interface AuthContextType {
   user: any;
-  register: (email: string, password: string, role: string) => Promise<void>;
-    login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  register: (name: string, phone: string, email: string, password: string, role: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<{ ok: boolean }>;
@@ -137,14 +137,12 @@ const resetPassword = async (token: string, newPassword: string) => {
   }
 };
 
-  const register = async (email: string, password: string, role: string) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register`, {
+  const register = async (name: string, phone: string, email: string, password: string, role: string) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register-student`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password_hash: password, role }),
+      body: JSON.stringify({ name, phone, email, password_hash: password, role }),
     });
-
-    
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Registration failed');
