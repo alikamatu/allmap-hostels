@@ -8,7 +8,7 @@ import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'reac
 import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {
-  status: 'loading' | 'success' | 'error' | 'expired';
+  status: 'loading' | 'success' | 'error';
   message: string;
 }
 
@@ -48,12 +48,10 @@ function VerifyEmailContent() {
         status: 'success',
         message: message || 'Your email has been verified successfully! You can now log in.'
       });
-    } else if (status === 'error') {
+    } else {
       const errorMessage = message ? decodeURIComponent(message) : 'Verification failed';
-      const isExpired = errorMessage.toLowerCase().includes('expired');
-      
       setVerification({
-        status: isExpired ? 'expired' : 'error',
+        status: 'error',
         message: errorMessage
       });
     }
@@ -61,10 +59,11 @@ function VerifyEmailContent() {
 
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -76,10 +75,8 @@ function VerifyEmailContent() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || 'Verification failed';
-        const isExpired = errorMessage.toLowerCase().includes('expired');
-        
         setVerification({
-          status: isExpired ? 'expired' : 'error',
+          status: 'error',
           message: errorMessage
         });
       }
@@ -92,8 +89,14 @@ function VerifyEmailContent() {
   };
 
   const handleResendEmail = async () => {
-    const email = searchParams.get('email') || prompt('Please enter your email address:');
-    if (!email) return;
+    const email = searchParams.get('email');
+    if (!email) {
+      setVerification({
+        status: 'error',
+        message: 'No email provided for resending verification.'
+      });
+      return;
+    }
 
     setIsResending(true);
     try {
@@ -115,7 +118,7 @@ function VerifyEmailContent() {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to resend verification email';
       setVerification({
-        ...verification,
+        status: 'error',
         message: errorMessage
       });
     } finally {
@@ -123,86 +126,46 @@ function VerifyEmailContent() {
     }
   };
 
-  const StatusIcon = () => {
-    const iconSize = 80;
-    const iconColor = getStatusColor();
-
-    switch (verification.status) {
-      case 'success':
-        return (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          >
-            <FiCheckCircle size={iconSize} color={iconColor} />
-          </motion.div>
-        );
-      case 'error':
-      case 'expired':
-        return (
-          <motion.div
-            initial={{ rotate: 20, opacity: 0 }}
-            animate={{ rotate: 0, opacity: 1 }}
-            transition={{ type: 'spring' }}
-          >
-            <FiXCircle size={iconSize} color={iconColor} />
-          </motion.div>
-        );
-      default:
-        return (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-          >
-            <FaSpinner size={iconSize} color={iconColor} />
-          </motion.div>
-        );
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (verification.status) {
-      case 'success':
-        return '#10B981'; // emerald-500
-      case 'error':
-      case 'expired':
-        return '#EF4444'; // red-500
-      default:
-        return '#3B82F6'; // blue-500
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden"
-      >
-        <div className="p-8 text-center">
-          <div className="flex justify-center mb-6">
-            <StatusIcon />
-          </div>
-          
-          <motion.h2 
-            className="text-2xl font-bold text-gray-800 mb-2"
+    <div className="min-h-screen flex bg-white font-sans">
+      {/* Left Panel - Verification Content */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <h2 className="text-3xl font-bold text-black mb-2">Email Verification</h2>
+          <p className="text-gray-666 mb-6 text-base leading-relaxed">
+            Confirm your email to access the hostel portal
+          </p>
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
+            transition={{ duration: 0.3 }}
+            className="bg-gray-100 p-3 mb-6 flex items-center text-black"
           >
-            Email Verification
-          </motion.h2>
-          
-          <motion.p
-            className={`text-lg mb-6 ${verification.status === 'success' ? 'text-emerald-600' : verification.status === 'error' ? 'text-red-600' : 'text-blue-600'}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {verification.message}
-          </motion.p>
+            {verification.status === 'loading' && (
+              <>
+                <FaSpinner className="animate-spin h-4 w-4 mr-2 text-black" />
+                {verification.message}
+              </>
+            )}
+            {verification.status === 'success' && (
+              <>
+                <FiCheckCircle className="h-4 w-4 mr-2 text-black" />
+                {verification.message}
+              </>
+            )}
+            {verification.status === 'error' && (
+              <>
+                <FiXCircle className="h-4 w-4 mr-2 text-black" />
+                {verification.message}
+              </>
+            )}
+          </motion.div>
 
           <AnimatePresence>
             {showResendSuccess && (
@@ -210,60 +173,102 @@ function VerifyEmailContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="bg-emerald-100 text-emerald-700 p-3 rounded-lg mb-4"
+                transition={{ duration: 0.3 }}
+                className="bg-gray-100 p-3 mb-6 flex items-center text-black"
               >
+                <FiCheckCircle className="h-4 w-4 mr-2 text-black" />
                 Verification email sent successfully!
               </motion.div>
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col gap-3">
+          <div className="space-y-3">
             {verification.status === 'success' && (
               <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => router.push('/login')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
+                className="w-full bg-black text-white py-3 px-6 font-medium transition hover:bg-gray-800 flex items-center justify-center gap-2"
               >
                 Go to Login <FiArrowRight />
               </motion.button>
             )}
 
-            {(verification.status === 'error' || verification.status === 'expired') && (
+            {verification.status === 'error' && (
               <>
                 <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleResendEmail}
                   disabled={isResending}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center justify-center gap-2 ${
-                    isResending ? 'bg-amber-400' : 'bg-amber-500 hover:bg-amber-600'
-                  } text-white py-3 px-6 rounded-lg font-medium transition-colors`}
+                  className={`w-full py-3 px-6 font-medium transition flex items-center justify-center gap-2 ${
+                    isResending ? 'bg-gray-999 cursor-not-allowed' : 'bg-white text-black hover:bg-gray-100'
+                  }`}
                 >
                   {isResending ? (
                     <>
-                      <FaSpinner className="animate-spin" /> Sending...
+                      <FaSpinner className="animate-spin h-4 w-4 mr-2" />
+                      Sending...
                     </>
                   ) : (
                     <>
-                      <FiMail /> Resend Verification
+                      <FiMail className="h-4 w-4" />
+                      Resend Verification
                     </>
                   )}
                 </motion.button>
 
                 <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => router.push('/sign-up')}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
+                  className="w-full bg-white text-black py-3 px-6 font-medium transition hover:bg-gray-100 flex items-center justify-center gap-2"
                 >
-                  <FiUserPlus /> Back to Registration
+                  <FiUserPlus className="h-4 w-4" />
+                  Back to Registration
                 </motion.button>
               </>
             )}
           </div>
+        </motion.div>
+      </div>
+
+      {/* Right Panel - Image with Overlay */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <img
+          src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+          alt="Hostel Community"
+          className="absolute inset-0 object-cover w-full h-full"
+        />
+        <div className="absolute inset-0 bg-black/70 z-10" />
+        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-12">
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold text-white mb-2"
+          >
+            Verify Your Email
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-lg text-white max-w-md text-center"
+          >
+            Complete your registration to access the hostel portal
+          </motion.p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -271,10 +276,10 @@ function VerifyEmailContent() {
 export default function VerifyEmail() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center p-8">
-          <FaSpinner className="animate-spin text-blue-500 text-4xl mx-auto mb-4" />
-          <p className="text-gray-600">Loading verification...</p>
+          <FaSpinner className="animate-spin text-black h-6 w-6 mx-auto mb-4" />
+          <p className="text-gray-666">Loading verification...</p>
         </div>
       </div>
     }>

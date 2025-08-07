@@ -18,6 +18,7 @@ interface User {
   email: string;
   name: string;
   is_verified: boolean;
+  phone: string;
 }
 
 interface LoginResponse {
@@ -84,8 +85,8 @@ const login = async (email: string, password: string, rememberMe: boolean) => {
     localStorage.setItem('user', JSON.stringify(loginData.user));
     setUser(loginData.user);
 
-    // Redirect to verification
-    router.push('/verification-status');
+    // Redirect to dashboard
+    router.push('/dashboard');
   } catch (error) {
     throw error; // Re-throw for form handling
   }
@@ -99,7 +100,7 @@ const login = async (email: string, password: string, rememberMe: boolean) => {
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const forgotPassword = async (email: string) => {
