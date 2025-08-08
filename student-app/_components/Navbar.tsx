@@ -1,17 +1,23 @@
-"use client";
+'use client';
 
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiBell, FiHelpCircle } from "react-icons/fi";
+import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiBell, FiHelpCircle, FiSun, FiMoon } from "react-icons/fi";
+import { useTheme } from "@/context/ThemeProvider";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(3);
+  const [notificationCount] = useState(3);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -31,16 +37,6 @@ export default function Navbar() {
     };
   }, []);
 
-  // Navbar scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
@@ -54,104 +50,101 @@ export default function Navbar() {
   }, [isOpen]);
 
   const navLinks = [
-    { href: "/", label: "Home", icon: <FiHome className="mr-2" /> },
-    { href: "/bookings", label: "Bookings", icon: <FiCalendar className="mr-2" /> },
-    { href: "/settings", label: "Settings", icon: <FiSettings className="mr-2" /> },
-    { href: "/help", label: "Help", icon: <FiHelpCircle className="mr-2" /> },
+    { href: "/dashboard", label: "Home" },
+    { href: "/dashboard/bookings", label: "Bookings" },
+    { href: "/dashboard/settings", label: "Settings" },
+    { href: "/dashboard/help", label: "Help" },
   ];
 
   return (
-    <header className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? "bg-white shadow-md py-2" : "bg-gradient-to-r from-blue-600 to-indigo-700 py-4"}`}>
-      <div className="container mx-auto px-4">
+    <header className="fixed w-full z-50 bg-white shadow-sm">
+      <div className="container mx-auto px-4 py-3 max-w-7xl">
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded"></div>
+            <div className="w-8 h-8 bg-black flex items-center justify-center">
+              <div className="w-4 h-4 bg-white"></div>
             </div>
-            <span className={`text-xl font-bold ${isScrolled ? "text-blue-600" : "text-white"}`}>
+            <span className="text-xl font-bold text-black">
               Hostel<span className="font-light">Hub</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center space-x-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 rounded-lg transition-all flex items-center ${
-                  isScrolled
-                    ? "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                    : "text-blue-100 hover:bg-white/10 hover:text-white"
-                }`}
+                className="px-4 py-2 text-black hover:bg-gray-100 transition"
               >
-                {link.icon}
                 {link.label}
               </Link>
             ))}
 
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="px-4 py-2 text-black hover:bg-gray-100 transition flex items-center"
+              >
+                {theme === "light" ? <FiMoon className="mr-2" /> : <FiSun className="mr-2" />}
+                {theme === "light" ? "Dark Mode" : "Light Mode"}
+              </button>
+            )}
+
             {user ? (
-              <div className="flex items-center ml-4 space-x-3">
+              <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <button className="p-2 rounded-full hover:bg-white/10">
-                    <FiBell className={`text-xl ${isScrolled ? "text-gray-700" : "text-white"}`} />
+                  <button className="p-2">
+                    <FiBell className="text-black text-xl" />
                   </button>
                   {notificationCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute top-0 right-0 bg-gray-200 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                    >
                       {notificationCount}
-                    </span>
+                    </motion.span>
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-medium">
-                    {user.name ? user.name.charAt(0) : "U"}
-                  </div>
-                  <div className="relative group">
-                    <button className="flex items-center">
-                      <span className={`font-medium ${isScrolled ? "text-gray-800" : "text-white"}`}>
-                        {user.name || "User"}
-                      </span>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-                      <Link
-                        href="/profile"
-                        className="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <FiUser className="mr-2" /> Profile
-                      </Link>
-                      <button
-                        onClick={logout}
-                        className="w-full text-left flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <FiLogOut className="mr-2" /> Logout
-                      </button>
+                <div className="relative group">
+                  <button className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-medium">
+                      {user.name ? user.name.charAt(0) : "U"}
                     </div>
+                    <span className="text-black font-medium">{user.name || "User"}</span>
+                  </button>
+                  <div className="absolute right-0 mt-2 w-48 bg-white py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                    <Link
+                      href="/dashboard/profile"
+                      className="flex items-center px-4 py-2 text-black hover:bg-gray-100"
+                    >
+                      <FiUser className="mr-2" /> Profile
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="w-full text-left flex items-center px-4 py-2 text-black hover:bg-gray-100"
+                    >
+                      <FiLogOut className="mr-2" /> Logout
+                    </button>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center ml-4 space-x-2">
+              <div className="flex items-center space-x-4">
                 <Link
                   href="/login"
-                  className={`px-4 py-2 rounded-lg flex items-center ${
-                    isScrolled
-                      ? "text-blue-600 hover:bg-blue-50"
-                      : "text-white border border-white/50 hover:bg-white/10"
-                  }`}
+                  className="px-4 py-2 text-black hover:underline"
                 >
-                  <FiLogIn className="mr-2" /> Login
+                  Login
                 </Link>
                 <Link
                   href="/sign-up"
-                  className={`px-4 py-2 rounded-lg flex items-center ${
-                    isScrolled
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-white text-blue-600 hover:bg-blue-50"
-                  }`}
+                  className="px-4 py-2 text-black hover:underline"
                 >
-                  <FiUserPlus className="mr-2" /> Sign Up
+                  Sign Up
                 </Link>
               </div>
             )}
@@ -160,9 +153,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMenu}
-            className={`md:hidden p-2 rounded-lg ${
-              isScrolled ? "bg-blue-50 text-blue-600" : "bg-white/10 text-white"
-            }`}
+            className="md:hidden p-2 text-black"
           >
             {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
           </button>
@@ -174,87 +165,145 @@ export default function Navbar() {
         {isOpen && (
           <motion.div
             ref={mobileMenuRef}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white shadow-xl absolute top-full left-0 right-0 overflow-hidden"
+            className="md:hidden bg-white absolute top-full left-0 right-0"
           >
             <div className="container mx-auto px-4 py-4">
               <div className="space-y-1">
-                {navLinks.map((link) => (
-                  <Link
+                {navLinks.map((link, index) => (
+                  <motion.div
                     key={link.href}
-                    href={link.href}
-                    className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                    onClick={() => setIsOpen(false)}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    {link.icon}
-                    {link.label}
-                  </Link>
+                    <Link
+                      href={link.href}
+                      className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {link.label === "Home" && <FiHome className="mr-2" />}
+                      {link.label === "Bookings" && <FiCalendar className="mr-2" />}
+                      {link.label === "Settings" && <FiSettings className="mr-2" />}
+                      {link.label === "Help" && <FiHelpCircle className="mr-2" />}
+                      {link.label}
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                {user ? (
-                  <div className="space-y-3">
+              <hr className="my-4 border-t border-gray-200" />
+
+              {mounted && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: navLinks.length * 0.1 }}
+                >
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center px-4 py-3 text-black hover:bg-gray-100"
+                  >
+                    {theme === "light" ? <FiMoon className="mr-2" /> : <FiSun className="mr-2" />}
+                    {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  </button>
+                </motion.div>
+              )}
+
+              {user ? (
+                <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 1) * 0.1 }}
+                  >
                     <div className="flex items-center px-4 py-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-medium mr-3">
+                      <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-medium mr-3">
                         {user.name ? user.name.charAt(0) : "U"}
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900">{user.name || "User"}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
+                      <div className="text-black font-medium">{user.name || "User"}</div>
                     </div>
+                  </motion.div>
 
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
+                  >
                     <Link
                       href="/profile"
-                      className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
                       onClick={() => setIsOpen(false)}
                     >
-                      <FiUser className="mr-2" /> My Profile
+                      <FiUser className="mr-2" /> Profile
                     </Link>
+                  </motion.div>
 
-                    <div className="flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 3) * 0.1 }}
+                  >
+                    <div className="flex items-center px-4 py-3 text-black hover:bg-gray-100">
                       <FiBell className="mr-2" />
                       Notifications
                       {notificationCount > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        <span className="ml-auto bg-gray-200 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">
                           {notificationCount}
                         </span>
                       )}
                     </div>
+                  </motion.div>
 
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 4) * 0.1 }}
+                  >
                     <button
                       onClick={() => {
                         logout();
                         setIsOpen(false);
                       }}
-                      className="w-full flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      className="w-full flex items-center px-4 py-3 text-black hover:bg-gray-100"
                     >
                       <FiLogOut className="mr-2" /> Logout
                     </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 1) * 0.1 }}
+                  >
                     <Link
                       href="/login"
-                      className="flex items-center justify-center px-4 py-3 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50"
+                      className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
                       onClick={() => setIsOpen(false)}
                     >
                       <FiLogIn className="mr-2" /> Login
                     </Link>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
+                  >
                     <Link
                       href="/sign-up"
-                      className="flex items-center justify-center px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                      className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
                       onClick={() => setIsOpen(false)}
                     >
                       <FiUserPlus className="mr-2" /> Sign Up
                     </Link>
-                  </div>
-                )}
-              </div>
+                  </motion.div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

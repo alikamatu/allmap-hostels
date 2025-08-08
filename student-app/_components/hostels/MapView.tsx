@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { HostelCard } from '@/types/hostels';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { calculateDistance } from '@/utils/geo';
+import { useUserSchoolName } from '@/hooks/useDistanceFilter';
+import { FaBookDead } from 'react-icons/fa';
 
 interface MapViewProps {
   hostels: HostelCard[];
@@ -18,7 +20,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
   const directionsRenderer = useRef<any>(null);
   const markers = useRef<any[]>([]);
   const { isLoaded, error } = useGoogleMaps();
-  
+  const schoolName = useUserSchoolName();
   const [selectedHostel, setSelectedHostel] = useState<HostelCard | null>(null);
   const [directions, setDirections] = useState<any>(null);
   const [travelMode, setTravelMode] = useState<'DRIVING' | 'WALKING' | 'TRANSIT'>('DRIVING');
@@ -56,7 +58,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
       const schoolMarker = new window.google.maps.Marker({
         position: { lat: schoolCoords[1], lng: schoolCoords[0] },
         map: mapInstance.current,
-        title: 'Your School',
+        title: schoolName || 'Your School',
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: 10,
@@ -70,7 +72,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
       const schoolInfo = new window.google.maps.InfoWindow({
         content: `
           <div class="p-2">
-            <h3 class="font-bold text-lg">Your School</h3>
+            <h3 class="font-bold text-lg">${schoolName || 'Your School'}</h3>
             <p class="text-sm">Reference point for directions</p>
           </div>
         `
@@ -95,7 +97,9 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
           map: mapInstance.current,
           title: hostel.name,
           icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+            url: <FaBookDead className="text-red-500" />,
+            scaledSize: new window.google.maps.Size(30, 30),
+            anchor: new window.google.maps.Point(15, 15)
           }
         });
         
@@ -308,7 +312,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
                 <h4 className="font-medium mb-2">Hostel Legend</h4>
                 <div className="flex items-center mb-2">
                   <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-                  <span className="text-sm">Your School</span>
+                  <span className="text-sm">{schoolName || 'Your School'}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>

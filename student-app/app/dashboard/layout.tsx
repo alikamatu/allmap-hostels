@@ -1,3 +1,5 @@
+import Navbar from "@/_components/Navbar";
+
 interface HostelLayoutProps {
   children: React.ReactNode;
 }
@@ -5,9 +7,12 @@ interface HostelLayoutProps {
 const HostelLayout: React.FC<HostelLayoutProps> = ({ children }) => {
   return (
     <div className="hostel-layout">
-      <header className="hostel-header">Hostel Header</header>
-      <main className="hostel-content">{children}</main>
-      <footer className="hostel-footer">Hostel Footer</footer>
+      <main className="hostel-content">
+        <div className="flex mb-12">
+        <Navbar />
+        </div>
+        {children}
+      </main>
     </div>
   );
 };
