@@ -23,7 +23,7 @@ export function useFilteredHostels(
         const searchLower = filters.searchTerm.toLowerCase();
         if (
           !hostel.name.toLowerCase().includes(searchLower) &&
-          !hostel.address.toLowerCase().includes(searchLower)
+          !(hostel.address && hostel.address.toLowerCase().includes(searchLower))
         ) {
           return false;
         }
@@ -35,13 +35,16 @@ export function useFilteredHostels(
       
       // Apply distance filter
       if (schoolCoords && hostel.coords) {
-        const distance = calculateDistance(
-          schoolCoords[1], // latitude
-          schoolCoords[0], // longitude
-          hostel.coords[1], // latitude
-          hostel.coords[0]  // longitude
-        );
-        return distance <= filters.maxDistance;
+        // Calculate distance if not already calculated
+        if (hostel.distance === null) {
+          hostel.distance = calculateDistance(
+            schoolCoords[1], 
+            schoolCoords[0], 
+            hostel.coords[1], 
+            hostel.coords[0]
+          );
+        }
+        return hostel.distance <= filters.maxDistance;
       }
       
       return true;

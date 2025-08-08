@@ -118,7 +118,7 @@ export default function SignUpPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/')}
                 className="w-full bg-black text-white py-3 font-medium hover:bg-gray-800 transition"
               >
                 Back to Login

@@ -18,9 +18,26 @@ export function calculateDistance(
   return R * c; // Distance in km
 }
 
-// Parse location from backend which could be string or GeoJSON
+// Parse location from various formats
 export function parseLocation(location: any): [number, number] | null {
   if (!location) return null;
+  
+  // Handle WKB format (PostGIS)
+  if (typeof location === 'string' && location.startsWith('0101000020E6100000')) {
+    try {
+      // Extract the hex part after the prefix
+      const hex = location.substring(18);
+      // Convert hex to buffer
+      const buffer = Buffer.from(hex, 'hex');
+      // Read as double (8 bytes each)
+      const lng = buffer.readDoubleLE(0);
+      const lat = buffer.readDoubleLE(8);
+      return [lng, lat];
+    } catch (error) {
+      console.error('Failed to parse WKB location:', error);
+      return null;
+    }
+  }
   
   // Handle GeoJSON format
   if (typeof location === 'object' && location.coordinates) {

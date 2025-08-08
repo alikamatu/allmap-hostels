@@ -21,7 +21,7 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
       {hostels.map((hostel) => (
         <Link
           key={hostel.id}
-          href={`/hostels/${hostel.id}`}
+          href={`/dashboard/hostels/${hostel.id}`}
           className="block overflow-hidden hover:scale-101 transition-all duration-500"
         >
           <div className="relative aspect-square">
@@ -42,12 +42,19 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
             <p className="text-md font-thin truncate">{hostel.address}</p>
             <div className="flex justify-between mt-1">
               <span className="text-sm font-medium text-blue-600">
-                ₦{hostel.lowestPrice.toLocaleString()}
-                {hostel.lowestPrice !== hostel.highestPrice && 
-                 ` - ₦${hostel.highestPrice.toLocaleString()}`}
+                {hostel.lowestPrice > 0 ? (
+                  <>
+                    ₦{hostel.lowestPrice.toLocaleString()}
+                    {hostel.lowestPrice !== hostel.highestPrice && 
+                    ` - ₦${hostel.highestPrice.toLocaleString()}`}
+                  </>
+                ) : (
+                  'Price not available'
+                )}
               </span>
+              {/* Always show distance if available */}
               {hostel.distance !== null && (
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                <span className="text-xs bg-gray-100 px-2 py-1 text-red-600 rounded-full">
                   {hostel.distance.toFixed(1)} km
                 </span>
               )}

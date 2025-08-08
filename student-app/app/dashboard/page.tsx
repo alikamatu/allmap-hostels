@@ -4,23 +4,16 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@/context/ThemeProvider';
 import { useDistanceFilter } from '@/hooks/useDistanceFilter';
 import { useFilteredHostels } from '@/hooks/useFilteredHostels';
+import { HostelCard } from '@/types/hostels';
 import { calculateDistance, parseLocation } from '@/utils/geo';
 import dynamic from 'next/dynamic';
-import { HostelCard } from '@/types/hostels';
 import { FilterPanel } from '@/_components/hostels/FilterPanel';
 import { HostelList } from '@/_components/hostels/HostelList';
 
-// Dynamically import MapView to avoid SSR issues
+// Dynamically import MapView
 const MapView = dynamic(() => import('@/_components/hostels/MapView'), { 
   ssr: false,
-  loading: () => (
-    <div className="h-[600px] bg-gray-100 rounded-xl flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading map...</p>
-      </div>
-    </div>
-  )
+  loading: () => <div className="h-[600px] bg-gray-100 rounded-xl flex items-center justify-center">Loading map...</div>
 });
 
 export default function HomePage() {
@@ -35,7 +28,7 @@ export default function HomePage() {
     searchTerm: '',
     minPrice: '' as number | '',
     maxPrice: '' as number | '',
-    maxDistance: 10, // Default to 10km
+    maxDistance: 10,
   });
 
   useEffect(() => {
@@ -43,6 +36,7 @@ export default function HomePage() {
   }, []);
   
   useEffect(() => {
+    console.log('School Coordinates:', schoolCoords);
     async function fetchHostels() {
       try {
         const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -53,6 +47,7 @@ export default function HomePage() {
         if (!res.ok) throw new Error(`Failed to fetch hostels: ${res.statusText}`);
 
         const data = await res.json();
+        
         const formatted: HostelCard[] = data.map((hostel: any) => {
           const coords = parseLocation(hostel.location);
           const prices = hostel.roomTypes?.map((rt: any) => rt.pricePerSemester) || [];
@@ -62,11 +57,12 @@ export default function HomePage() {
           // Calculate distance if both school and hostel coordinates are available
           let distance = null;
           if (coords && schoolCoords) {
+            // IMPORTANT: Coordinates are [longitude, latitude]
             distance = calculateDistance(
-              schoolCoords[1], // latitude
-              schoolCoords[0], // longitude
-              coords[1],       // latitude
-              coords[0]        // longitude
+              schoolCoords[1], // school latitude
+              schoolCoords[0], // school longitude
+              coords[1],       // hostel latitude
+              coords[0]        // hostel longitude
             );
           }
           
