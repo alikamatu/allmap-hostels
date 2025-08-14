@@ -85,6 +85,10 @@ const RoomCard = ({
             <span>Type:</span>
             <span className="font-medium">{room.roomType?.name || 'Unknown'}</span>
           </div>
+            <div className="flex justify-between">
+            <span>Gender:</span>
+            <span className="font-medium">{room.roomType?.gender || 'Unknown'}</span>
+          </div>
           <div className="flex justify-between">
             <span>Occupancy:</span>
             <span className="font-medium">

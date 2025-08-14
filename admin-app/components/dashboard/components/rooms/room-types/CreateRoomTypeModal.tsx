@@ -4,6 +4,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
+// Gender enum to match backend
+export enum RoomGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed'
+}
+
 type HostelOption = {
   id: string;
   name: string;
@@ -13,16 +20,16 @@ type CreateRoomTypeFormData = {
   hostelId: string;
   name: string;
   description: string;
-  pricePerSemester: string;
-  pricePerMonth: string;
-  pricePerWeek: string;
-  capacity: string;
-  total_rooms: string;
-  available_rooms: string;
+  pricePerSemester: number;
+  pricePerMonth: number;
+  pricePerWeek?: number;
+  capacity: number;
+  gender: RoomGender; // Added gender field
+  total_rooms: number;
+  available_rooms: number;
   images: string[];
   amenities: string[];
 };
-
 
 interface CreateRoomTypeModalProps {
   isOpen: boolean;
@@ -39,7 +46,20 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
   onSubmit,
   loading,
 }) => {
-  const [formData, setFormData] = useState<CreateRoomTypeFormData>({
+  const [formData, setFormData] = useState<{
+    hostelId: string;
+    name: string;
+    description: string;
+    pricePerSemester: string;
+    pricePerMonth: string;
+    pricePerWeek: string;
+    capacity: string;
+    gender: RoomGender; // Added gender to form state
+    total_rooms: string;
+    available_rooms: string;
+    images: string[];
+    amenities: string[];
+  }>({
     hostelId: '',
     name: '',
     description: '',
@@ -47,6 +67,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: '',
     pricePerWeek: '',
     capacity: '1',
+    gender: RoomGender.MIXED, // Default to mixed
     total_rooms: '1',
     available_rooms: '1',
     images: [],
@@ -98,20 +119,38 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       return;
     }
 
+    // Convert string values to numbers and include gender
     const data: CreateRoomTypeFormData = {
-      ...formData,
-      pricePerSemester: parseFloat(formData.pricePerSemester).toString(),
-      pricePerMonth: parseFloat(formData.pricePerMonth).toString(),
-      pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek).toString() : '',
-      capacity: parseInt(formData.capacity).toString(),
-      total_rooms: parseInt(formData.total_rooms).toString(),
-      available_rooms: parseInt(formData.available_rooms).toString(),
+      hostelId: formData.hostelId,
+      name: formData.name,
+      description: formData.description,
+      pricePerSemester: parseFloat(formData.pricePerSemester),
+      pricePerMonth: parseFloat(formData.pricePerMonth),
+      pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : undefined,
+      capacity: parseInt(formData.capacity),
+      gender: formData.gender, // Include gender in submission
+      total_rooms: parseInt(formData.total_rooms),
+      available_rooms: parseInt(formData.available_rooms),
       amenities: formData.amenities,
       images: formData.images,
     };
 
     console.log('Submitting Room Type:', data);
     onSubmit(data);
+  };
+
+  // Helper function to get gender display name
+  const getGenderDisplayName = (gender: RoomGender): string => {
+    switch (gender) {
+      case RoomGender.MALE:
+        return 'Male Only';
+      case RoomGender.FEMALE:
+        return 'Female Only';
+      case RoomGender.MIXED:
+        return 'Mixed Gender';
+      default:
+        return 'Mixed Gender';
+    }
   };
 
   return (
@@ -127,7 +166,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-xl p-6 w-full max-w-md"
+            className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
             <h3 className="text-lg font-semibold mb-4">Create New Room Type</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,6 +211,33 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                   placeholder="Describe the room type..."
                 />
+              </div>
+
+              {/* Gender Selection Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender Designation
+                </label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                >
+                  <option value={RoomGender.MIXED}>
+                    {getGenderDisplayName(RoomGender.MIXED)}
+                  </option>
+                  <option value={RoomGender.MALE}>
+                    {getGenderDisplayName(RoomGender.MALE)}
+                  </option>
+                  <option value={RoomGender.FEMALE}>
+                    {getGenderDisplayName(RoomGender.FEMALE)}
+                  </option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Specify who can be assigned to rooms of this type
+                </p>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
@@ -238,7 +304,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                   onChange={handleChange}
                   required
                   min="1"
-                  max="10"
+                  max="1000"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                 />
               </div>
@@ -251,8 +317,8 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                   value={formData.available_rooms}
                   onChange={handleChange}
                   required
-                  min="1"
-                  max="10"
+                  min="0"
+                  max="1000"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                 />
               </div>
@@ -264,13 +330,14 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                     type="text"
                     value={newAmenity}
                     onChange={(e) => setNewAmenity(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
                     placeholder="Add an amenity..."
                   />
                   <button
                     type="button"
                     onClick={addAmenity}
-                    className="px-3 py-2 bg-black text-white rounded-lg"
+                    className="px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
                   >
                     Add
                   </button>

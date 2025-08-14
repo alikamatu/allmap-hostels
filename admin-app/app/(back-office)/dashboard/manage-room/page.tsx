@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-
 import { 
   Plus, Search, Trash2,
   Building,
@@ -18,6 +17,13 @@ import StatsOverview from '@/components/dashboard/components/rooms/StatsOverview
 import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-types/CreateRoomTypeModal';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+
+// Gender enum to match the modal and backend
+export enum RoomGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed'
+}
 
 type CreateRoomFormData = {
   hostelId: string;
@@ -46,17 +52,21 @@ type UpdateRoomFormData = {
   notes?: string;
 };
 
-type CreateRoomTypeFormData = {
+// Updated CreateRoomTypeFormData to include gender
+export type CreateRoomTypeFormData = {
   hostelId: string;
   name: string;
-  description?: string;
-  pricePerSemester: string;
-  pricePerMonth: string;
-  pricePerWeek?: string;
-  capacity: string;
-  amenities?: string[];
+  description: string;
+  pricePerSemester: number;
+  pricePerMonth: number;
+  pricePerWeek?: number;
+  capacity: number;
+  gender: RoomGender; // Added gender field
+  total_rooms: number;
+  available_rooms: number;
+  images: string[];
+  amenities: string[];
 };
-
 
 const RoomManagementPage = () => {
   const [selectedHostel, setSelectedHostel] = useState('');
@@ -214,8 +224,6 @@ const RoomManagementPage = () => {
       
       if (data.rooms && data.pagination) {
         setRooms(data.rooms);
-        // Note: pagination data is available but not currently used in the UI
-        // const { page, totalPages, total } = data.pagination;
       } else if (Array.isArray(data)) {
         setRooms(data);
       } else {
@@ -231,7 +239,7 @@ const RoomManagementPage = () => {
     }
   }, [selectedHostel, statusFilter, floorFilter, searchTerm]);
 
-  // Initial data fetch - only runs once on mount
+  // Initial data fetch
   useEffect(() => {
     const fetchInitialData = async () => {
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -283,9 +291,9 @@ const RoomManagementPage = () => {
     };
     
     fetchInitialData();
-  }, [fetchRooms]); // Include fetchRooms dependency
+  }, [fetchRooms]);
 
-  // Handle hostel selection changes - fetch room types when hostel changes
+  // Handle hostel selection changes
   useEffect(() => {
     if (selectedHostel) {
       fetchRoomTypes(selectedHostel);
@@ -295,16 +303,16 @@ const RoomManagementPage = () => {
     }
   }, [selectedHostel, fetchRoomTypes]);
 
-  // Handle filter changes - refetch rooms when filters change
+  // Handle filter changes
   useEffect(() => {
-    fetchRooms(1); // Reset to page 1 when filters change
+    fetchRooms(1);
   }, [fetchRooms]);
 
   // Reset create form when modal opens
   useEffect(() => {
     if (showCreateModal) {
       setCreateFormData({
-        hostelId: selectedHostel || '', // Pre-select current hostel if available
+        hostelId: selectedHostel || '',
         roomTypeId: '',
         roomNumber: '',
         floor: '',
@@ -324,17 +332,14 @@ const RoomManagementPage = () => {
 
     setLoading(prev => ({ ...prev, action: true }));
     try {
-      // Prepare data exactly as the CreateRoomDto expects
       const createRoomData = {
         hostelId: formData.hostelId,
         roomTypeId: formData.roomTypeId,
         roomNumber: formData.roomNumber,
-        maxOccupancy: parseInt(formData.maxOccupancy), // Ensure it's a number
-        ...(formData.floor && { floor: parseInt(formData.floor) }), // Only include if provided
-        ...(formData.notes && { notes: formData.notes }) // Only include if provided
+        maxOccupancy: parseInt(formData.maxOccupancy),
+        ...(formData.floor && { floor: parseInt(formData.floor) }),
+        ...(formData.notes && { notes: formData.notes })
       };
-
-      console.log('Creating room with data:', createRoomData);
 
       const res = await fetch(`${API_BASE_URL}/rooms/create`, {
         method: 'POST',
@@ -345,12 +350,8 @@ const RoomManagementPage = () => {
         body: JSON.stringify(createRoomData)
       });
 
-      console.log('Response status:', res.status);
-
       if (!res.ok) {
         const responseText = await res.text();
-        console.log('Error response:', responseText);
-        
         let errorData;
         try {
           errorData = JSON.parse(responseText);
@@ -361,7 +362,6 @@ const RoomManagementPage = () => {
         if (res.status === 401) {
           throw new Error('Authentication failed. Please log in again.');
         } else if (res.status === 400) {
-          // Handle validation errors
           const message = errorData.message || responseText;
           if (Array.isArray(errorData.message)) {
             throw new Error(`Validation Error: ${errorData.message.join(', ')}`);
@@ -376,13 +376,8 @@ const RoomManagementPage = () => {
         throw new Error(errorData.message || `HTTP ${res.status}: Failed to create room`);
       }
       
-      const result = await res.json();
-      console.log('Room created successfully:', result);
-      
       await fetchRooms();
       setShowCreateModal(false);
-      
-      // Reset form data
       setCreateFormData({
         hostelId: selectedHostel || '',
         roomTypeId: '',
@@ -391,7 +386,6 @@ const RoomManagementPage = () => {
         maxOccupancy: '',
         notes: ''
       });
-      
       alert('Room created successfully!');
       
     } catch (error) {
@@ -402,45 +396,89 @@ const RoomManagementPage = () => {
     }
   };
 
-  const handleBulkCreate = async (formData: BulkCreateFormData) => {
-    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+const handleBulkCreate = async (formData: BulkCreateFormData) => {
+  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-    if (!accessToken) {
-      alert('You are not authenticated. Please log in again.');
-      return;
+  if (!accessToken) {
+    alert('You are not authenticated. Please log in again.');
+    return;
+  }
+
+  setLoading(prev => ({ ...prev, action: true }));
+  try {
+    // Parse and validate room numbers
+    const roomNumbers = formData.roomNumbers
+      .split(',')
+      .map((num: string) => num.trim())
+      .filter((num: string) => num !== '');
+
+    if (roomNumbers.length === 0) {
+      throw new Error('Please provide at least one room number');
     }
 
-    setLoading(prev => ({ ...prev, action: true }));
-    try {
-      const res = await fetch(`${API_BASE_URL}/rooms/bulk`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...formData,
-          roomNumbers: formData.roomNumbers.split(',').map((num: string) => num.trim())
-        })
-      });
+    const bulkCreateData = {
+      hostelId: formData.hostelId,
+      roomTypeId: formData.roomTypeId,
+      roomNumbers: roomNumbers,
+      maxOccupancy: parseInt(formData.maxOccupancy),
+      ...(formData.floor && { floor: parseInt(formData.floor) }),
+      ...(formData.notes && formData.notes.trim() && { notes: formData.notes.trim() })
+    };
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
+    const res = await fetch(`${API_BASE_URL}/rooms/bulk`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bulkCreateData)
+    });
+
+    if (!res.ok) {
+      const responseText = await res.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        errorData = { message: responseText };
+      }
+
+      if (res.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (res.status === 400) {
+        const message = errorData.message || responseText;
+        if (Array.isArray(errorData.message)) {
+          throw new Error(`Validation Error: ${errorData.message.join(', ')}`);
         }
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to create rooms');
+        throw new Error(`Bad Request: ${message}`);
+      } else if (res.status === 409) {
+        throw new Error(`Conflict: ${errorData.message || 'Some room numbers already exist in this hostel'}`);
+      } else if (res.status === 404) {
+        throw new Error(`Not Found: ${errorData.message || 'Hostel or Room Type not found'}`);
       }
       
-      await fetchRooms();
-      setShowBulkModal(false);
-    } catch (error) {
-      console.error('Error creating rooms:', error);
-      alert((error as Error).message || 'Failed to create rooms. Please try again.');
-    } finally {
-      setLoading(prev => ({ ...prev, action: false }));
+      throw new Error(errorData.message || `HTTP ${res.status}: Failed to create rooms`);
     }
-  };
+    
+    await fetchRooms();
+    setShowBulkModal(false);
+    setBulkFormData({
+      hostelId: selectedHostel || '',
+      roomTypeId: '',
+      floor: '',
+      maxOccupancy: '',
+      roomNumbers: '',
+      notes: ''
+    });
+    alert(`Successfully created ${roomNumbers.length} rooms!`);
+    
+  } catch (error) {
+    console.error('Error creating rooms:', error);
+    alert((error as Error).message || 'Failed to create rooms. Please try again.');
+  } finally {
+    setLoading(prev => ({ ...prev, action: false }));
+  }
+};
 
   const handleUpdateRoom = async (roomId: string, formData: UpdateRoomFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -615,6 +653,7 @@ const RoomManagementPage = () => {
     );
   };
 
+  // Updated handleCreateRoomType function with gender support
   const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     
@@ -634,9 +673,12 @@ const RoomManagementPage = () => {
         pricePerMonth: formData.pricePerMonth,
         ...(formData.pricePerWeek && { pricePerWeek: formData.pricePerWeek }),
         capacity: formData.capacity,
+        gender: formData.gender, // Include gender in payload
         amenities: formData.amenities || [],
         images: []
       };
+
+      console.log('Creating room type with payload:', payload);
 
       const res = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
         method: 'POST',
@@ -823,16 +865,17 @@ const RoomManagementPage = () => {
       />
 
       {/* Bulk Create Modal */}
-      <BulkCreateModal
-        isOpen={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
-        hostels={hostels}
-        roomTypes={roomTypes}
-        formData={bulkFormData}
-        setFormData={setBulkFormData}
-        onSubmit={handleBulkCreate}
-        loading={loading.action}
-      />
+<BulkCreateModal
+  isOpen={showBulkModal}
+  onClose={() => setShowBulkModal(false)}
+  hostels={hostels}
+  roomTypes={roomTypes}
+  formData={bulkFormData}
+  setFormData={setBulkFormData}
+  onSubmit={handleBulkCreate}
+  loading={loading.action}
+  onHostelSelect={fetchRoomTypes} // Add this prop
+/>
 
       {/* Create Room Type Modal */}
       <CreateRoomTypeModal

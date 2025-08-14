@@ -7,6 +7,12 @@ export enum RoomStatus {
   RESERVED = 'reserved'
 }
 
+export enum RoomGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed'
+}
+
 export interface Room {
   id: string;
   hostelId: string;
@@ -30,6 +36,7 @@ export interface RoomType {
   description: string;
   pricePerSemester: number;
   capacity: number;
+  gender: RoomGender;
   totalRooms: number;
   availableRooms: number;
   amenities: string[];
