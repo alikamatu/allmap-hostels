@@ -24,12 +24,35 @@ export default function AddHostelPage() {
     phone: '',
     SecondaryNumber: '',
     address: '',
+    base_price: 0,
+    payment_method: 'both' as 'bank' | 'momo' | 'both',
+    bank_details: {
+      bank_name: '',
+      account_name: '',
+      account_number: '',
+      branch: ''
+    },
+    momo_details: {
+      provider: '',
+      number: '',
+      name: ''
+    },
+    max_occupancy: 0,
+    house_rules: '',
+    check_in_time: '14:00',
+    check_out_time: '12:00',
+    nearby_facilities: [] as string[],
     amenities: {
       wifi: false,
       laundry: false,
       cafeteria: false,
       parking: false,
-      security: false
+      security: false,
+      gym: false,
+      studyRoom: false,
+      kitchen: false,
+      ac: false,
+      generator: false
     },
     location: { lng: -0.1969, lat: 5.6037 }, // Default to Accra, Ghana
     images: [] as File[]
@@ -50,6 +73,30 @@ export default function AddHostelPage() {
 
   const handleSecondaryPhoneChange = (SecondaryNumber: string) => {
     setHostelData(prev => ({ ...prev, SecondaryNumber }));
+  };
+
+  const handleBasePriceChange = (base_price: number) => {
+    setHostelData(prev => ({ ...prev, base_price }));
+  };
+
+  const handlePaymentMethodChange = (payment_method: 'bank' | 'momo' | 'both') => {
+    setHostelData(prev => ({ ...prev, payment_method }));
+  };
+
+  const handleBankDetailsChange = (bank_details: any) => {
+    setHostelData(prev => ({ ...prev, bank_details }));
+  };
+
+  const handleMomoDetailsChange = (momo_details: any) => {
+    setHostelData(prev => ({ ...prev, momo_details }));
+  };
+
+  const handleMaxOccupancyChange = (max_occupancy: number) => {
+    setHostelData(prev => ({ ...prev, max_occupancy }));
+  };
+
+  const handleNearbyFacilitiesChange = (nearby_facilities: string[]) => {
+    setHostelData(prev => ({ ...prev, nearby_facilities: nearby_facilities || [] }));
   };
 
   const handleAmenityChange = (amenity: string) => {
@@ -83,14 +130,49 @@ export default function AddHostelPage() {
 
   const validateStep = () => {
     if (step === 1) {
-      if (!hostelData.name.trim() || !hostelData.description.trim() || !hostelData.email.trim() || !hostelData.phone.trim() || !hostelData.SecondaryNumber.trim()) {
+      // Basic info validation
+      if (!hostelData.name.trim() || 
+          !hostelData.description.trim() || 
+          !hostelData.email.trim() || 
+          !hostelData.phone.trim() || 
+          !hostelData.SecondaryNumber.trim() ||
+          hostelData.base_price <= 0) {
         Swal.fire({
           icon: 'error',
           title: 'Missing Information',
-          text: 'Please fill in all required fields',
+          text: 'Please fill in all required fields including base price',
           confirmButtonColor: '#000',
         });
         return false;
+      }
+
+      // Payment method validation
+      if (hostelData.payment_method === 'bank' || hostelData.payment_method === 'both') {
+        if (!hostelData.bank_details.bank_name || 
+            !hostelData.bank_details.account_name || 
+            !hostelData.bank_details.account_number) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Bank Details Required',
+            text: 'Please fill in all required bank details',
+            confirmButtonColor: '#000',
+          });
+          return false;
+        }
+      }
+
+      if (hostelData.payment_method === 'momo' || hostelData.payment_method === 'both') {
+        if (!hostelData.momo_details.provider || 
+            !hostelData.momo_details.number || 
+            !hostelData.momo_details.name) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Mobile Money Details Required',
+            text: 'Please fill in all required mobile money details',
+            confirmButtonColor: '#000',
+          });
+          return false;
+        }
       }
     }
     
@@ -133,8 +215,24 @@ export default function AddHostelPage() {
       formData.append('SecondaryNumber', hostelData.SecondaryNumber);
       formData.append('description', hostelData.description);
       formData.append('address', hostelData.address);
+      formData.append('base_price', hostelData.base_price.toString());
+      formData.append('payment_method', hostelData.payment_method);
+      formData.append('max_occupancy', hostelData.max_occupancy.toString());
+      formData.append('house_rules', hostelData.house_rules);
+      formData.append('check_in_time', hostelData.check_in_time);
+      formData.append('check_out_time', hostelData.check_out_time);
       formData.append('location', JSON.stringify(hostelData.location));
       formData.append('amenities', JSON.stringify(hostelData.amenities));
+      formData.append('nearby_facilities', JSON.stringify(hostelData.nearby_facilities));
+      
+      // Add payment details based on method
+      if (hostelData.payment_method === 'bank' || hostelData.payment_method === 'both') {
+        formData.append('bank_details', JSON.stringify(hostelData.bank_details));
+      }
+      
+      if (hostelData.payment_method === 'momo' || hostelData.payment_method === 'both') {
+        formData.append('momo_details', JSON.stringify(hostelData.momo_details));
+      }
       
       hostelData.images.forEach((file: File) => {
         formData.append(`images`, file);
@@ -154,7 +252,7 @@ export default function AddHostelPage() {
       Swal.fire({
         icon: 'success',
         title: 'Hostel Created!',
-        text: 'Your hostel has been successfully added',
+        text: 'Your hostel has been successfully added with payment details',
         confirmButtonColor: '#000',
       }).then(() => {
         router.push('/dashboard');
@@ -165,7 +263,7 @@ export default function AddHostelPage() {
       Swal.fire({
         icon: 'error',
         title: 'Submission Failed',
-        text: (error as Error).message || 'An error occurred',
+        text: (error as Error).message || 'An error occurred while creating the hostel',
         confirmButtonColor: '#000',
       });
     } finally {
@@ -204,7 +302,7 @@ export default function AddHostelPage() {
                   </span>
                 </div>
                 <span className="mt-2 text-sm font-medium text-gray-700">
-                  {['Details', 'Location', 'Amenities', 'Images'][num - 1]}
+                  {['Details & Payment', 'Location', 'Amenities', 'Images'][num - 1]}
                 </span>
               </div>
             ))}
@@ -212,8 +310,8 @@ export default function AddHostelPage() {
           <div className="h-1 bg-gray-200 rounded-full">
             <motion.div 
               className="h-full bg-black rounded-full"
-              initial={{ width: `${(step - 1) * 33}%` }}
-              animate={{ width: `${(step - 1) * 33}%` }}
+              initial={{ width: `${(step - 1) * 33.33}%` }}
+              animate={{ width: `${(step - 1) * 33.33}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
@@ -234,6 +332,12 @@ export default function AddHostelPage() {
               handleEmailChange={handleEmailChange}
               handlePhoneChange={handlePhoneChange}
               handleSecondaryPhoneChange={handleSecondaryPhoneChange}
+              handleBasePriceChange={handleBasePriceChange}
+              handlePaymentMethodChange={handlePaymentMethodChange}
+              handleBankDetailsChange={handleBankDetailsChange}
+              handleMomoDetailsChange={handleMomoDetailsChange}
+              handleMaxOccupancyChange={handleMaxOccupancyChange}
+              handleNearbyFacilitiesChange={handleNearbyFacilitiesChange}
             />
           )}
           
@@ -289,7 +393,7 @@ export default function AddHostelPage() {
                 disabled={loading}
                 className="px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center disabled:opacity-70"
               >
-                {loading ? 'Submitting...' : 'Create Hostel'}
+                {loading ? 'Creating Hostel...' : 'Create Hostel'}
                 {!loading && <Plus className="ml-2 h-4 w-4" />}
               </button>
             )}
