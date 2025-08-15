@@ -3,6 +3,7 @@ import { BookingStatus, BookingType, PaymentStatus } from '@/types/booking';
 export interface CreateBookingRequest {
   hostelId: string;
   roomId: string;
+  studentId: string;
   studentName: string;
   studentEmail: string;
   studentPhone: string;
@@ -39,6 +40,17 @@ export interface BookingResponse {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  confirmedAt?: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
+  emergencyContacts?: Array<{
+    name: string;
+    relationship: string;
+    phone: string;
+    email?: string;
+  }>;
   hostel?: {
     id: string;
     name: string;
@@ -54,6 +66,7 @@ export interface BookingResponse {
       pricePerSemester: number;
       pricePerMonth: number;
       pricePerWeek?: number;
+      allowedGenders?: string[];
     };
   };
 }
@@ -70,6 +83,7 @@ export interface RoomAvailabilityResponse {
     floor: number;
     maxOccupancy: number;
     currentOccupancy: number;
+    status: string;
     roomType: {
       id: string;
       name: string;
@@ -78,8 +92,29 @@ export interface RoomAvailabilityResponse {
       pricePerWeek?: number;
       capacity: number;
       amenities: string[];
+      allowedGenders?: string[];
     };
   }>;
+}
+
+export interface PaymentRequest {
+  amount: number;
+  paymentMethod: 'CASH' | 'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CARD' | 'CHEQUE';
+  transactionRef?: string;
+  notes?: string;
+}
+
+export interface PaymentResponse {
+  id: string;
+  bookingId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentType: string;
+  transactionRef?: string;
+  notes?: string;
+  paymentDate: string;
+  receivedBy?: string;
+  createdAt: string;
 }
 
 class BookingService {
@@ -114,21 +149,44 @@ class BookingService {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      
+      // Handle specific backend error messages
+      if (errorData.message) {
+        throw new Error(errorData.message);
+      }
+      
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     return response.json();
   }
 
-  // Create a new booking
+  // Create a new booking with enhanced error handling
   async createBooking(bookingData: CreateBookingRequest): Promise<BookingResponse> {
-    return this.makeRequest<BookingResponse>('/bookings/create', {
-      method: 'POST',
-      body: JSON.stringify(bookingData),
-    });
+    try {
+      return await this.makeRequest<BookingResponse>('/bookings/create', {
+        method: 'POST',
+        body: JSON.stringify(bookingData),
+      });
+    } catch (error: any) {
+      // Re-throw with enhanced context
+      if (error.message.includes('already have an active booking')) {
+        throw new Error(error.message);
+      }
+      if (error.message.includes('gender')) {
+        throw new Error(error.message);
+      }
+      if (error.message.includes('Room is not available')) {
+        throw new Error('This room is no longer available for booking. Please select another room or different dates.');
+      }
+      if (error.message.includes('Room is already booked')) {
+        throw new Error('This room has been booked by another user. Please select another room.');
+      }
+      throw error;
+    }
   }
 
-  // Check room availability for specific dates
+  // Check room availability for specific dates with enhanced filtering
   async checkRoomAvailability(
     hostelId: string,
     checkIn: string,
@@ -141,22 +199,65 @@ class BookingService {
       ...(roomTypeId && { roomTypeId }),
     });
 
-    return this.makeRequest<RoomAvailabilityResponse>(
-      `/bookings/hostel/${hostelId}/availability?${params}`
-    );
+    try {
+      const response = await this.makeRequest<RoomAvailabilityResponse>(
+        `/bookings/hostel/${hostelId}/availability?${params}`
+      );
+      
+      // Filter out rooms that are not actually available
+      // response.rooms = response.rooms.filter(room => 
+      //   room.status === 'available' && 
+      //   room.currentOccupancy < room.maxOccupancy
+      // );
+      
+      response.availableRooms = response.rooms.length;
+      
+      return response;
+    } catch (error: any) {
+      throw new Error(`Failed to check room availability: ${error.message}`);
+    }
   }
 
-  // Get user's bookings
+  
+
+  // Get user's bookings with active booking detection
   async getUserBookings(studentId: string): Promise<BookingResponse[]> {
-    return this.makeRequest<BookingResponse[]>(`/bookings/student/${studentId}`);
+    try {
+      const bookings = await this.makeRequest<BookingResponse[]>(`/bookings/student/${studentId}`);
+      
+      // Sort bookings by creation date (newest first)
+      return bookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (error: any) {
+      throw new Error(`Failed to fetch your bookings: ${error.message}`);
+    }
   }
 
-  // Get booking by ID
-  async getBookingById(bookingId: string): Promise<BookingResponse> {
+  async hasActiveBooking(studentId: string): Promise<{
+    hasActive: boolean;
+    activeBooking?: BookingResponse;
+  }> {
+    try {
+      const bookings = await this.getUserBookings(studentId);
+      const activeStatuses = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN];
+      
+      const activeBooking = bookings.find(booking => 
+        activeStatuses.includes(booking.status)
+      );
+      
+      return {
+        hasActive: !!activeBooking,
+        activeBooking
+      };
+    } catch (error) {
+      console.error('Error checking active booking:', error);
+      return { hasActive: false };
+    }
+  }
+
+ async getBookingById(bookingId: string): Promise<BookingResponse> {
     return this.makeRequest<BookingResponse>(`/bookings/${bookingId}`);
   }
 
-  // Update booking
   async updateBooking(
     bookingId: string,
     updateData: Partial<CreateBookingRequest>
@@ -167,7 +268,7 @@ class BookingService {
     });
   }
 
-  // Cancel booking
+    // Cancel booking with reason
   async cancelBooking(
     bookingId: string,
     reason: string,
@@ -191,13 +292,6 @@ class BookingService {
     });
   }
 
-  // Get booking calendar for a hostel
-  async getBookingCalendar(hostelId: string, month?: string) {
-    const params = month ? `?month=${month}` : '';
-    return this.makeRequest(`/bookings/hostel/${hostelId}/calendar${params}`);
-  }
-
-  // Calculate booking price
   calculateBookingPrice(
     pricePerSemester: number,
     pricePerMonth: number,
@@ -230,10 +324,13 @@ class BookingService {
     }).format(price);
   }
 
-  // Validate booking dates
+  // Enhanced date validation
   validateBookingDates(checkIn: Date, checkOut: Date): string | null {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    checkIn.setHours(0, 0, 0, 0);
+    checkOut.setHours(0, 0, 0, 0);
 
     if (checkIn < today) {
       return 'Check-in date cannot be in the past';
@@ -243,7 +340,14 @@ class BookingService {
       return 'Check-out date must be after check-in date';
     }
 
-    // Check if booking is too far in advance (e.g., 1 year)
+    // Minimum stay requirement (1 day)
+    const minStayDays = 1;
+    const stayDuration = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    if (stayDuration < minStayDays) {
+      return `Minimum stay is ${minStayDays} day(s)`;
+    }
+
+    // Check if booking is too far in advance (1 year)
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
@@ -251,7 +355,84 @@ class BookingService {
       return 'Check-in date cannot be more than one year in advance';
     }
 
+    // Maximum booking duration based on type
+    const maxDurations = {
+      [BookingType.WEEKLY]: 28, // 4 weeks max
+      [BookingType.MONTHLY]: 365, // 12 months max
+      [BookingType.SEMESTER]: 180, // 6 months max
+    };
+
     return null;
+  }
+
+    // Validate booking constraints
+  validateBookingConstraints(
+    userProfile: any,
+    roomType: any,
+    checkIn: Date,
+    checkOut: Date,
+    bookingType: BookingType
+  ): string[] {
+    const errors: string[] = [];
+
+    // Gender compatibility check
+    if (userProfile?.gender && roomType?.allowedGenders) {
+      const userGender = userProfile.gender.toLowerCase();
+      const allowedGenders = roomType.allowedGenders.map((g: string) => g.toLowerCase());
+      
+      if (!allowedGenders.includes(userGender) && !allowedGenders.includes('mixed')) {
+        const allowedGendersText = allowedGenders.join(', ');
+        errors.push(`This room is restricted to ${allowedGendersText} students only.`);
+      }
+    }
+
+    // Date validation
+    const dateError = this.validateBookingDates(checkIn, checkOut);
+    if (dateError) {
+      errors.push(dateError);
+    }
+
+    // Booking type specific validations
+    const duration = this.getDurationInDays(checkIn, checkOut);
+    
+    if (bookingType === BookingType.WEEKLY && duration > 28) {
+      errors.push('Weekly bookings cannot exceed 4 weeks');
+    }
+    
+    if (bookingType === BookingType.SEMESTER && duration > 180) {
+      errors.push('Semester bookings cannot exceed 6 months');
+    }
+
+    return errors;
+  }
+
+
+  // Check booking constraints
+  checkBookingConstraints(
+    userProfile: any,
+    roomType: any,
+    checkIn: Date,
+    checkOut: Date,
+    bookingType: BookingType
+  ): string[] {
+    return this.validateBookingConstraints(
+      userProfile,
+      roomType,
+      checkIn,
+      checkOut,
+      bookingType
+    );
+  }
+
+   // Get booking payments
+  async getBookingPayments(bookingId: string): Promise<PaymentResponse[]> {
+    return this.makeRequest<PaymentResponse[]>(`/bookings/${bookingId}/payments`);
+  }
+
+  // Get booking calendar for a hostel
+  async getBookingCalendar(hostelId: string, month?: string) {
+    const params = month ? `?month=${month}` : '';
+    return this.makeRequest(`/bookings/hostel/${hostelId}/calendar${params}`);
   }
 
   // Get duration in days

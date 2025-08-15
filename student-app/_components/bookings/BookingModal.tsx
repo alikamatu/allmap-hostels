@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaExclamationTriangle, FaSync, FaSpinner } from 'react-icons/fa';
 import { FiAlertTriangle } from 'react-icons/fi';
-import { BookingType, RoomType, Room, BookingFormData, BookingFormErrors } from '@/types/booking';
+import { BookingType, RoomType, Room, BookingFormData, BookingFormErrors, ApiRoom, apiRoomToRoom } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
@@ -168,7 +168,45 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       );
 
       console.log('Availability response:', availability); // Debug log
-      const roomsOfType = availability.rooms.filter(room => room.roomType.id === roomType.id);
+      
+      // Handle the API response which returns ApiRoom format
+      const apiRooms = availability.rooms || [];
+      const roomsOfType = apiRooms
+        .filter((room: any) => room.roomType.id === roomType.id)
+        .map((apiRoom: any) => {
+          // Convert API room format to our Room interface
+          const convertedRoom: Room = {
+            id: apiRoom.id,
+            hostelId: apiRoom.hostelId || hostel.id,
+            roomTypeId: apiRoom.roomType.id,
+            roomNumber: apiRoom.roomNumber,
+            floor: apiRoom.floor,
+            status: apiRoom.status,
+            currentOccupancy: apiRoom.currentOccupancy,
+            maxOccupancy: apiRoom.maxOccupancy,
+            notes: apiRoom.notes,
+            createdAt: apiRoom.createdAt || new Date().toISOString(),
+            updatedAt: apiRoom.updatedAt || new Date().toISOString(),
+            roomType: {
+              id: apiRoom.roomType.id,
+              hostelId: apiRoom.roomType.hostelId || hostel.id,
+              name: apiRoom.roomType.name,
+              description: apiRoom.roomType.description,
+              pricePerSemester: apiRoom.roomType.pricePerSemester,
+              pricePerMonth: apiRoom.roomType.pricePerMonth,
+              pricePerWeek: apiRoom.roomType.pricePerWeek,
+              capacity: apiRoom.roomType.capacity,
+              amenities: apiRoom.roomType.amenities || [],
+              allowedGenders: apiRoom.roomType.allowedGenders,
+              totalRooms: apiRoom.roomType.totalRooms || 0,
+              availableRooms: apiRoom.roomType.availableRooms || 0,
+              createdAt: apiRoom.roomType.createdAt || new Date().toISOString(),
+              updatedAt: apiRoom.roomType.updatedAt || new Date().toISOString(),
+            }
+          };
+          return convertedRoom;
+        });
+
       setAvailableRooms(roomsOfType);
 
       if (roomsOfType.length === 0) {
@@ -405,69 +443,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       value={formData.studentName}
                       onChange={(e) => handleInputChange('studentName', e.target.value)}
                       className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                      placeholder="Enter your full name"
-                      aria-label="Enter full name"
-                    />
-                    {errors.studentName && <p className="text-black text-sm mt-1">{errors.studentName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">
-                      <FaEnvelope className="inline mr-2" />
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.studentEmail}
-                      onChange={(e) => handleInputChange('studentEmail', e.target.value)}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                      placeholder="Enter your email"
-                      aria-label="Enter email address"
-                    />
-                    {errors.studentEmail && <p className="text-black text-sm mt-1">{errors.studentEmail}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">
-                      <FaPhone className="inline mr-2" />
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.studentPhone}
-                      onChange={(e) => handleInputChange('studentPhone', e.target.value)}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                      placeholder="Enter your phone number"
-                      aria-label="Enter phone number"
-                    />
-                    {errors.studentPhone && <p className="text-black text-sm mt-1">{errors.studentPhone}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">Booking Type *</label>
-                    <select
-                      value={formData.bookingType}
-                      onChange={(e) => handleInputChange('bookingType', e.target.value as BookingType)}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                      aria-label="Select booking type"
-                    >
-                      <option value={BookingType.SEMESTER}>Semester</option>
-                      <option value={BookingType.MONTHLY}>Monthly</option>
-                      <option value={BookingType.WEEKLY}>Weekly</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-2">
-                      <FaCalendarAlt className="inline mr-2" />
-                      Check-in Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.checkInDate}
-                      onChange={(e) => handleInputChange('checkInDate', e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                       aria-label="Select check-in date"
                     />
                     {errors.checkInDate && <p className="text-black text-sm mt-1">{errors.checkInDate}</p>}
@@ -647,6 +622,12 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-666">Status:</span>
                             <span className="font-medium text-black">Available</span>
+                          </div>
+                          <div className="flex justify-between text-sm mt-1">
+                            <span className="text-gray-666">Gender:</span>
+                            <span className="font-medium text-black">
+                              {roomType.allowedGenders?.join(', ') || 'N/A'}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm mt-1">
                             <span className="text-gray-666">Capacity:</span>

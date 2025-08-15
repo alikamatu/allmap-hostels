@@ -19,10 +19,11 @@ import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-ty
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
 // Gender enum to match the modal and backend
-export enum RoomGender {
+export enum AllowedGender {
   MALE = 'male',
   FEMALE = 'female',
-  MIXED = 'mixed'
+  MIXED = 'mixed',
+  OTHER = 'other'
 }
 
 type CreateRoomFormData = {
@@ -61,7 +62,7 @@ export type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-  gender: RoomGender; // Added gender field
+  allowedGenders: string[]; // Changed from gender to allowedGenders array
   total_rooms: number;
   available_rooms: number;
   images: string[];
@@ -653,71 +654,84 @@ const handleBulkCreate = async (formData: BulkCreateFormData) => {
     );
   };
 
-  // Updated handleCreateRoomType function with gender support
-  const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
-    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    
-    if (!accessToken) {
-      alert('You are not authenticated. Please log in again.');
-      return;
-    }
+// In your parent component (e.g., page.tsx)
 
-    setLoading(prev => ({ ...prev, action: true }));
-    
-    try {
-      const payload = {
+const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
+  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+  try {
+    console.log('Parent component received data:', formData);
+    console.log('allowedGenders from parent:', formData.allowedGenders);
+
+    // Make sure to include ALL fields in the API call
+    const response = await fetch('http://localhost:1000/rooms/create-room-type', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
         hostelId: formData.hostelId,
         name: formData.name,
-        description: formData.description || '',
+        description: formData.description,
         pricePerSemester: formData.pricePerSemester,
         pricePerMonth: formData.pricePerMonth,
-        ...(formData.pricePerWeek && { pricePerWeek: formData.pricePerWeek }),
+        pricePerWeek: formData.pricePerWeek,
         capacity: formData.capacity,
-        gender: formData.gender, // Include gender in payload
+        allowedGenders: formData.allowedGenders, // Make sure this is included!
+        total_rooms: formData.total_rooms,
+        available_rooms: formData.available_rooms,
         amenities: formData.amenities || [],
-        images: []
-      };
+        images: formData.images || [],
+      }),
+    });
 
-      console.log('Creating room type with payload:', payload);
-
-      const res = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        
-        if (res.status === 401) {
-          alert('Authentication failed. Please log in again.');
-          return;
-        }
-        
-        throw new Error(errorData.message || `HTTP ${res.status}: Failed to create room type`);
-      }
-
-      // Refresh room types for the created hostel
-      await fetchRoomTypes(formData.hostelId);
-      
-      // If the created room type's hostel is currently selected, refresh the room types
-      if (formData.hostelId === selectedHostel) {
-        await fetchRoomTypes(selectedHostel);
-      }
-      
-      setShowCreateRoomTypeModal(false);
-      alert('Room type created successfully!');
-      
-    } catch (error) {
-      console.error('Error creating room type:', error);
-      alert((error as Error).message || 'Failed to create room type. Please try again.');
-    } finally {
-      setLoading(prev => ({ ...prev, action: false }));
+    if (!response.ok) {
+      throw new Error('Failed to create room type');
     }
-  };
+
+    const newRoomType = await response.json();
+    console.log('Created room type:', newRoomType);
+
+    // Handle success (close modal, refresh data, etc.)
+    setShowCreateRoomTypeModal(false);
+    // Refresh your room types list here
+    
+  } catch (error) {
+    console.error('Error creating room type:', error);
+    // Handle error
+  }
+};
+
+// Alternative: Use spread operator to ensure all fields are included
+const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
+  try {
+    console.log('Creating room type with payload:', formData);
+    
+    const response = await fetch('http://localhost:1000/rooms/create-room-type', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...formData, // This ensures ALL fields are included
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create room type');
+    }
+
+    const newRoomType = await response.json();
+    console.log('Successfully created room type:', newRoomType);
+    
+    // Handle success
+    setShowCreateRoomTypeModal(false);
+    
+  } catch (error) {
+    console.error('Error creating room type:', error);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

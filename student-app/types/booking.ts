@@ -65,6 +65,71 @@ export interface RoomType {
   availableRooms: number;
   createdAt: string;
   updatedAt: string;
+  allowedGenders?: string[]; // Added this missing property
+}
+
+// API Response type that matches what your backend returns
+export interface ApiRoom {
+  id: string;
+  roomNumber: string;
+  floor: number;
+  maxOccupancy: number;
+  currentOccupancy: number;
+  status: string;
+  hostelId?: string; // Optional since it might not always be included
+  roomTypeId?: string; // Optional since it might not always be included
+  createdAt?: string; // Optional since it might not always be included
+  updatedAt?: string; // Optional since it might not always be included
+  notes?: string;
+  roomType: {
+    id: string;
+    name: string;
+    pricePerSemester: number;
+    pricePerMonth: number;
+    pricePerWeek?: number;
+    capacity: number;
+    amenities: string[];
+    allowedGenders?: string[];
+    hostelId?: string;
+    description?: string;
+    totalRooms?: number;
+    availableRooms?: number;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+}
+
+// Helper function to convert ApiRoom to Room
+export function apiRoomToRoom(apiRoom: ApiRoom): Room {
+  return {
+    id: apiRoom.id,
+    hostelId: apiRoom.hostelId || '',
+    roomTypeId: apiRoom.roomType.id,
+    roomNumber: apiRoom.roomNumber,
+    floor: apiRoom.floor,
+    status: apiRoom.status as RoomStatus,
+    currentOccupancy: apiRoom.currentOccupancy,
+    maxOccupancy: apiRoom.maxOccupancy,
+    notes: apiRoom.notes,
+    createdAt: apiRoom.createdAt || new Date().toISOString(),
+    updatedAt: apiRoom.updatedAt || new Date().toISOString(),
+    roomType: {
+      id: apiRoom.roomType.id,
+      hostelId: apiRoom.roomType.hostelId || apiRoom.hostelId || '',
+      name: apiRoom.roomType.name,
+      description: apiRoom.roomType.description,
+      pricePerSemester: apiRoom.roomType.pricePerSemester,
+      pricePerMonth: apiRoom.roomType.pricePerMonth,
+      pricePerWeek: apiRoom.roomType.pricePerWeek,
+      capacity: apiRoom.roomType.capacity,
+      amenities: apiRoom.roomType.amenities,
+      allowedGenders: apiRoom.roomType.allowedGenders,
+      totalRooms: apiRoom.roomType.totalRooms || 0,
+      availableRooms: apiRoom.roomType.availableRooms || 0,
+      createdAt: apiRoom.roomType.createdAt || new Date().toISOString(),
+      updatedAt: apiRoom.roomType.updatedAt || new Date().toISOString(),
+    }
+  };
 }
 
 export interface Booking {

@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-// Gender enum to match backend
-export enum RoomGender {
+// Gender options to match backend allowed_genders
+export enum AllowedGender {
   MALE = 'male',
   FEMALE = 'female',
-  MIXED = 'mixed'
+  MIXED = 'mixed',
+  OTHER = 'other'
 }
 
 type HostelOption = {
@@ -24,7 +25,7 @@ type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-  gender: RoomGender; // Added gender field
+  allowedGenders: string[]; // Changed from gender to allowedGenders array
   total_rooms: number;
   available_rooms: number;
   images: string[];
@@ -54,7 +55,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: string;
     pricePerWeek: string;
     capacity: string;
-    gender: RoomGender; // Added gender to form state
+    allowedGenders: string[]; // Changed from gender to allowedGenders array
     total_rooms: string;
     available_rooms: string;
     images: string[];
@@ -67,7 +68,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: '',
     pricePerWeek: '',
     capacity: '1',
-    gender: RoomGender.MIXED, // Default to mixed
+    allowedGenders: [AllowedGender.MIXED], // Default to mixed
     total_rooms: '1',
     available_rooms: '1',
     images: [],
@@ -81,6 +82,29 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle checkbox changes for allowed genders
+  const handleGenderToggle = (gender: AllowedGender) => {
+    setFormData((prev) => {
+      const currentGenders = prev.allowedGenders;
+      const isSelected = currentGenders.includes(gender);
+
+      if (isSelected) {
+        // Remove if already selected (but ensure at least one remains)
+        const newGenders = currentGenders.filter(g => g !== gender);
+        return {
+          ...prev,
+          allowedGenders: newGenders.length > 0 ? newGenders : [AllowedGender.MIXED]
+        };
+      } else {
+        // Add if not selected
+        return {
+          ...prev,
+          allowedGenders: [...currentGenders, gender]
+        };
+      }
+    });
   };
 
   const addAmenity = () => {
@@ -119,7 +143,15 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       return;
     }
 
-    // Convert string values to numbers and include gender
+    if (formData.allowedGenders.length === 0) {
+      alert('Please select at least one allowed gender');
+      return;
+    }
+
+    // Debug logging
+    console.log('Form data allowedGenders before submission:', formData.allowedGenders);
+
+    // Convert string values to numbers and include allowedGenders
     const data: CreateRoomTypeFormData = {
       hostelId: formData.hostelId,
       name: formData.name,
@@ -128,7 +160,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       pricePerMonth: parseFloat(formData.pricePerMonth),
       pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : undefined,
       capacity: parseInt(formData.capacity),
-      gender: formData.gender, // Include gender in submission
+      allowedGenders: [...formData.allowedGenders], // Ensure it's a proper array copy
       total_rooms: parseInt(formData.total_rooms),
       available_rooms: parseInt(formData.available_rooms),
       amenities: formData.amenities,
@@ -136,21 +168,33 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     };
 
     console.log('Submitting Room Type:', data);
+    console.log('allowedGenders in final data:', data.allowedGenders);
     onSubmit(data);
   };
 
   // Helper function to get gender display name
-  const getGenderDisplayName = (gender: RoomGender): string => {
+  const getGenderDisplayName = (gender: AllowedGender): string => {
     switch (gender) {
-      case RoomGender.MALE:
-        return 'Male Only';
-      case RoomGender.FEMALE:
-        return 'Female Only';
-      case RoomGender.MIXED:
+      case AllowedGender.MALE:
+        return 'Male';
+      case AllowedGender.FEMALE:
+        return 'Female';
+      case AllowedGender.MIXED:
         return 'Mixed Gender';
+      case AllowedGender.OTHER:
+        return 'Other';
       default:
-        return 'Mixed Gender';
+        return 'Unknown';
     }
+  };
+
+  // Helper function to get selected genders display
+  const getSelectedGendersDisplay = (): string => {
+    if (formData.allowedGenders.length === 0) return 'None selected';
+    if (formData.allowedGenders.length === 1) {
+      return getGenderDisplayName(formData.allowedGenders[0] as AllowedGender);
+    }
+    return `${formData.allowedGenders.length} genders selected`;
   };
 
   return (
@@ -213,31 +257,39 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                 />
               </div>
 
-              {/* Gender Selection Field */}
+              {/* Debug Section - Remove this after fixing */}
+              <div className="p-3 bg-gray-100 rounded-lg text-xs">
+                <strong>Debug Info:</strong>
+                <div>Selected genders: {JSON.stringify(formData.allowedGenders)}</div>
+                <div>Array length: {formData.allowedGenders.length}</div>
+              </div>
+
+              {/* Allowed Genders Selection Field - Now with checkboxes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender Designation
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Allowed Genders
                 </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                >
-                  <option value={RoomGender.MIXED}>
-                    {getGenderDisplayName(RoomGender.MIXED)}
-                  </option>
-                  <option value={RoomGender.MALE}>
-                    {getGenderDisplayName(RoomGender.MALE)}
-                  </option>
-                  <option value={RoomGender.FEMALE}>
-                    {getGenderDisplayName(RoomGender.FEMALE)}
-                  </option>
-                </select>
+                <div className="space-y-2 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                  {Object.values(AllowedGender).map((gender) => (
+                    <label key={gender} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowedGenders.includes(gender)}
+                        onChange={() => handleGenderToggle(gender)}
+                        className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black focus:ring-2"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {getGenderDisplayName(gender)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Specify who can be assigned to rooms of this type
+                  Select who can be assigned to rooms of this type. You can select multiple options.
                 </p>
+                <div className="mt-1 text-sm text-gray-600">
+                  Selected: {getSelectedGendersDisplay()}
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
+
 
 // Create Auth Context
 interface AuthContextType {
   user: any;
-  register: (name: string, phone: string, email: string, password: string, role: string) => Promise<void>;
+  register: (name: string, phone: string, email: string, password: string, role: string, gender?: string) => Promise<void>;
   login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
@@ -17,6 +19,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  gender?: string;
   is_verified: boolean;
   phone: string;
 }
@@ -27,9 +30,10 @@ interface LoginResponse {
   refresh_token?: string;
 }
 
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 
 // Create Auth Context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -138,19 +142,41 @@ const resetPassword = async (token: string, newPassword: string) => {
   }
 };
 
-  const register = async (name: string, phone: string, email: string, password: string, role: string) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register-student`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, password_hash: password, role }),
-    });
+const register = async (
+    name: string,
+    phone: string,
+    email: string,
+    password: string,
+    role: string,
+    gender?: string
+  ) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register-student`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          email,
+          password_hash: password,
+          role,
+          gender,
+        }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
 
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    return data;
+      // Registration successful - user will need to verify email
+      return await response.json();
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
   return (

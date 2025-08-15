@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { FiUser, FiMail, FiPhone, FiShield, FiCheckCircle, FiXCircle, FiEdit, FiMapPin, FiGlobe } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import EditProfileModal from '@/_components/profile/EditProfileModal';
 
 interface School {
   id: string;
@@ -17,6 +18,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  gender?: string;
   is_verified: boolean;
   role: string;
   school_id: string;
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (!authUser) {
@@ -35,45 +38,72 @@ export default function ProfilePage() {
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
+// Add this debugging code to your profile page's fetchProfile function
+const fetchProfile = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentication failed. Please log in again.');
-          }
-          if (response.status === 404) {
-            throw new Error('Profile not found');
-          }
-          throw new Error(`Failed to fetch profile: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setProfile(data);
-      } catch (err) {
-        console.error('Profile fetch error:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      } finally {
-        setLoading(false);
+    console.log('Fetching profile...');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-    };
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      if (response.status === 404) {
+        throw new Error('Profile not found');
+      }
+      throw new Error(`Failed to fetch profile: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Profile API Response:', data); // Add this debug line
+    console.log('Gender from API:', data.gender); // Add this debug line
+    
+    // Also log localStorage data for comparison
+    const localStorageUser = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('LocalStorage user:', localStorageUser);
+    console.log('LocalStorage gender:', localStorageUser.gender);
+    
+    setProfile(data);
+  } catch (err) {
+    console.error('Profile fetch error:', err);
+    setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
 
     fetchProfile();
   }, [authUser]);
+
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+  };
+
+  const formatGender = (gender?: string) => {
+    if (!gender) return 'Not specified';
+    
+    const genderMap: { [key: string]: string } = {
+      'male': 'Male',
+      'female': 'Female',
+      'other': 'Other',
+      'prefer_not_to_say': 'Prefer not to say'
+    };
+    
+    return genderMap[gender] || gender;
+  };
 
   // Loading state
   if (loading) {
@@ -155,6 +185,7 @@ export default function ProfilePage() {
                 </h3>
                 <div className="space-y-4">
                   <InfoItem icon={<FiUser className="h-4 w-4 " />} label="Full Name" value={profile.name || "Not provided"} />
+                  <InfoItem icon={<FiUser className="h-4 w-4 " />} label="Gender" value={formatGender(profile.gender)} />
                   <InfoItem icon={<FiMail className="h-4 w-4 " />} label="Email" value={profile.email} />
                   <InfoItem icon={<FiPhone className="h-4 w-4 " />} label="Phone" value={profile.phone || "Not provided"} />
                   <div className="flex items-center space-x-3">
@@ -169,6 +200,7 @@ export default function ProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
+                    onClick={() => setShowEditModal(true)}
                     className="flex items-center px-6 py-2   hover:bg-gray-800 transition duration-200"
                   >
                     <FiEdit className="h-4 w-4 mr-2" />
@@ -234,6 +266,22 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+          )}
+
+          {/* Edit Profile Modal */}
+          {profile && (
+            <EditProfileModal
+              isOpen={showEditModal}
+              onClose={() => setShowEditModal(false)}
+              profile={{
+                id: profile.id,
+                name: profile.name,
+                email: profile.email,
+                phone: profile.phone,
+                gender: profile.gender,
+              }}
+              onUpdate={handleProfileUpdate}
+            />
           )}
         </motion.div>
       </div>

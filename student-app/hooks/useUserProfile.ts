@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
+export enum RoomGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed'
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -10,6 +16,7 @@ export interface UserProfile {
   phone: string;
   is_verified: boolean;
   role: string;
+  gender: RoomGender;
   school_id: string;
   school?: {
     id: string;

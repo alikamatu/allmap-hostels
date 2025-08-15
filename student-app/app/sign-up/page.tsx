@@ -22,6 +22,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [gender, setGender] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +76,7 @@ export default function SignUpPage() {
 
     try {
       setIsLoading(true);
-      await register(fullName, phone, email, password, 'student');
+      await register(fullName, phone, email, password, 'student', gender || undefined);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -156,6 +157,31 @@ export default function SignUpPage() {
                     className="w-full pl-10 pr-3 py-3 text-base text-black bg-white border-b border-gray-200 focus:border-black outline-none transition"
                     placeholder="John Doe"
                   />
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+              >
+                <label htmlFor="gender" className="block text-lg font-medium text-black mb-1">
+                  Gender <span className="text-sm text-gray-666 font-normal">(Optional)</span>
+                </label>
+                <div className="relative flex items-center">
+                  <UserIcon className="h-4 w-4 text-black absolute left-3" />
+                  <select
+                    id="gender"
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full pl-10 pr-3 py-3 text-base text-black bg-white border-b border-gray-200 focus:border-black outline-none transition appearance-none"
+                  >
+                    <option value="">Select gender (optional)</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">Prefer not to say</option>
+                  </select>
                 </div>
               </motion.div>
 
