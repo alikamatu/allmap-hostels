@@ -11,7 +11,7 @@ export function useDistanceFilter() {
         const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
         if (!accessToken) return;
 
-        const res = await fetch('http://localhost:1000/auth/user-profile', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         
@@ -58,7 +58,7 @@ export function useUserSchoolName() {
         const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
         if (!accessToken) return;
 
-        const res = await fetch('http://localhost:1000/auth/user-profile', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

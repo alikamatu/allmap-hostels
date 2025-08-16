@@ -135,7 +135,7 @@ export default function Navbar() {
             ) : (
               <div className="flex items-center space-x-4">
                 <Link
-                  href="/login"
+                  href="/"
                   className="px-4 py-2 text-black hover:underline"
                 >
                   Login
@@ -234,7 +234,7 @@ export default function Navbar() {
                     transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
                   >
                     <Link
-                      href="/profile"
+                      href="/dashboard/profile"
                       className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
                       onClick={() => setIsOpen(false)}
                     >
@@ -282,7 +282,7 @@ export default function Navbar() {
                     transition={{ duration: 0.3, delay: (navLinks.length + 1) * 0.1 }}
                   >
                     <Link
-                      href="/login"
+                      href="/"
                       className="flex items-center px-4 py-3 text-black hover:bg-gray-100"
                       onClick={() => setIsOpen(false)}
                     >
