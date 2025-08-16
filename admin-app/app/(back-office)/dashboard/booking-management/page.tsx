@@ -25,7 +25,6 @@ import { useBookings } from '@/hooks/useBookings';
 import { usePayments } from '@/hooks/usePayments';
 
 // Utils
-import { formatCurrency } from '@/utils/currency';
 import { exportToExcel } from '@/utils/export';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';

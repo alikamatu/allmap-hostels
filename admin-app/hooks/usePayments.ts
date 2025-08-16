@@ -9,6 +9,7 @@ interface PaymentData {
   paymentMethod: PaymentMethod;
   transactionRef?: string;
   notes?: string;
+  [key: string]: any; // Allow additional properties
 }
 
 interface PaymentFilters {

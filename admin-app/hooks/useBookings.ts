@@ -253,7 +253,7 @@ export const useBookings = () => {
     }
   }, []);
 
-  const checkInBooking = useCallback(async (bookingId: string, checkInData: { notes?: string }): Promise<Booking> => {
+  const checkInBooking = useCallback(async (bookingId: string, checkInData: { notes?: string, [key: string]: unknown }): Promise<Booking> => {
     setLoading(true);
     try {
       const data = await makeApiRequest(`/bookings/${bookingId}/checkin`, {
@@ -276,7 +276,7 @@ export const useBookings = () => {
     }
   }, []);
 
-  const checkOutBooking = useCallback(async (bookingId: string, checkOutData: { notes?: string }): Promise<Booking> => {
+  const checkOutBooking = useCallback(async (bookingId: string, checkOutData: { notes?: string, [key: string]: unknown }): Promise<Booking> => {
     setLoading(true);
     try {
       const data = await makeApiRequest(`/bookings/${bookingId}/checkout`, {
