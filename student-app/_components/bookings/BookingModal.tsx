@@ -226,7 +226,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   }, []);
 
   const handleEmergencyContactChange = useCallback(
-    (index: number, field: keyof typeof formData.emergencyContacts[0], value: string) => {
+    (index: number, field: keyof typeof formData | 'name' | 'relationship' | 'phone', value: string) => {
       setFormData(prev => ({
         ...prev,
         emergencyContacts: prev.emergencyContacts?.map((contact, i) =>
