@@ -254,7 +254,7 @@ const fetchProfile = async () => {
                 ) : (
                   <div>
                     <h4 className="text-lg font-bold  mb-2">No School Connected</h4>
-                    <p className=" mb-4">You haven't been associated with a school yet</p>
+                    <p className=" mb-4">You haven&apos;t been associated with a school yet</p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}

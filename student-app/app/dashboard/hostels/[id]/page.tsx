@@ -139,6 +139,8 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom }: {
   );
 });
 
+MemoizedRoomCard.displayName = "MemoizedRoomCard";
+
 export default function HostelDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -636,7 +638,7 @@ export default function HostelDetailPage() {
               <FaBed className="mx-auto text-4xl text-gray-400 mb-4" />
               <h3 className="text-xl font-medium text-black mb-2">No Room Types Available</h3>
               <p className="text-gray-666">
-                This hostel doesn't have any room types configured yet. Please check back later.
+                This hostel doesn&apos;t have any room types configured yet. Please check back later.
               </p>
             </div>
           )}
