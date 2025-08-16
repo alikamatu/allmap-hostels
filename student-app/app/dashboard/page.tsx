@@ -76,7 +76,7 @@ export default function HomePage() {
       setError(null);
       try {
         const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        const res = await fetch('http://localhost:1000/hostels/fetch', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
