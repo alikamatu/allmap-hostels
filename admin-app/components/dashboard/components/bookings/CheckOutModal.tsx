@@ -386,26 +386,26 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
           </div>
 
           {/* Financial Summary */}
-          {(formData.cleaningFee > 0 || formData.depositRefund > 0) && (
+          {((formData.cleaningFee ?? 0) > 0 || (formData.depositRefund ?? 0) > 0) && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h4 className="font-medium text-gray-900 mb-3">Financial Summary</h4>
               <div className="space-y-2 text-sm">
-                {formData.cleaningFee > 0 && (
+                {(formData.cleaningFee ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-red-600">Cleaning Fee:</span>
-                    <span className="font-medium text-red-600">-{formatCurrency(formData.cleaningFee)}</span>
+                    <span className="font-medium text-red-600">-{formatCurrency(formData.cleaningFee ?? 0)}</span>
                   </div>
                 )}
-                {formData.depositRefund > 0 && (
+                {(formData.depositRefund ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-green-600">Deposit Refund:</span>
-                    <span className="font-medium text-green-600">+{formatCurrency(formData.depositRefund)}</span>
+                    <span className="font-medium text-green-600">+{formatCurrency(formData.depositRefund ?? 0)}</span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between font-medium">
                   <span>Net Amount:</span>
-                  <span className={(formData.depositRefund - formData.cleaningFee) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {(formData.depositRefund - formData.cleaningFee) >= 0 ? '+' : ''}{formatCurrency(formData.depositRefund - formData.cleaningFee)}
+                  <span className={((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0)) >= 0 ? '+' : ''}{formatCurrency((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0))}
                   </span>
                 </div>
               </div>
