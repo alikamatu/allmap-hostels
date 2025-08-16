@@ -3,14 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { AllowedGender } from '@/types/room';
 
-// Gender options to match backend allowed_genders
-export enum AllowedGender {
-  MALE = 'male',
-  FEMALE = 'female',
-  MIXED = 'mixed',
-  OTHER = 'other'
-}
 
 type HostelOption = {
   id: string;
@@ -25,7 +19,7 @@ type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-  allowedGenders: string[]; // Changed from gender to allowedGenders array
+  allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
   total_rooms: number;
   available_rooms: number;
   images: string[];
@@ -55,7 +49,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: string;
     pricePerWeek: string;
     capacity: string;
-    allowedGenders: string[]; // Changed from gender to allowedGenders array
+    allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
     total_rooms: string;
     available_rooms: string;
     images: string[];

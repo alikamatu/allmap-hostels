@@ -6,7 +6,7 @@ import {
   Building,
   Copy
 } from 'lucide-react';
-import { Room, RoomStatus, RoomType } from '@/types/room';
+  import { AllowedGender, Room, RoomStatus, RoomType } from '@/types/room';
 import { Hostel } from '@/types/hostel';
 import RoomCard from '@/components/dashboard/components/rooms/RoomCard';
 import CreateRoomModal from '@/components/dashboard/components/rooms/CreateRoomModal';
@@ -18,13 +18,6 @@ import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-ty
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
-// Gender enum to match the modal and backend
-export enum AllowedGender {
-  MALE = 'male',
-  FEMALE = 'female',
-  MIXED = 'mixed',
-  OTHER = 'other'
-}
 
 type CreateRoomFormData = {
   hostelId: string;
@@ -62,7 +55,7 @@ export type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-  allowedGenders: string[]; // Changed from gender to allowedGenders array
+    allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
   total_rooms: number;
   available_rooms: number;
   images: string[];

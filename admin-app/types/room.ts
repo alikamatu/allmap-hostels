@@ -13,6 +13,13 @@ export enum RoomGender {
   MIXED = 'mixed'
 }
 
+export enum AllowedGender {
+  MALE = 'male',
+  FEMALE = 'female',
+  MIXED = 'mixed',
+  OTHER = 'other'
+}
+
 export interface Room {
   id: string;
   hostelId: string;
