@@ -812,7 +812,7 @@ const PaymentDetailsSection = ({ hostel }: { hostel: ExtendedBooking['hostel'] }
           <div className="text-center py-16">
             <FaHome className="mx-auto text-4xl text-gray-800 mb-4" />
             <h3 className="text-xl font-medium text-black mb-2">No Bookings Found</h3>
-            <p className="text-gray-800 mb-6">You haven't made any bookings yet.</p>
+            <p className="text-gray-800 mb-6">You haven&apos;t made any bookings yet.</p>
             <Link
               href="/dashboard/hostels"
               className="inline-flex items-center bg-black text-white px-6 py-3 font-medium hover:bg-gray-800"
