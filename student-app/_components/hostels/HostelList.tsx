@@ -16,8 +16,10 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
     );
   }
 
+  
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {hostels.map((hostel) => {
         // Debug logging to see what price data we have
         console.log(`Hostel ${hostel.name}:`, {
@@ -43,6 +45,11 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
                 <div className="bg-gray-100 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center">
                   <span className="text-gray-800">No image</span>
                 </div>
+              )}
+              {!hostel.accepting_bookings && (
+                <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">
+                  Not Accepting Bookings
+                </span>
               )}
             </div>
             <div className="pt-2">

@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic';
 import { FilterPanel } from '@/_components/hostels/FilterPanel';
 import { HostelList } from '@/_components/hostels/HostelList';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMap, FiList, FiAlertTriangle } from 'react-icons/fi';
+import { FiMap, FiList, FiAlertTriangle, FiFilter } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 
 // Dynamically import MapView
@@ -26,12 +26,13 @@ const MapView = dynamic(() => import('@/_components/hostels/MapView'), {
 const MemoizedHostelList = memo(HostelList);
 const MemoizedMapView = memo(MapView);
 
-export default function HomePage() {
+export default function HostelsPage() {
   const [hostels, setHostels] = useState<HostelCard[]>([]);
   const [mounted, setMounted] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const schoolCoords = useDistanceFilter();
   const schoolName = useUserSchoolName();
 
@@ -112,6 +113,7 @@ export default function HomePage() {
             highestPrice,
             base_price: hostel.base_price,
             distance,
+            accepting_bookings: hostel.accepting_bookings,
           };
         });
 
@@ -198,7 +200,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="text-4xl sm:text-3xl font-bold text-black mb-8 text-center"
+              className="text-xs md:text-2xl font-bold text-black mb-3 md:mb-8 text-left"
             >
               Hostels near {schoolName || 'your school'}
             </motion.h1>
@@ -239,11 +241,12 @@ export default function HomePage() {
 
             {!isLoading && !error && (
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {/* Desktop Filter Panel */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
-                  className="md:col-span-1 lg:sticky lg:top-4"
+                  className="hidden md:block md:col-span-1 lg:sticky lg:top-4"
                 >
                   <FilterPanel
                     filters={filters}
@@ -254,6 +257,19 @@ export default function HomePage() {
                     onResetFilters={handleResetFilters}
                   />
                 </motion.div>
+
+                {/* Mobile Filter Button */}
+                {!isFilterModalOpen && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className="md:hidden fixed bottom-4 left-4 bg-black text-white p-3 rounded-full shadow-lg z-10"
+                    aria-label="Open filters"
+                  >
+                    <FiFilter className="w-5 h-5" />
+                  </motion.button>
+                )}
 
                 <div className="md:col-span-2 lg:col-span-3">
                   <motion.div
@@ -304,6 +320,39 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+
+            {/* Mobile Filter Modal */}
+            <AnimatePresence>
+              {isFilterModalOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 md:hidden"
+                  onClick={() => setIsFilterModalOpen(false)}
+                >
+                  <motion.div
+                    initial={{ translateY: '100%' }}
+                    animate={{ translateY: 0 }}
+                    exit={{ translateY: '100%' }}
+                    transition={{ type: 'spring', damping: 25 }}
+                    className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <FilterPanel
+                      filters={filters}
+                      onSearchChange={handleSearchChange}
+                      onMinPriceChange={handleMinPriceChange}
+                      onMaxPriceChange={handleMaxPriceChange}
+                      onMaxDistanceChange={handleMaxDistanceChange}
+                      onResetFilters={handleResetFilters}
+                      isMobileModal={true}
+                      onCloseModal={() => setIsFilterModalOpen(false)}
+                    />
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </div>

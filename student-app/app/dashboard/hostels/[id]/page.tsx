@@ -25,16 +25,18 @@ interface Hostel {
     security: boolean;
   };
   roomTypes: RoomType[];
+  accepting_bookings: boolean;
   location: string;
   rating: number;
   reviews: number;
   contact?: { admin?: string; phone?: string; email?: string };
 }
 
-const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom }: { 
+const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom, acceptingBookings }: { 
   roomType: RoomType; 
   onBook: (roomType: RoomType) => void;
   onViewRoom: (roomTypeId: string) => void;
+  acceptingBookings: boolean;
 }) => {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GHS' }).format(price);
@@ -117,23 +119,33 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom }: {
             whileTap={{ scale: 0.98 }}
             className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
             onClick={() => onViewRoom(roomType.id)}
+            disabled={!acceptingBookings}
           >
             View Details
           </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`flex-1 py-3 px-4 font-medium rounded-lg transition ${
-              roomType.availableRooms > 0
-                ? 'bg-black text-white hover:bg-gray-800'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-            onClick={() => roomType.availableRooms > 0 && onBook(roomType)}
-            disabled={roomType.availableRooms === 0}
-          >
-            {roomType.availableRooms > 0 ? 'Book Now' : 'Fully Booked'}
-          </motion.button>
+
+          {!acceptingBookings ? (
+            <motion.button
+              className="flex-1 bg-red-100 text-red-800 py-3 px-4 font-medium rounded-lg transition cursor-not-allowed"
+              disabled={true}
+            >
+              Unavailable
+            </motion.button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`flex-1 py-3 px-4 font-medium rounded-lg transition ${
+                roomType.availableRooms > 0
+                  ? 'bg-black text-white hover:bg-gray-800'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              onClick={() => roomType.availableRooms > 0 && onBook(roomType)}
+              disabled={roomType.availableRooms === 0}
+            >
+              {roomType.availableRooms > 0 ? 'Book Now' : 'Fully Booked'}
+            </motion.button>
+          )}
         </div>
       </div>
     </motion.div>
@@ -418,6 +430,11 @@ export default function HostelDetailPage() {
             Back to Hostels
           </Link>
           <h1 className="text-4xl sm:text-3xl font-bold text-black">{hostel.name}</h1>
+          <span>
+            {
+              (hostel.accepting_bookings) ? <span className="text-green-500">Accepting Bookings</span> : <span className="text-red-500">Not Accepting Bookings</span>
+            }
+          </span>
           <div className="flex items-center mt-2 gap-2">
             <div className="flex text-black">
               {[...Array(5)].map((_, i) => (
@@ -580,7 +597,7 @@ export default function HostelDetailPage() {
                 </div>
               </div>
 
-              <motion.button
+              {/* <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full bg-black text-white py-3 px-6 font-medium rounded-lg transition hover:bg-gray-800"
@@ -591,7 +608,7 @@ export default function HostelDetailPage() {
                 }}
               >
                 Quick Book Now
-              </motion.button>
+              </motion.button> */}
             </div>
           </motion.div>
         </div>
@@ -623,7 +640,7 @@ export default function HostelDetailPage() {
           
           <hr className="border-t border-gray-200 mb-8" />
 
-          {sortedRoomTypes.length > 0 ? (
+          {sortedRoomTypes.length > 0 ?  (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedRoomTypes.map((roomType) => (
                 <MemoizedRoomCard 
@@ -631,6 +648,7 @@ export default function HostelDetailPage() {
                   roomType={roomType} 
                   onBook={handleBookRoom}
                   onViewRoom={handleViewRoom} 
+                  acceptingBookings={hostel.accepting_bookings}
                 />
               ))}
             </div>
@@ -685,7 +703,7 @@ export default function HostelDetailPage() {
               View Location
             </motion.button>
           </div>
-          
+
           {!hostel.roomTypes.some(rt => rt.availableRooms > 0) && (
             <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800 font-medium">

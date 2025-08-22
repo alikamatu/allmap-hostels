@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Plus, Edit, Trash2, Loader2, MapPin, Mail, Phone, Wifi, Shirt, 
   Coffee, Car, Shield, RefreshCw, ChevronLeft, ChevronRight, Info, Hotel,
-  Star, MoreVertical, Check, X, Users, Bed
+  Star, MoreVertical, Check, X, Users, Bed, Calendar, CalendarOff
 } from 'lucide-react';
 import img from 'next/image';
 import Swal from 'sweetalert2';
@@ -44,6 +44,7 @@ interface Hostel {
   rating?: number;
   capacity?: number;
   rooms?: number;
+  accepting_bookings?: boolean; // Added booking status
   created_at: string;
   updated_at: string;
 }
@@ -54,7 +55,7 @@ export default function HostelManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'wifi' | 'parking' | 'security'>('all');
+  const [filter, setFilter] = useState<'all' | 'wifi' | 'parking' | 'security' | 'accepting' | 'not-accepting'>('all');
 
   const fetchHostels = useCallback(async () => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -93,11 +94,13 @@ export default function HostelManagementPage() {
     const matchesSearch = hostel.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          hostel.address.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Amenity filter
+    // Amenity and booking status filter
     let matchesFilter = true;
     if (filter === 'wifi') matchesFilter = hostel.amenities?.wifi;
     if (filter === 'parking') matchesFilter = hostel.amenities?.parking;
     if (filter === 'security') matchesFilter = hostel.amenities?.security;
+    if (filter === 'accepting') matchesFilter = hostel.accepting_bookings === true;
+    if (filter === 'not-accepting') matchesFilter = hostel.accepting_bookings === false;
     
     return matchesSearch && matchesFilter;
   });
@@ -108,6 +111,74 @@ export default function HostelManagementPage() {
 
   const handleEditHostel = (id: string) => {
     router.push(`/dashboard/hostels/edit/${id}`);
+  };
+
+  const handleToggleBookingStatus = async (id: string, currentStatus: boolean, hostelName: string) => {
+    const newStatus = !currentStatus;
+    const statusText = newStatus ? 'accepting' : 'not accepting';
+    
+    const result = await MySwal.fire({
+      title: 'Toggle Booking Status',
+      text: `Are you sure you want to set "${hostelName}" to ${statusText} bookings?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: newStatus ? '#10B981' : '#EF4444',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: `Yes, ${statusText} bookings`,
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rounded-2xl',
+        confirmButton: 'px-4 py-2 font-medium',
+        cancelButton: 'px-4 py-2 font-medium',
+      },
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/${id}/booking-status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ acceptingBookings: newStatus }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update booking status');
+        }
+
+        const result = await response.json();
+        
+        // Update the hostel in the local state
+        setHostels(prevHostels => 
+          prevHostels.map(hostel => 
+            hostel.id === id 
+              ? { ...hostel, accepting_bookings: newStatus }
+              : hostel
+          )
+        );
+
+        MySwal.fire({
+          icon: 'success',
+          title: 'Status Updated!',
+          text: result.message || `${hostelName} is now ${statusText} bookings.`,
+          confirmButtonColor: '#4F46E5',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err) {
+        console.error('Error updating booking status:', err);
+        MySwal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err instanceof Error ? err.message : 'Failed to update booking status',
+          confirmButtonColor: '#4F46E5',
+        });
+      }
+    }
   };
 
   const handleDeleteHostel = async (id: string, name: string) => {
@@ -187,10 +258,14 @@ export default function HostelManagementPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text">
               Hostel Management
             </h1>
-            <div className="flex items-center">
+            <div className="flex items-center flex-wrap gap-2">
               <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-2.5 py-0.5 rounded-full flex items-center">
                 <Hotel className="mr-1.5 h-4 w-4" />
                 {hostels.length} {hostels.length === 1 ? 'property' : 'properties'}
+              </span>
+              <span className="bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                <Calendar className="mr-1.5 h-4 w-4" />
+                {hostels.filter(h => h.accepting_bookings).length} accepting bookings
               </span>
               <p className="ml-3 text-gray-600 text-sm hidden sm:block">
                 Manage your hostel accommodations
@@ -229,6 +304,8 @@ export default function HostelManagementPage() {
                 onChange={(e) => setFilter(e.target.value as any)}
               >
                 <option value="all">All Hostels</option>
+                <option value="accepting">Accepting Bookings</option>
+                <option value="not-accepting">Not Accepting Bookings</option>
                 <option value="wifi">With Wi-Fi</option>
                 <option value="parking">With Parking</option>
                 <option value="security">With Security</option>
@@ -273,6 +350,9 @@ export default function HostelManagementPage() {
                   index={index}
                   onEdit={handleEditHostel}
                   onDelete={() => handleDeleteHostel(hostel.id, hostel.name)}
+                  onToggleBooking={(currentStatus) => 
+                    handleToggleBookingStatus(hostel.id, currentStatus, hostel.name)
+                  }
                 />
               ))}
             </AnimatePresence>
@@ -352,18 +432,21 @@ const HostelCard = ({
   hostel,
   index,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleBooking
 }: {
   hostel: Hostel;
   index: number;
   onEdit: (id: string) => void;
   onDelete: () => void;
+  onToggleBooking: (currentStatus: boolean) => void;
 }) => {
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const hasImages = hostel.images && hostel.images.length > 0;
+  const acceptingBookings = hostel.accepting_bookings ?? true; // Default to true if undefined
 
   const formatLocation = (location: Hostel['location']): string => {
     if (typeof location === 'string') return location;
@@ -417,9 +500,26 @@ const HostelCard = ({
       }}
       className="border border-gray-200 rounded-2xl overflow-hidden bg-white transition-all duration-300 shadow-md hover:shadow-xl relative"
     >
-      {/* Status badge */}
-      <div className="absolute top-3 left-3 bg-green-500 text-white text-xs font-medium px-2 py-0.5 rounded-full z-10 flex items-center">
-        <Check className="h-3 w-3 mr-1" /> Active
+      {/* Status badges */}
+      <div className="absolute top-3 left-3 flex gap-2 z-10">
+        <div className="bg-green-500 text-white text-xs font-medium px-2 py-0.5 rounded-full flex items-center">
+          <Check className="h-3 w-3 mr-1" /> Active
+        </div>
+        <div className={`text-white text-xs font-medium px-2 py-0.5 rounded-full flex items-center ${
+          acceptingBookings 
+            ? 'bg-emerald-500' 
+            : 'bg-red-500'
+        }`}>
+          {acceptingBookings ? (
+            <>
+              <Calendar className="h-3 w-3 mr-1" /> Accepting
+            </>
+          ) : (
+            <>
+              <CalendarOff className="h-3 w-3 mr-1" /> Closed
+            </>
+          )}
+        </div>
       </div>
 
       {/* Dropdown menu */}
@@ -444,6 +544,28 @@ const HostelCard = ({
             </button>
             <button 
               onClick={() => {
+                onToggleBooking(acceptingBookings);
+                setShowDropdown(false);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                acceptingBookings 
+                  ? 'text-red-600 hover:bg-red-50' 
+                  : 'text-green-600 hover:bg-green-50'
+              }`}
+            >
+              {acceptingBookings ? (
+                <>
+                  <CalendarOff className="h-4 w-4 mr-2" /> Stop Accepting Bookings
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-4 w-4 mr-2" /> Start Accepting Bookings
+                </>
+              )}
+            </button>
+            <div className="border-t border-gray-100 my-1"></div>
+            <button 
+              onClick={() => {
                 onDelete();
                 setShowDropdown(false);
               }}
@@ -455,14 +577,14 @@ const HostelCard = ({
         )}
       </div>
 
-      {/* img section */}
+      {/* Image section */}
       <div className="relative h-52 bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden">
         {hasImages && !imageError ? (
           <>
             <img
               src={hostel.images[currentImageIndex]}
               alt={`${hostel.name} - image ${currentImageIndex + 1}`}
-              className="object-cover transition-opacity duration-300"
+              className="w-full h-full object-cover transition-opacity duration-300"
               onError={() => setImageError(true)}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
@@ -517,6 +639,38 @@ const HostelCard = ({
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="w-4 h-4 mr-1.5 text-gray-500 flex-shrink-0" />
           <span className="truncate text-sm">{hostel.address}</span>
+        </div>
+
+        {/* Booking Status Indicator */}
+        <div className={`mb-4 p-3 rounded-lg border-2 ${
+          acceptingBookings 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {acceptingBookings ? (
+                <Calendar className="h-4 w-4 mr-2" />
+              ) : (
+                <CalendarOff className="h-4 w-4 mr-2" />
+              )}
+              <span className="text-sm font-medium">
+                {acceptingBookings ? 'Accepting Bookings' : 'Not Accepting Bookings'}
+              </span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onToggleBooking(acceptingBookings)}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                acceptingBookings
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              }`}
+            >
+              {acceptingBookings ? 'Close' : 'Open'}
+            </motion.button>
+          </div>
         </div>
 
         <p className="text-gray-600 mb-4 line-clamp-2 text-sm min-h-[40px] leading-relaxed">

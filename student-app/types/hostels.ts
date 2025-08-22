@@ -9,5 +9,6 @@ export interface HostelCard {
   lowestPrice: number;
   highestPrice: number;
   base_price: number | null;
-  distance: number | null; // Add distance property
+  distance: number | null;
+  accepting_bookings: boolean;
 }

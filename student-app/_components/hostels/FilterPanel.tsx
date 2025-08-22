@@ -1,5 +1,8 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'framer-motion';
+import { FiX } from 'react-icons/fi';
 
 interface FilterPanelProps {
   filters: {
@@ -13,6 +16,8 @@ interface FilterPanelProps {
   onMaxPriceChange: (price: number | '') => void;
   onMaxDistanceChange: (distance: number) => void;
   onResetFilters: () => void;
+  isMobileModal?: boolean;
+  onCloseModal?: () => void;
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
@@ -21,15 +26,30 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onMinPriceChange,
   onMaxPriceChange,
   onMaxDistanceChange,
-  onResetFilters
+  onResetFilters,
+  isMobileModal = false,
+  onCloseModal
 }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mb-8 p-6 bg-white font-sans"
+      transition={{ duration: 0. }}
+      className={`${isMobileModal ? 'fixed inset-0 z-50 bg-white p-4 overflow-y-auto' : 'mb-8 p-6'} bg-white font-sans`}
     >
+      {isMobileModal && (
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-black">Filters</h2>
+          <button 
+            onClick={onCloseModal}
+            className="p-2 rounded-full hover:bg-gray-100"
+            aria-label="Close filters"
+          >
+            <FiX className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,6 +145,20 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       >
         Reset Filters
       </motion.button>
+
+      {isMobileModal && (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.6 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onCloseModal}
+          className="w-full py-3 px-6 mt-4 bg-gray-200 text-black font-medium transition hover:bg-gray-300"
+        >
+          Apply Filters
+        </motion.button>
+      )}
     </motion.div>
   );
 };
