@@ -190,7 +190,7 @@ function VerifyEmailContent() {
                 transition={{ duration: 0.3, delay: 0.1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/')}
                 className="w-full bg-black text-white py-3 px-6 font-medium transition hover:bg-gray-800 flex items-center justify-center gap-2"
               >
                 Go to Login <FiArrowRight />

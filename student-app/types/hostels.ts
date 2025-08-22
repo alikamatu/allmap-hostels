@@ -8,5 +8,6 @@ export interface HostelCard {
   coords: [number, number] | null;
   lowestPrice: number;
   highestPrice: number;
+  base_price: number | null;
   distance: number | null; // Add distance property
 }

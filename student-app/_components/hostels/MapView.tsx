@@ -3,9 +3,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { HostelCard } from '@/types/hostels';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { calculateDistance } from '@/utils/geo';
 import { useUserSchoolName } from '@/hooks/useDistanceFilter';
-import { FaBookDead } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Bed, School } from 'lucide-react';
 
 interface MapViewProps {
   hostels: HostelCard[];
@@ -22,8 +23,9 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
   const { isLoaded, error } = useGoogleMaps();
   const schoolName = useUserSchoolName();
   const [selectedHostel, setSelectedHostel] = useState<HostelCard | null>(null);
-  const [directions, setDirections] = useState<any>(null);
   const [travelMode, setTravelMode] = useState<'DRIVING' | 'WALKING' | 'TRANSIT'>('DRIVING');
+  const router = useRouter();
+  const [directions, setDirections] = useState<any>(null);
 
   // Initialize map and services
   useEffect(() => {
@@ -53,19 +55,20 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
       suppressMarkers: true
     });
 
-    // Add school marker
+    // Add school marker with graduation cap icon
     if (schoolCoords) {
+      const schoolIconSvg = renderToStaticMarkup(
+        <School className="text-blue-500" style={{ width: '30px', height: '30px', color: 'blue' }} />
+      );
+
       const schoolMarker = new window.google.maps.Marker({
         position: { lat: schoolCoords[1], lng: schoolCoords[0] },
         map: mapInstance.current,
         title: schoolName || 'Your School',
         icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: '#4285F4',
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2
+          url: `data:image/svg+xml,${encodeURIComponent(schoolIconSvg)}`,
+          scaledSize: new window.google.maps.Size(30, 30),
+          anchor: new window.google.maps.Point(15, 15)
         }
       });
       
@@ -83,7 +86,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
       });
     }
 
-    // Add hostel markers
+    // Add hostel markers with bed icon
     markers.current = hostels
       .filter(hostel => hostel.coords)
       .map(hostel => {
@@ -92,12 +95,16 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
           lng: hostel.coords![0] 
         };
         
+        const hostelIconSvg = renderToStaticMarkup(
+          <Bed className="text-red-500" style={{ width: '30px', height: '30px', color: 'red' }} />
+        );
+        
         const marker = new window.google.maps.Marker({
           position,
           map: mapInstance.current,
           title: hostel.name,
           icon: {
-            url: <FaBookDead className="text-red-500" />,
+            url: `data:image/svg+xml,${encodeURIComponent(hostelIconSvg)}`,
             scaledSize: new window.google.maps.Size(30, 30),
             anchor: new window.google.maps.Point(15, 15)
           }
@@ -126,6 +133,12 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
               >
                 Get Directions
               </button>
+              <button 
+                class="mt-2 w-full px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 view-details"
+                data-hostel-id="${hostel.id}"
+              >
+                View Details
+              </button>
             </div>
           `
         });
@@ -137,21 +150,33 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
         return marker;
       });
 
-    // Listen for custom event from info window
+    // Listen for custom events from info window
     const handleSelectHostel = (e: CustomEvent) => {
       const hostelId = e.detail;
       const hostel = hostels.find(h => h.id === hostelId);
       if (hostel) setSelectedHostel(hostel);
     };
 
+    const handleViewDetails = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('view-details')) {
+        const hostelId = target.getAttribute('data-hostel-id');
+        if (hostelId) {
+          router.push(`/dashboard/hostels/${hostelId}`);
+        }
+      }
+    };
+
     window.addEventListener('select-hostel', handleSelectHostel as EventListener);
+    window.addEventListener('click', handleViewDetails);
     
     return () => {
       window.removeEventListener('select-hostel', handleSelectHostel as EventListener);
+      window.removeEventListener('click', handleViewDetails);
       markers.current.forEach(marker => marker.setMap(null));
       markers.current = [];
     };
-  }, [hostels, schoolCoords, isLoaded]);
+  }, [hostels, schoolCoords, isLoaded, router]);
 
   // Fetch directions when hostel is selected
   useEffect(() => {
@@ -250,7 +275,9 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-6a1 1 0 00-1-1h-8.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 008.586 3H3z" />
+                      <path d="M3 4a1 1 0 00-1 1
+
+v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-1h4.05a2.5 2.5 0 014.9 0H20a1 1 0 001-1v-6a1 1 0 00-1-1h-8.586a1 1 0 01-.707-.293l-1.414-1.414A1 1 0 008.586 3H3z" />
                     </svg>
                     Drive
                   </button>
@@ -311,11 +338,11 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
               <div className="mt-6">
                 <h4 className="font-medium mb-2">Hostel Legend</h4>
                 <div className="flex items-center mb-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
+                  <School className="text-blue-500 mr-2" style={{ width: '16px', height: '16px', color: 'blue' }} />
                   <span className="text-sm">{schoolName || 'Your School'}</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                  <Bed className="text-red-500 mr-2" style={{ width: '16px', height: '16px', color: 'red' }} />
                   <span className="text-sm">Hostel Location</span>
                 </div>
               </div>

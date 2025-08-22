@@ -82,7 +82,8 @@ const BookingManagementPage: React.FC = () => {
     cancelBooking,
     checkInBooking,
     checkOutBooking,
-    getBookingById // Make sure this method exists in your hook
+    getBookingById,
+    fetchStats // Make sure this method exists in your hook
   } = useBookings();
 
   const {
@@ -113,6 +114,26 @@ const BookingManagementPage: React.FC = () => {
     
     fetchHostels();
   }, []);
+
+    useEffect(() => {
+    console.log('Stats from useBookings hook:', stats);
+    console.log('Bookings loading state:', bookingsLoading);
+    console.log('Bookings data:', bookings);
+  }, [stats, bookingsLoading, bookings]);
+
+    useEffect(() => {
+    const loadStats = async () => {
+      try {
+        if (fetchStats) {
+          await fetchStats();
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+
+    loadStats();
+  }, [fetchStats]);
 
   // Fetch bookings when filters change
   useEffect(() => {

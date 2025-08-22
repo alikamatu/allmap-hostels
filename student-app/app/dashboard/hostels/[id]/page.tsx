@@ -63,23 +63,24 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom }: {
           </span>
         </div>
         
-        <p className="text-gray-666 text-sm mb-6 line-clamp-2 leading-relaxed">
+        <p className="text-gray-800 text-sm mb-6 line-clamp-2 leading-relaxed">
           {roomType.description || 'Comfortable living space with essential amenities'}
         </p>
         
         <div className="flex justify-between items-center mb-6">
           <div>
             <p className="text-lg font-bold text-black">{formatPrice(roomType.pricePerSemester)}</p>
-            <p className="text-xs text-gray-666">per semester</p>
+            <p className="text-xs text-gray-800">per semester</p>
+            <p className='text-xs py-1 rounded-full font-medium w-contain text-red-800'>{roomType.allowedGenders}</p>
           </div>
           <div>
-            <p className="text-gray-666 font-medium">{formatPrice(roomType.pricePerMonth)}</p>
-            <p className="text-xs text-gray-666">per month</p>
+            <p className="text-gray-800 font-medium">{formatPrice(roomType.pricePerMonth)}</p>
+            <p className="text-xs text-gray-800">per month</p>
           </div>
         </div>
         
         <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-666 mb-3">
+          <div className="flex justify-between text-sm text-gray-800 mb-3">
             <span>Capacity</span>
             <span className="font-medium">{roomType.capacity} person(s)</span>
           </div>
@@ -97,13 +98,13 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom }: {
             {roomType.amenities.slice(0, 4).map((amenity, idx) => (
               <span 
                 key={idx} 
-                className="text-gray-666 text-xs px-3 py-1.5 bg-gray-100 rounded-full"
+                className="text-gray-800 text-xs px-3 py-1.5 bg-gray-100 rounded-full"
               >
                 {amenity}
               </span>
             ))}
             {roomType.amenities.length > 4 && (
-              <span className="text-gray-666 text-xs px-3 py-1.5 bg-gray-100 rounded-full">
+              <span className="text-gray-800 text-xs px-3 py-1.5 bg-gray-100 rounded-full">
                 +{roomType.amenities.length - 4} more
               </span>
             )}
@@ -294,7 +295,7 @@ export default function HostelDetailPage() {
         <div className="text-center max-w-md">
           <FiAlertTriangle className="text-black text-5xl mb-4" />
           <h2 className="text-2xl font-bold text-black mb-2">Error Loading Hostel</h2>
-          <p className="text-gray-666 mb-6">{error}</p>
+          <p className="text-gray-800 mb-6">{error}</p>
           <div className="flex justify-center gap-4">
             <Link href="/dashboard/hostels" className="text-black hover:underline font-medium">
               Back to Hostels
@@ -323,7 +324,7 @@ export default function HostelDetailPage() {
       >
         <div className="flex flex-col items-center">
           <FaSpinner className="animate-spin text-black h-6 w-6 mb-4" />
-          <span className="text-gray-666">Loading hostel details...</span>
+          <span className="text-gray-800">Loading hostel details...</span>
         </div>
       </motion.div>
     );
@@ -423,13 +424,13 @@ export default function HostelDetailPage() {
                 <FaStar key={i} className={i < Math.floor(hostel.rating) ? '' : 'opacity-30'} />
               ))}
             </div>
-            <span className="text-gray-666">{hostel.rating} ({hostel.reviews} reviews)</span>
+            <span className="text-gray-800">{hostel.rating} ({hostel.reviews} reviews)</span>
           </div>
-          <div className="mt-2 text-gray-666">{hostel.address}</div>
+          <div className="mt-2 text-gray-800">{hostel.address}</div>
           {hostel.roomTypes[0] && (
             <div className="mt-4">
               <div className="text-lg font-bold text-black">{formatPrice(hostel.roomTypes[0].pricePerMonth)}</div>
-              <div className="text-sm text-gray-666">Starting price per month</div>
+              <div className="text-sm text-gray-800">Starting price per month</div>
             </div>
           )}
         </motion.div>
@@ -481,7 +482,7 @@ export default function HostelDetailPage() {
             >
               <h2 className="text-2xl font-bold text-black mb-4">Description</h2>
               <hr className="border-t border-gray-200 mb-4" />
-              <p className="text-gray-666 whitespace-pre-line leading-relaxed">{hostel.description}</p>
+              <p className="text-gray-800 whitespace-pre-line leading-relaxed">{hostel.description}</p>
             </motion.div>
 
             <motion.div
@@ -496,31 +497,31 @@ export default function HostelDetailPage() {
                 {hostel.amenities.wifi && (
                   <div className="flex items-center">
                     <FaWifi className="text-black text-lg mr-3" />
-                    <span className="text-gray-666">Wi-Fi</span>
+                    <span className="text-gray-800">Wi-Fi</span>
                   </div>
                 )}
                 {hostel.amenities.parking && (
                   <div className="flex items-center">
                     <FaParking className="text-black text-lg mr-3" />
-                    <span className="text-gray-666">Parking</span>
+                    <span className="text-gray-800">Parking</span>
                   </div>
                 )}
                 {hostel.amenities.cafeteria && (
                   <div className="flex items-center">
                     <FaUtensils className="text-black text-lg mr-3" />
-                    <span className="text-gray-666">Cafeteria</span>
+                    <span className="text-gray-800">Cafeteria</span>
                   </div>
                 )}
                 {hostel.amenities.security && (
                   <div className="flex items-center">
                     <FaShieldAlt className="text-black text-lg mr-3" />
-                    <span className="text-gray-666">24/7 Security</span>
+                    <span className="text-gray-800">24/7 Security</span>
                   </div>
                 )}
                 {hostel.amenities.laundry && (
                   <div className="flex items-center">
                     <FaTshirt className="text-black text-lg mr-3" />
-                    <span className="text-gray-666">Laundry</span>
+                    <span className="text-gray-800">Laundry</span>
                   </div>
                 )}
               </div>
@@ -539,15 +540,15 @@ export default function HostelDetailPage() {
             <div className="space-y-6">
               {hostel.contact && (
                 <div>
-                  <h3 className="font-semibold text-gray-666 mb-2">Contact</h3>
-                  {hostel.contact.admin && <p className="text-gray-666 mb-1">Admin: {hostel.contact.admin}</p>}
-                  {hostel.contact.phone && <p className="text-gray-666 mb-1">Phone: {hostel.contact.phone}</p>}
-                  {hostel.contact.email && <p className="text-gray-666">Email: {hostel.contact.email}</p>}
+                  <h3 className="font-semibold text-gray-800 mb-2">Contact</h3>
+                  {hostel.contact.admin && <p className="text-gray-800 mb-1">Admin: {hostel.contact.admin}</p>}
+                  {hostel.contact.phone && <p className="text-gray-800 mb-1">Phone: {hostel.contact.phone}</p>}
+                  {hostel.contact.email && <p className="text-gray-800">Email: {hostel.contact.email}</p>}
                 </div>
               )}
               <div>
-                <h3 className="font-semibold text-gray-666 mb-2">Location</h3>
-                <p className="text-gray-666 mb-2">{hostel.address}</p>
+                <h3 className="font-semibold text-gray-800 mb-2">Location</h3>
+                <p className="text-gray-800 mb-2">{hostel.address}</p>
                 <button 
                   onClick={() => setShowMap(true)}
                   className="text-black hover:underline text-sm font-medium"
@@ -558,7 +559,7 @@ export default function HostelDetailPage() {
               
               {/* Quick Stats */}
               <div>
-                <h3 className="font-semibold text-gray-666 mb-2">Quick Stats</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">Quick Stats</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Room Types</span>
@@ -604,7 +605,7 @@ export default function HostelDetailPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h2 className="text-2xl font-bold text-black">Available Room Types</h2>
-              <p className="text-gray-666 text-sm mt-1">
+              <p className="text-gray-800 text-sm mt-1">
                 {sortedRoomTypes.filter(rt => rt.availableRooms > 0).length} of {sortedRoomTypes.length} room types available
               </p>
             </div>
@@ -637,7 +638,7 @@ export default function HostelDetailPage() {
             <div className="text-center py-16">
               <FaBed className="mx-auto text-4xl text-gray-400 mb-4" />
               <h3 className="text-xl font-medium text-black mb-2">No Room Types Available</h3>
-              <p className="text-gray-666">
+              <p className="text-gray-800">
                 This hostel doesn&apos;t have any room types configured yet. Please check back later.
               </p>
             </div>
@@ -654,7 +655,7 @@ export default function HostelDetailPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">
             Ready to make {hostel.name} your home?
           </h2>
-          <p className="text-gray-666 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-gray-800 max-w-2xl mx-auto mb-8 leading-relaxed">
             Join the community of students who have made {hostel.name} their home away from home. 
             Experience comfortable living with modern amenities and excellent service.
           </p>

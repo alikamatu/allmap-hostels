@@ -328,7 +328,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Room Type</label>
                 <input
                   type="number"
                   name="capacity"

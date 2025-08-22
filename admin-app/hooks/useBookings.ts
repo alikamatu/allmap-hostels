@@ -50,22 +50,23 @@ export const useBookings = () => {
     total: 0,
     limit: 20
   });
-  const [stats, setStats] = useState<BookingStats>({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    checkedIn: 0,
-    checkedOut: 0,
-    cancelled: 0,
-    totalRevenue: 0,
-    paidRevenue: 0,
-    pendingRevenue: 0,
-    occupancyRate: 0
-  });
+const [stats, setStats] = useState({
+  total: 0,
+  pending: 0,
+  confirmed: 0,
+  checkedIn: 0,
+  checkedOut: 0,
+  cancelled: 0,
+  totalRevenue: 0,
+  paidRevenue: 0,
+  pendingRevenue: 0,
+  occupancyRate: 0
+});
 
   const getAuthToken = () => {
     return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
   };
+
 
   const makeApiRequest = async (url: string, options: RequestInit = {}) => {
     const token = getAuthToken();
@@ -144,6 +145,30 @@ export const useBookings = () => {
       return defaultStats;
     }
   }, []); // Removed stats dependency
+
+const fetchStats = async (hostelId?: string) => {
+  try {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    const url = hostelId 
+      ? `${API_BASE_URL}/bookings/statistics?hostelId=${hostelId}`
+      : `${API_BASE_URL}/bookings/statistics`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const statsData = await response.json();
+      console.log('Stats API response:', statsData);
+      setStats(statsData);
+    }
+  } catch (error) {
+    console.error('Failed to fetch stats:', error);
+  }
+};
 
   const createBooking = useCallback(async (bookingData: any): Promise<Booking> => {
     setLoading(true);
@@ -422,7 +447,8 @@ export const useBookings = () => {
     searchBookings,
     generateReport,
     getBookingById,
-    updateBookingInList, // Added this to the return statement
+    updateBookingInList,
+    fetchStats, // Added this to the return statement
 
     // Utilities
     setError,

@@ -326,7 +326,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center p-4 sm:p-6 font-sans"
+        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 sm:p-6 font-sans"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <motion.div
@@ -340,7 +340,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-black">Book {roomType.name}</h2>
-                <p className="text-gray-666">{hostel.name}</p>
+                <p className="text-gray-800">{hostel.name}</p>
                 {profile && !profileLoading && (
                   <div className="flex items-center mt-2">
                     <p className="text-sm text-black">✓ Auto-filled with your profile</p>
@@ -382,7 +382,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         ? 'bg-black text-white'
                         : index < ['details', 'room-selection', 'confirmation'].indexOf(step)
                         ? 'bg-black text-white'
-                        : 'bg-gray-200 text-gray-666'
+                        : 'bg-gray-200 text-gray-800'
                     }`}
                   >
                     {index + 1}
@@ -418,7 +418,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 {profileLoading && (
                   <div className="flex items-center p-4">
                     <FaSpinner className="animate-spin text-black mr-3" />
-                    <p className="text-gray-666 text-sm">Loading your profile information...</p>
+                    <p className="text-gray-800 text-sm">Loading your profile information...</p>
                   </div>
                 )}
 
@@ -427,12 +427,12 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                     <FiAlertTriangle className="text-black mr-3" />
                     <div>
                       <p className="text-black font-medium text-sm">Profile not available</p>
-                      <p className="text-gray-666 text-sm">Please fill in your details manually or check your connection.</p>
+                      <p className="text-gray-800 text-sm">Please fill in your details manually or check your connection.</p>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="hidden grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-black mb-2">
                       <FaUser className="inline mr-2" />
@@ -442,7 +442,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       type="text"
                       value={formData.studentName}
                       onChange={(e) => handleInputChange('studentName', e.target.value)}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
                       aria-label="Select check-in date"
                     />
                     {errors.checkInDate && <p className="text-black text-sm mt-1">{errors.checkInDate}</p>}
@@ -488,20 +488,20 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             onClick={() => removeEmergencyContact(index)}
-                            className="text-black"
+                            className="text-black"  
                             aria-label={`Remove emergency contact ${index + 1}`}
                           >
                             <FaTimes />
                           </motion.button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-gray-800">
                         <input
                           type="text"
                           placeholder="Name"
                           value={contact.name}
                           onChange={(e) => handleEmergencyContactChange(index, 'name', e.target.value)}
-                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
                           aria-label={`Enter name for emergency contact ${index + 1}`}
                         />
                         <input
@@ -509,7 +509,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                           placeholder="Relationship"
                           value={contact.relationship}
                           onChange={(e) => handleEmergencyContactChange(index, 'relationship', e.target.value)}
-                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
                           aria-label={`Enter relationship for emergency contact ${index + 1}`}
                         />
                         <input
@@ -517,7 +517,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                           placeholder="Phone"
                           value={contact.phone}
                           onChange={(e) => handleEmergencyContactChange(index, 'phone', e.target.value)}
-                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          className="px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
                           aria-label={`Enter phone number for emergency contact ${index + 1}`}
                         />
                       </div>
@@ -542,16 +542,16 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Room Type</span>
+                      <span className="text-gray-800">Room Type</span>
                       <span className="font-medium text-black">{roomType.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Booking Type</span>
+                      <span className="text-gray-800">Booking Type</span>
                       <span className="font-medium text-black capitalize">{formData.bookingType}</span>
                     </div>
                     {formData.checkInDate && formData.checkOutDate && (
                       <div className="flex justify-between">
-                        <span className="text-gray-666">Duration</span>
+                        <span className="text-gray-800">Duration</span>
                         <span className="font-medium text-black">
                           {bookingService.getDurationInDays(new Date(formData.checkInDate), new Date(formData.checkOutDate))} days
                         </span>
@@ -571,20 +571,20 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
             {step === 'room-selection' && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                 <h3 className="text-lg font-bold text-black">Select Your Room</h3>
-                <p className="text-gray-666">
+                <p className="text-gray-800">
                   {availableRooms.length} room(s) available for your selected dates
                 </p>
 
                 {checkingAvailability ? (
                   <div className="text-center py-8">
                     <FaSpinner className="animate-spin text-black h-8 w-8 mx-auto mb-4" />
-                    <p className="text-gray-666">Checking availability...</p>
+                    <p className="text-gray-800">Checking availability...</p>
                   </div>
                 ) : availableRooms.length === 0 ? (
                   <div className="text-center py-8">
                     <FiAlertTriangle className="text-black text-3xl mx-auto mb-4" />
                     <p className="text-black font-medium mb-2">No rooms available</p>
-                    <p className="text-gray-666 mb-4">Sorry, no rooms of this type are available for your selected dates.</p>
+                    <p className="text-gray-800 mb-4">Sorry, no rooms of this type are available for your selected dates.</p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       onClick={() => setStep('details')}
@@ -608,7 +608,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-bold text-black">Room {room.roomNumber}</h4>
-                            <p className="text-gray-666 text-sm">Floor {room.floor}</p>
+                            <p className="text-gray-800 text-sm">Floor {room.floor}</p>
                           </div>
                           <div className="flex items-center">
                             <div
@@ -620,17 +620,17 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         </div>
                         <div className="mt-3">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-666">Status:</span>
+                            <span className="text-gray-800">Status:</span>
                             <span className="font-medium text-black">Available</span>
                           </div>
                           <div className="flex justify-between text-sm mt-1">
-                            <span className="text-gray-666">Gender:</span>
+                            <span className="text-gray-800">Gender:</span>
                             <span className="font-medium text-black">
                               {roomType.allowedGenders?.join(', ') || 'N/A'}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm mt-1">
-                            <span className="text-gray-666">Capacity:</span>
+                            <span className="text-gray-800">Capacity:</span>
                             <span className="font-medium text-black">
                               {room.currentOccupancy}/{room.maxOccupancy}
                             </span>
@@ -656,33 +656,33 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Hostel:</span>
+                      <span className="text-gray-800">Hostel:</span>
                       <span className="font-medium text-black">{hostel.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Room Type:</span>
+                      <span className="text-gray-800">Room Type:</span>
                       <span className="font-medium text-black">{roomType.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Room Number:</span>
+                      <span className="text-gray-800">Room Number:</span>
                       <span className="font-medium text-black">
                         {availableRooms.find(r => r.id === selectedRoomId)?.roomNumber || 'N/A'}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Check-in:</span>
+                      <span className="text-gray-800">Check-in:</span>
                       <span className="font-medium text-black">
                         {new Date(formData.checkInDate).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Check-out:</span>
+                      <span className="text-gray-800">Check-out:</span>
                       <span className="font-medium text-black">
                         {new Date(formData.checkOutDate).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Duration:</span>
+                      <span className="text-gray-800">Duration:</span>
                       <span className="font-medium text-black">
                         {bookingService.getDurationInDays(new Date(formData.checkInDate), new Date(formData.checkOutDate))} days
                       </span>
@@ -701,15 +701,15 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Name:</span>
+                      <span className="text-gray-800">Name:</span>
                       <span className="font-medium text-black">{formData.studentName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Email:</span>
+                      <span className="text-gray-800">Email:</span>
                       <span className="font-medium text-black">{formData.studentEmail}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-666">Phone:</span>
+                      <span className="text-gray-800">Phone:</span>
                       <span className="font-medium text-black">{formData.studentPhone}</span>
                     </div>
                   </div>
@@ -719,7 +719,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <div className="p-5">
                     <h4 className="font-bold text-black mb-3">Special Requests</h4>
                     <hr className="border-t border-gray-200 mb-4" />
-                    <p className="text-gray-666">{formData.specialRequests}</p>
+                    <p className="text-gray-800">{formData.specialRequests}</p>
                   </div>
                 )}
 
@@ -731,7 +731,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       {formData.emergencyContacts.map((contact, index) => (
                         <div key={index}>
                           <p className="font-medium text-black">{contact.name}</p>
-                          <p className="text-gray-666">
+                          <p className="text-gray-800">
                             {contact.relationship} • {contact.phone}
                           </p>
                         </div>

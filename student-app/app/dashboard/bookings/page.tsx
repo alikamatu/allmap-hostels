@@ -1,78 +1,108 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaCalendarAlt, FaHome, FaMoneyBillWave, FaClock, FaEye, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaCalendarAlt, FaHome, FaMoneyBillWave, FaClock, FaEye, FaTimes, FaSpinner, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCreditCard, FaMobileAlt } from 'react-icons/fa';
 import { FiAlertTriangle } from 'react-icons/fi';
 import Link from 'next/link';
 import { Booking, BookingStatus, BookingType, PaymentStatus } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useAuth } from '@/context/AuthContext';
 
-interface BookingFilters {
-  status: BookingStatus | 'all';
-  paymentStatus: PaymentStatus | 'all';
-  bookingType: BookingType | 'all';
-  search: string;
+interface ExtendedBooking extends Booking {
+  hostel?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    SecondaryNumber: string;
+    address: string;
+    payment_method: 'bank' | 'momo' | 'both';
+    bank_details?: {
+      bank_name: string;
+      account_name: string;
+      account_number: string;
+      branch: string;
+    };
+    momo_details?: {
+      provider: string;
+      number: string;
+      name: string;
+    };
+  };
 }
 
 export default function UserBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<ExtendedBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<ExtendedBooking | null>(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [newCheckOutDate, setNewCheckOutDate] = useState('');
-  const [filters, setFilters] = useState<BookingFilters>({
-    status: 'all',
-    paymentStatus: 'all',
-    bookingType: 'all',
-    search: '',
-  });
   const { user } = useAuth();
 
-  const fetchUserBookings = useCallback(async () => {
-    if (!user?.id) {
-      setError('User not found. Please log in again.');
-      setLoading(false);
-      return;
-    }
+// Add this debug code to your fetchUserBookings function in page.tsx:
 
-    try {
-      setLoading(true);
-      const userBookings = await bookingService.getUserBookings(user.id);
-      console.log('User bookings response:', userBookings); // Debug log
-      setBookings(
-        userBookings.map((booking: any) => ({
-          ...booking,
-          room: booking.room
-            ? {
-                ...booking.room,
-                roomType: booking.room.roomType
-                  ? {
-                      ...booking.room.roomType,
-                      hostelId: booking.room.roomType.hostelId ?? '',
-                      capacity: booking.room.roomType.capacity ?? 0,
-                      amenities: booking.room.roomType.amenities ?? [],
-                      totalRooms: booking.room.roomType.totalRooms ?? 0,
-                      description: booking.room.roomType.description ?? '',
-                      images: booking.room.roomType.images ?? [],
-                    }
-                  : undefined,
-              }
-            : undefined,
-        }))
-      );
-      setError(null);
-    } catch (err: any) {
-      console.error('Failed to fetch bookings:', err);
-      setError('Failed to load your bookings. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
+const fetchUserBookings = useCallback(async () => {
+  if (!user?.id) {
+    setError('User not found. Please log in again.');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const userBookings = await bookingService.getUserBookings(user.id);
+    console.log('Raw user bookings response:', userBookings); // Debug log
+    
+    const processedBookings = userBookings.map((booking: any) => {
+      console.log('Processing booking:', booking.id);
+      console.log('Hostel data:', booking.hostel);
+      console.log('Payment method:', booking.hostel?.payment_method);
+      console.log('Bank details:', booking.hostel?.bank_details);
+      console.log('Momo details:', booking.hostel?.momo_details);
+      
+      return {
+        ...booking,
+        room: booking.room
+          ? {
+              ...booking.room,
+              roomType: booking.room.roomType
+                ? {
+                    ...booking.room.roomType,
+                    hostelId: booking.room.roomType.hostelId ?? '',
+                    capacity: booking.room.roomType.capacity ?? 0,
+                    amenities: booking.room.roomType.amenities ?? [],
+                    totalRooms: booking.room.roomType.totalRooms ?? 0,
+                    description: booking.room.roomType.description ?? '',
+                    images: booking.room.roomType.images ?? [],
+                  }
+                : undefined,
+            }
+          : undefined,
+        hostel: booking.hostel
+          ? {
+              ...booking.hostel,
+              payment_method: booking.hostel.payment_method ?? 'both',
+              bank_details: booking.hostel.bank_details ?? null,
+              momo_details: booking.hostel.momo_details ?? null,
+            }
+          : undefined,
+      };
+    });
+    
+    console.log('Processed bookings:', processedBookings);
+    setBookings(processedBookings);
+    setError(null);
+  } catch (err: any) {
+    console.error('Failed to fetch bookings:', err);
+    setError('Failed to load your bookings. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
@@ -110,13 +140,13 @@ export default function UserBookingsPage() {
       case BookingStatus.PENDING:
       case BookingStatus.NO_SHOW:
       case BookingStatus.CANCELLED:
-        return 'bg-gray-100 text-gray-666';
+        return 'bg-gray-100 text-gray-800';
       case BookingStatus.CONFIRMED:
       case BookingStatus.CHECKED_IN:
       case BookingStatus.CHECKED_OUT:
         return 'bg-black text-white';
       default:
-        return 'bg-gray-100 text-gray-666';
+        return 'bg-gray-100 text-gray-800';
     }
   }, []);
 
@@ -128,9 +158,9 @@ export default function UserBookingsPage() {
       case PaymentStatus.PARTIAL:
       case PaymentStatus.PENDING:
       case PaymentStatus.OVERDUE:
-        return 'bg-gray-100 text-gray-666';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-666';
+        return 'bg-gray-100 text-gray-800';
     }
   }, []);
 
@@ -160,20 +190,6 @@ export default function UserBookingsPage() {
     [fetchUserBookings]
   );
 
-  const filteredBookings = useMemo(() => {
-    return bookings.filter(booking => {
-      const matchesStatus = filters.status === 'all' || booking.status === filters.status;
-      const matchesPaymentStatus = filters.paymentStatus === 'all' || booking.paymentStatus === filters.paymentStatus;
-      const matchesBookingType = filters.bookingType === 'all' || booking.bookingType === filters.bookingType;
-      const matchesSearch =
-        !filters.search ||
-        (booking.hostel?.name || '').toLowerCase().includes(filters.search.toLowerCase()) ||
-        (booking.room?.roomNumber || '').toLowerCase().includes(filters.search.toLowerCase());
-
-      return matchesStatus && matchesPaymentStatus && matchesBookingType && matchesSearch;
-    });
-  }, [bookings, filters]);
-
   const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -187,12 +203,184 @@ export default function UserBookingsPage() {
     []
   );
 
+const PaymentDetailsSection = ({ hostel }: { hostel: ExtendedBooking['hostel'] }) => {
+  if (!hostel) return null;
+
+  console.log('PaymentDetailsSection - hostel data:', hostel);
+  console.log('Payment method:', hostel.payment_method);
+  console.log('Bank details:', hostel.bank_details);
+  console.log('Momo details:', hostel.momo_details);
+
+  const showBankDetails = hostel.payment_method === 'bank' || hostel.payment_method === 'both';
+  const showMomoDetails = hostel.payment_method === 'momo' || hostel.payment_method === 'both';
+
+  // Parse bank details if it's a string
+  let bankDetails = null;
+  if (hostel.bank_details) {
+    try {
+      bankDetails = typeof hostel.bank_details === 'string' 
+        ? JSON.parse(hostel.bank_details) 
+        : hostel.bank_details;
+    } catch (e) {
+      console.error('Error parsing bank details:', e);
+    }
+  }
+
+  // Parse momo details if it's a string
+  let momoDetails = null;
+  if (hostel.momo_details) {
+    try {
+      momoDetails = typeof hostel.momo_details === 'string' 
+        ? JSON.parse(hostel.momo_details) 
+        : hostel.momo_details;
+    } catch (e) {
+      console.error('Error parsing momo details:', e);
+    }
+  }
+
+  console.log('Parsed bank details:', bankDetails);
+  console.log('Parsed momo details:', momoDetails);
+
+  return (
+    <div>
+      <h3 className="font-medium text-black mb-3">Payment Details</h3>
+      <hr className="border-t border-gray-200 mb-4" />
+      
+      {showBankDetails && bankDetails && (
+        <div className="mb-4">
+          <h4 className="font-medium text-black mb-2 flex items-center">
+            <FaCreditCard className="mr-2" />
+            Bank Transfer Details
+          </h4>
+          <div className="bg-gray-50 p-3 rounded text-sm space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-800">Bank Name:</span>
+              <span className="font-medium text-black">{bankDetails.bank_name || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-800">Account Name:</span>
+              <span className="font-medium text-black">{bankDetails.account_name || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-800">Account Number:</span>
+              <span className="font-medium text-black">{bankDetails.account_number || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-800">Branch:</span>
+              <span className="font-medium text-black">{bankDetails.branch || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMomoDetails && momoDetails && (
+        <div className="mb-4">
+          <h4 className="font-medium text-black mb-2 flex items-center">
+            <FaMobileAlt className="mr-2" />
+            Mobile Money Details
+          </h4>
+          <div className="bg-gray-50 p-3 rounded text-sm space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-800">Provider:</span>
+              <span className="font-medium text-black">{momoDetails.provider || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-800">Number:</span>
+              <span className="font-medium text-black">{momoDetails.number || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-800">Name:</span>
+              <span className="font-medium text-black">{momoDetails.name || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!showBankDetails && !showMomoDetails && (
+        <div className="text-gray-800 text-sm">
+          No payment methods configured for this hostel.
+        </div>
+      )}
+
+      {showBankDetails && !bankDetails && (
+        <div className="mb-4">
+          <h4 className="font-medium text-black mb-2 flex items-center">
+            <FaCreditCard className="mr-2" />
+            Bank Transfer Details
+          </h4>
+          <div className="bg-gray-50 p-3 rounded text-sm">
+            <p className="text-gray-800">Bank details not configured.</p>
+          </div>
+        </div>
+      )}
+
+      {showMomoDetails && !momoDetails && (
+        <div className="mb-4">
+          <h4 className="font-medium text-black mb-2 flex items-center">
+            <FaMobileAlt className="mr-2" />
+            Mobile Money Details
+          </h4>
+          <div className="bg-gray-50 p-3 rounded text-sm">
+            <p className="text-gray-800">Mobile money details not configured.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+  const ContactDetailsSection = ({ hostel }: { hostel: ExtendedBooking['hostel'] }) => {
+    if (!hostel) return null;
+
+    return (
+      <div>
+        <h3 className="font-medium text-black mb-3">Contact Details</h3>
+        <hr className="border-t border-gray-200 mb-4" />
+        <div className="space-y-3 text-sm">
+          <div className="flex items-start">
+            <FaPhone className="text-black mt-1 mr-3 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-black">{hostel.phone}</p>
+              <span className="text-gray-800">Primary Contact</span>
+            </div>
+          </div>
+          
+          {hostel.SecondaryNumber && (
+            <div className="flex items-start">
+              <FaPhone className="text-black mt-1 mr-3 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-black">{hostel.SecondaryNumber}</p>
+                <span className="text-gray-800">Secondary Contact</span>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex items-start">
+            <FaEnvelope className="text-black mt-1 mr-3 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-black">{hostel.email}</p>
+              <span className="text-gray-800">Email Address</span>
+            </div>
+          </div>
+          
+          <div className="flex items-start">
+            <FaMapMarkerAlt className="text-black mt-1 mr-3 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-black">{hostel.address}</p>
+              <span className="text-gray-800">Address</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
           <FaSpinner className="animate-spin text-black h-12 w-12 mb-4" />
-          <span className="text-gray-666">Loading your bookings...</span>
+          <span className="text-gray-800">Loading your bookings...</span>
         </div>
       </div>
     );
@@ -204,7 +392,7 @@ export default function UserBookingsPage() {
         <div className="text-center">
           <FiAlertTriangle className="text-black text-5xl mx-auto mb-4" />
           <h2 className="text-xl font-bold text-black mb-2">Error Loading Bookings</h2>
-          <p className="text-gray-666 mb-4">{error}</p>
+          <p className="text-gray-800 mb-4">{error}</p>
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={fetchUserBookings}
@@ -223,7 +411,7 @@ export default function UserBookingsPage() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h2 className="text-xl font-bold text-black mb-2">Authentication Required</h2>
-          <p className="text-gray-666 mb-4">Please log in to view your bookings</p>
+          <p className="text-gray-800 mb-4">Please log in to view your bookings</p>
           <Link
             href="/auth/login"
             className="bg-black text-white px-6 py-2 font-medium hover:bg-gray-800"
@@ -252,7 +440,7 @@ export default function UserBookingsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white w-full max-w-md"
+              className="bg-white w-full max-w-md shadow-lg border"
             >
               <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -266,7 +454,7 @@ export default function UserBookingsPage() {
                     <FaTimes className="text-xl" />
                   </motion.button>
                 </div>
-                <p className="text-gray-666 mb-6">
+                <p className="text-gray-800 mb-6">
                   Are you sure you want to cancel your booking for {selectedBooking.hostel?.name} (Room{' '}
                   {selectedBooking.room?.roomNumber})?
                 </p>
@@ -308,7 +496,7 @@ export default function UserBookingsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white w-full max-w-md"
+              className="bg-white w-full max-w-md shadow-lg border"
             >
               <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -373,13 +561,13 @@ export default function UserBookingsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg border"
             >
               <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-black">Booking Details</h2>
-                    <p className="text-gray-666">ID: {selectedBooking.id}</p>
+                    <p className="text-gray-800">ID: {selectedBooking.id}</p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -391,158 +579,171 @@ export default function UserBookingsPage() {
                   </motion.button>
                 </div>
                 <hr className="border-t border-gray-200 my-4" />
-                <div className="space-y-6">
-                  {/* Booking Status */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-black mb-2">Booking Status</h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedBooking.status)}`}
-                      >
-                        {selectedBooking.status.replace('_', ' ').toUpperCase()}
-                      </span>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-6">
+                    {/* Booking Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-medium text-black mb-2">Booking Status</h3>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedBooking.status)}`}
+                        >
+                          {selectedBooking.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-black mb-2">Payment Status</h3>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(
+                            selectedBooking.paymentStatus
+                          )}`}
+                        >
+                          {selectedBooking.paymentStatus.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-black mb-2">Payment Status</h3>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(
-                          selectedBooking.paymentStatus
-                        )}`}
-                      >
-                        {selectedBooking.paymentStatus.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Accommodation Details */}
-                  <div>
-                    <h3 className="font-medium text-black mb-3">Accommodation Details</h3>
-                    <hr className="border-t border-gray-200 mb-4" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-666">Hostel:</span>
-                        <p className="font-medium text-black">{selectedBooking.hostel?.name || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-666">Room:</span>
-                        <p className="font-medium text-black">{selectedBooking.room?.roomNumber || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-666">Floor:</span>
-                        <p className="font-medium text-black">{selectedBooking.room?.floor || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-666">Room Type:</span>
-                        <p className="font-medium text-black">{selectedBooking.room?.roomType?.name || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Accommodation Details */}
                     <div>
-                      <h3 className="font-medium text-black mb-2">Check-in</h3>
-                      <p className="text-gray-666">{formatDate(selectedBooking.checkInDate)}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-black mb-2">Check-out</h3>
-                      <p className="text-gray-666">{formatDate(selectedBooking.checkOutDate)}</p>
-                    </div>
-                  </div>
-
-                  {/* Payment Information */}
-                  <div>
-                    <h3 className="font-medium text-black mb-3">Payment Information</h3>
-                    <hr className="border-t border-gray-200 mb-4" />
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-666">Total Amount:</span>
-                        <span className="font-medium text-black">{formatPrice(selectedBooking.totalAmount)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-666">Amount Paid:</span>
-                        <span className="font-medium text-black">{formatPrice(selectedBooking.amountPaid)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-666">Amount Due:</span>
-                        <span className="font-medium text-black">{formatPrice(selectedBooking.amountDue)}</span>
-                      </div>
-                      {selectedBooking.paymentDueDate && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-666">Payment Due:</span>
-                          <span className="font-medium text-black">{formatDate(selectedBooking.paymentDueDate)}</span>
+                      <h3 className="font-medium text-black mb-3">Accommodation Details</h3>
+                      <hr className="border-t border-gray-200 mb-4" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-800">Hostel:</span>
+                          <p className="font-medium text-black">{selectedBooking.hostel?.name || 'N/A'}</p>
                         </div>
-                      )}
+                        <div>
+                          <span className="text-gray-800">Room:</span>
+                          <p className="font-medium text-black">{selectedBooking.room?.roomNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-800">Floor:</span>
+                          <p className="font-medium text-black">{selectedBooking.room?.floor || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-800">Room Type:</span>
+                          <p className="font-medium text-black">{selectedBooking.room?.roomType?.name || 'N/A'}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Special Requests */}
-                  {selectedBooking.specialRequests && (
-                    <div>
-                      <h3 className="font-medium text-black mb-3">Special Requests</h3>
-                      <hr className="border-t border-gray-200 mb-4" />
-                      <p className="text-gray-666 text-sm">{selectedBooking.specialRequests}</p>
+                    {/* Dates */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-medium text-black mb-2">Check-in</h3>
+                        <p className="text-gray-800">{formatDate(selectedBooking.checkInDate)}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-black mb-2">Check-out</h3>
+                        <p className="text-gray-800">{formatDate(selectedBooking.checkOutDate)}</p>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Emergency Contacts */}
-                  {selectedBooking.emergencyContacts && selectedBooking.emergencyContacts.length > 0 && (
+                    {/* Payment Information */}
                     <div>
-                      <h3 className="font-medium text-black mb-3">Emergency Contacts</h3>
+                      <h3 className="font-medium text-black mb-3">Payment Information</h3>
                       <hr className="border-t border-gray-200 mb-4" />
-                      <div className="space-y-2">
-                        {selectedBooking.emergencyContacts.map((contact, index) => (
-                          <div key={index} className="text-sm">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                              <div>
-                                <span className="text-gray-666">Name:</span>
-                                <p className="font-medium text-black">{contact.name}</p>
-                              </div>
-                              <div>
-                                <span className="text-gray-666">Relationship:</span>
-                                <p className="font-medium text-black">{contact.relationship}</p>
-                              </div>
-                              <div>
-                                <span className="text-gray-666">Phone:</span>
-                                <p className="font-medium text-black">{contact.phone}</p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-800">Total Amount:</span>
+                          <span className="font-medium text-black">{formatPrice(selectedBooking.totalAmount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-800">Amount Paid:</span>
+                          <span className="font-medium text-black">{formatPrice(selectedBooking.amountPaid)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-800">Amount Due:</span>
+                          <span className="font-medium text-black">{formatPrice(selectedBooking.amountDue)}</span>
+                        </div>
+                        {selectedBooking.paymentDueDate && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-800">Payment Due:</span>
+                            <span className="font-medium text-black">{formatDate(selectedBooking.paymentDueDate)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Special Requests */}
+                    {selectedBooking.specialRequests && (
+                      <div>
+                        <h3 className="font-medium text-black mb-3">Special Requests</h3>
+                        <hr className="border-t border-gray-200 mb-4" />
+                        <p className="text-gray-800 text-sm">{selectedBooking.specialRequests}</p>
+                      </div>
+                    )}
+
+                    {/* Emergency Contacts */}
+                    {selectedBooking.emergencyContacts && selectedBooking.emergencyContacts.length > 0 && (
+                      <div>
+                        <h3 className="font-medium text-black mb-3">Emergency Contacts</h3>
+                        <hr className="border-t border-gray-200 mb-4" />
+                        <div className="space-y-2">
+                          {selectedBooking.emergencyContacts.map((contact, index) => (
+                            <div key={index} className="text-sm">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div>
+                                  <span className="text-gray-800">Name:</span>
+                                  <p className="font-medium text-black">{contact.name}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-800">Relationship:</span>
+                                  <p className="font-medium text-black">{contact.relationship}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-800">Phone:</span>
+                                  <p className="font-medium text-black">{contact.phone}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4">
-                    {selectedBooking.status === BookingStatus.CONFIRMED && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        onClick={() => setShowCancelModal(true)}
-                        className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800"
-                        aria-label="Cancel booking"
-                      >
-                        Cancel Booking
-                      </motion.button>
                     )}
-                    {selectedBooking.status === BookingStatus.CHECKED_IN && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        onClick={() => setShowExtendModal(true)}
-                        className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800"
-                        aria-label="Extend booking"
-                      >
-                        Extend Stay
-                      </motion.button>
-                    )}
-                    <Link
-                      href={`/dashboard/hostels/${selectedBooking.hostelId}`}
-                      className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800 text-center"
-                      aria-label="View hostel details"
-                    >
-                      View Hostel
-                    </Link>
                   </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-6">
+                    {/* Contact Details */}
+                    <ContactDetailsSection hostel={selectedBooking.hostel} />
+
+                    {/* Payment Details */}
+                    <PaymentDetailsSection hostel={selectedBooking.hostel} />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-6 border-t border-gray-200 mt-6">
+                  {selectedBooking.status === BookingStatus.CONFIRMED && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => setShowCancelModal(true)}
+                      className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800"
+                      aria-label="Cancel booking"
+                    >
+                      Cancel Booking
+                    </motion.button>
+                  )}
+                  {selectedBooking.status === BookingStatus.CHECKED_IN && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => setShowExtendModal(true)}
+                      className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800"
+                      aria-label="Extend booking"
+                    >
+                      Extend Stay
+                    </motion.button>
+                  )}
+                  <Link
+                    href={`/dashboard/hostels/${selectedBooking.hostelId}`}
+                    className="flex-1 bg-black text-white py-2 px-4 font-medium hover:bg-gray-800 text-center"
+                    aria-label="View hostel details"
+                  >
+                    View Hostel
+                  </Link>
                 </div>
               </div>
             </motion.div>
@@ -554,93 +755,25 @@ export default function UserBookingsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-black">My Bookings</h1>
-          <p className="text-gray-666 mt-2">Manage your hostel reservations</p>
-        </div>
-
-        {/* Filters */}
-        <div className="mb-8">
-          <h2 className="text-lg font-medium text-black mb-4">Filter Bookings</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as BookingStatus | 'all' }))}
-                className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                aria-label="Filter by booking status"
-              >
-                <option value="all">All Statuses</option>
-                <option value={BookingStatus.PENDING}>Pending</option>
-                <option value={BookingStatus.CONFIRMED}>Confirmed</option>
-                <option value={BookingStatus.CHECKED_IN}>Checked In</option>
-                <option value={BookingStatus.CHECKED_OUT}>Checked Out</option>
-                <option value={BookingStatus.CANCELLED}>Cancelled</option>
-                <option value={BookingStatus.NO_SHOW}>No Show</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">Payment Status</label>
-              <select
-                value={filters.paymentStatus}
-                onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value as PaymentStatus | 'all' }))}
-                className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                aria-label="Filter by payment status"
-              >
-                <option value="all">All Payment Status</option>
-                <option value={PaymentStatus.PENDING}>Pending</option>
-                <option value={PaymentStatus.PARTIAL}>Partial</option>
-                <option value={PaymentStatus.PAID}>Paid</option>
-                <option value={PaymentStatus.OVERDUE}>Overdue</option>
-                <option value={PaymentStatus.REFUNDED}>Refunded</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">Booking Type</label>
-              <select
-                value={filters.bookingType}
-                onChange={(e) => setFilters(prev => ({ ...prev, bookingType: e.target.value as BookingType | 'all' }))}
-                className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                aria-label="Filter by booking type"
-              >
-                <option value="all">All Types</option>
-                <option value={BookingType.SEMESTER}>Semester</option>
-                <option value={BookingType.MONTHLY}>Monthly</option>
-                <option value={BookingType.WEEKLY}>Weekly</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                placeholder="Search hostel or room..."
-                className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
-                aria-label="Search bookings by hostel or room"
-              />
-            </div>
-          </div>
+          <p className="text-gray-800 mt-2">Manage your hostel reservations</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="p-4">
+          <div className="p-4 bg-gray-50 rounded">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm text-gray-666">Total Bookings</p>
+                <p className="text-sm text-gray-800">Total Bookings</p>
                 <p className="text-2xl font-bold text-black">{bookings.length}</p>
               </div>
               <FaHome className="text-black text-2xl" />
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-4 bg-gray-50 rounded">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm text-gray-666">Active Bookings</p>
+                <p className="text-sm text-gray-800">Active Bookings</p>
                 <p className="text-2xl font-bold text-black">
                   {bookings.filter(b => [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN].includes(b.status)).length}
                 </p>
@@ -649,10 +782,10 @@ export default function UserBookingsPage() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-4 bg-gray-50 rounded">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm text-gray-666">Pending Payment</p>
+                <p className="text-sm text-gray-800">Pending Payment</p>
                 <p className="text-2xl font-bold text-black">
                   {bookings.filter(b => [PaymentStatus.PENDING, PaymentStatus.OVERDUE].includes(b.paymentStatus)).length}
                 </p>
@@ -661,10 +794,10 @@ export default function UserBookingsPage() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-4 bg-gray-50 rounded">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm text-gray-666">Total Spent</p>
+                <p className="text-sm text-gray-800">Total Spent</p>
                 <p className="text-2xl font-bold text-black">
                   {formatPrice(bookings.reduce((sum, b) => sum + b.amountPaid, 0))}
                 </p>
@@ -675,31 +808,27 @@ export default function UserBookingsPage() {
         </div>
 
         {/* Bookings List */}
-        {filteredBookings.length === 0 ? (
+        {bookings.length === 0 ? (
           <div className="text-center py-16">
-            <FaHome className="mx-auto text-4xl text-gray-666 mb-4" />
+            <FaHome className="mx-auto text-4xl text-gray-800 mb-4" />
             <h3 className="text-xl font-medium text-black mb-2">No Bookings Found</h3>
-            <p className="text-gray-666 mb-6">
-              {bookings.length === 0 ? "You haven't made any bookings yet." : 'No bookings match your current filters.'}
-            </p>
-            {bookings.length === 0 && (
-              <Link
-                href="/dashboard/hostels"
-                className="inline-flex items-center bg-black text-white px-6 py-3 font-medium hover:bg-gray-800"
-                aria-label="Find hostels"
-              >
-                Find Hostels
-              </Link>
-            )}
+            <p className="text-gray-800 mb-6">You haven't made any bookings yet.</p>
+            <Link
+              href="/dashboard/hostels"
+              className="inline-flex items-center bg-black text-white px-6 py-3 font-medium hover:bg-gray-800"
+              aria-label="Find hostels"
+            >
+              Find Hostels
+            </Link>
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredBookings.map((booking) => (
+            {bookings.map((booking) => (
               <motion.div
                 key={booking.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-6 hover:bg-gray-100 transition-colors"
+                className="p-6 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
               >
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex-1 mb-4 lg:mb-0">
@@ -717,7 +846,7 @@ export default function UserBookingsPage() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-666">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-800">
                       <div className="flex items-center">
                         <FaHome className="mr-2" />
                         <span>Room {booking.room?.roomNumber || 'N/A'}</span>
@@ -736,7 +865,7 @@ export default function UserBookingsPage() {
 
                     <div className="mt-3">
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-666">Payment Progress</span>
+                        <span className="text-gray-800">Payment Progress</span>
                         <span className="font-medium text-black">
                           {formatPrice(booking.amountPaid)} / {formatPrice(booking.totalAmount)}
                         </span>
@@ -797,13 +926,13 @@ export default function UserBookingsPage() {
         )}
 
         {/* Quick Actions */}
-        {filteredBookings.length > 0 && (
+        {bookings.length > 0 && (
           <div className="mt-8">
             <h2 className="text-lg font-medium text-black mb-4">Quick Actions</h2>
             <hr className="border-t border-gray-200 mb-4" />
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/dashboard/hostels"
+                href="/dashboard"
                 className="bg-black text-white px-4 py-2 font-medium hover:bg-gray-800"
                 aria-label="Book another room"
               >
@@ -811,38 +940,8 @@ export default function UserBookingsPage() {
               </Link>
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                onClick={() =>
-                  setFilters({
-                    status: BookingStatus.CHECKED_IN,
-                    paymentStatus: 'all',
-                    bookingType: 'all',
-                    search: '',
-                  })
-                }
-                className="px-4 py-2 text-black border-b border-gray-200 hover:bg-gray-100"
-                aria-label="View active stays"
-              >
-                View Active Stays
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() =>
-                  setFilters({
-                    status: 'all',
-                    paymentStatus: PaymentStatus.OVERDUE,
-                    bookingType: 'all',
-                    search: '',
-                  })
-                }
-                className="px-4 py-2 text-black border-b border-gray-200 hover:bg-gray-100"
-                aria-label="View overdue payments"
-              >
-                View Overdue Payments
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
                 onClick={fetchUserBookings}
-                className="px-4 py-2 text-black border-b border-gray-200 hover:bg-gray-100"
+                className="px-4 py-2 text-black border border-gray-200 hover:bg-gray-100"
                 aria-label="Refresh bookings"
               >
                 Refresh

@@ -19,7 +19,7 @@ interface BookingStats {
 }
 
 interface BookingStatsCardsProps {
-  stats: BookingStats;
+  stats: BookingStats | null | undefined;
   loading: boolean;
 }
 
@@ -35,60 +35,97 @@ interface StatCard {
   subtitle?: string;
 }
 
+// Default stats for when data is unavailable
+const getDefaultStats = (): BookingStats => ({
+  total: 0,
+  pending: 0,
+  confirmed: 0,
+  checkedIn: 0,
+  checkedOut: 0,
+  cancelled: 0,
+  totalRevenue: 0,
+  paidRevenue: 0,
+  pendingRevenue: 0,
+  occupancyRate: 0
+});
+
 const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading }) => {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('BookingStatsCards received stats:', stats);
+    console.log('BookingStatsCards loading:', loading);
+  }, [stats, loading]);
+
+  // Safety check and default values
+  const safeStats = stats || getDefaultStats();
+  
+  // If stats is still invalid, show error state
+  if (!loading && !stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="col-span-full bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+            <p className="text-yellow-800">Unable to load booking statistics. Please refresh the page.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const statCards: StatCard[] = [
     {
       title: 'Total Bookings',
-      value: stats.total,
+      value: safeStats.total || 0,
       icon: <Users className="h-6 w-6" />,
       color: 'blue',
       subtitle: 'All time bookings'
     },
     {
       title: 'Pending',
-      value: stats.pending,
+      value: safeStats.pending || 0,
       icon: <Clock className="h-6 w-6" />,
       color: 'yellow',
       subtitle: 'Awaiting confirmation'
     },
     {
       title: 'Active (Checked In)',
-      value: stats.checkedIn,
+      value: safeStats.checkedIn || 0,
       icon: <CheckCircle className="h-6 w-6" />,
       color: 'green',
       subtitle: 'Currently staying'
     },
     {
       title: 'Completed',
-      value: stats.checkedOut,
+      value: safeStats.checkedOut || 0,
       icon: <CheckCircle className="h-6 w-6" />,
       color: 'indigo',
       subtitle: 'Successfully completed'
     },
     {
       title: 'Total Revenue',
-      value: formatCurrency(stats.totalRevenue),
+      value: formatCurrency(safeStats.totalRevenue || 0),
       icon: <DollarSign className="h-6 w-6" />,
       color: 'green',
       subtitle: 'All bookings combined'
     },
     {
       title: 'Collected',
-      value: formatCurrency(stats.paidRevenue),
+      value: formatCurrency(safeStats.paidRevenue || 0),
       icon: <CreditCard className="h-6 w-6" />,
       color: 'blue',
       subtitle: 'Successfully collected'
     },
     {
       title: 'Outstanding',
-      value: formatCurrency(stats.pendingRevenue),
+      value: formatCurrency(safeStats.pendingRevenue || 0),
       icon: <AlertTriangle className="h-6 w-6" />,
       color: 'red',
       subtitle: 'Pending payments'
     },
     {
       title: 'Occupancy Rate',
-      value: `${stats.occupancyRate.toFixed(1)}%`,
+      value: `${(safeStats.occupancyRate || 0).toFixed(1)}%`,
       icon: <TrendingUp className="h-6 w-6" />,
       color: 'purple',
       subtitle: 'Current occupancy'
@@ -196,8 +233,8 @@ const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading })
                 <div className="flex justify-between text-xs text-gray-600">
                   <span>Collection Rate</span>
                   <span className="font-medium">
-                    {stats.totalRevenue > 0 
-                      ? ((stats.paidRevenue / stats.totalRevenue) * 100).toFixed(1)
+                    {safeStats.totalRevenue > 0 
+                      ? ((safeStats.paidRevenue / safeStats.totalRevenue) * 100).toFixed(1)
                       : 0
                     }%
                   </span>
@@ -206,19 +243,19 @@ const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading })
             )}
 
             {/* Additional context for occupancy */}
-            {card.title === 'Occupancy Rate' && stats.occupancyRate > 0 && (
+            {card.title === 'Occupancy Rate' && safeStats.occupancyRate > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <div className={`w-full bg-gray-200 rounded-full h-2`}>
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${colors.bg}`}
-                    style={{ width: `${Math.min(stats.occupancyRate, 100)}%` }}
+                    style={{ width: `${Math.min(safeStats.occupancyRate, 100)}%` }}
                   ></div>
                 </div>
               </div>
             )}
 
             {/* Quick actions for certain cards */}
-            {(card.title === 'Pending' && stats.pending > 0) && (
+            {(card.title === 'Pending' && safeStats.pending > 0) && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                   Review Pending →
@@ -226,7 +263,7 @@ const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading })
               </div>
             )}
 
-            {(card.title === 'Outstanding' && stats.pendingRevenue > 0) && (
+            {(card.title === 'Outstanding' && safeStats.pendingRevenue > 0) && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <button className="text-xs text-red-600 hover:text-red-700 font-medium">
                   Follow Up →

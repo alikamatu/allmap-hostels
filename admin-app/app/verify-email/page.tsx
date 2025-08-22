@@ -61,7 +61,7 @@ function VerifyEmailContent() {
 
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify/${token}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -220,7 +220,7 @@ function VerifyEmailContent() {
           <div className="flex flex-col gap-3">
             {verification.status === 'success' && (
               <motion.button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/')}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"

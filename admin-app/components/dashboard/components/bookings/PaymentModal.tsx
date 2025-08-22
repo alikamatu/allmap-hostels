@@ -317,6 +317,7 @@ const validateForm = (): boolean => {
               type="text"
               id="transactionRef"
               value={formData.transactionRef}
+              required
               onChange={(e) => {
                 setFormData(prev => ({ 
                   ...prev, 

@@ -110,6 +110,7 @@ export default function HomePage() {
             coords,
             lowestPrice,
             highestPrice,
+            base_price: hostel.base_price,
             distance,
           };
         });
@@ -232,7 +233,7 @@ export default function HomePage() {
                 className="h-[400px] sm:h-[600px] flex items-center justify-center"
               >
                 <FaSpinner className="animate-spin text-black h-6 w-6 mr-2" />
-                <span className="text-gray-666">Loading hostels...</span>
+                <span className="text-gray-800">Loading hostels...</span>
               </motion.div>
             )}
 
@@ -259,7 +260,7 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.3 }}
-                    className="mb-4 text-base text-gray-666"
+                    className="mb-4 text-base text-gray-800"
                   >
                     {filterSummary()}
                   </motion.div>
@@ -274,7 +275,7 @@ export default function HomePage() {
                         className="text-center py-12"
                       >
                         <p className="text-black text-lg mb-2">No hostels match your filters.</p>
-                        <p className="text-gray-666">Try adjusting or resetting the filters to see more options.</p>
+                        <p className="text-gray-800">Try adjusting or resetting the filters to see more options.</p>
                         <button
                           onClick={handleResetFilters}
                           className="mt-4 text-black hover:underline"

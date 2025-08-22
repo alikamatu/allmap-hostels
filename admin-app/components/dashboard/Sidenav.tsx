@@ -24,7 +24,7 @@ const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Manage Hostels', href: '/dashboard/manage-hostels', icon: Building },
   { name: 'Manage Rooms', href: '/dashboard/manage-room', icon: Bed },
-  { name: 'Bookings Calendar', href: '/dashboard/booking-management', icon: Calendar },
+  { name: 'Manage Bookings', href: '/dashboard/booking-management', icon: Calendar },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
