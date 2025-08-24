@@ -26,18 +26,18 @@ export default function HelpPage() {
         {
           id: 'book-1',
           question: 'How do I book a hostel room?',
-          answer: 'To book a hostel room, navigate to the hostel listing page, select your preferred hostel, choose a room type, and click "Book Now". You\'ll need to provide your personal details, select check-in/check-out dates, and add emergency contacts.',
+          answer: 'To book a hostel room, navigate to the hostel listing page, select your preferred hostel, choose a room type, and click "Book Now". You\&apos;ll need to provide your personal details, select check-in/check-out dates, and add emergency contacts.',
           category: 'Booking Process'
         },
         {
           id: 'book-2',
           question: 'Can I extend my booking?',
-          answer: 'Yes, you can extend your booking if you\'re already checked in. Go to your bookings, select the active booking, and click "Extend Stay". You\'ll need to select a new check-out date.'
+          answer: 'Yes, you can extend your booking if you\&apos;re already checked in. Go to your bookings, select the active booking, and click "Extend Stay". You\&apos;ll need to select a new check-out date.'
         },
         {
           id: 'book-3',
           question: 'What happens if a hostel is not accepting bookings?',
-          answer: 'If a hostel is marked as "Not Accepting Bookings", you won\'t be able to book any rooms there. This typically happens when the hostel is fully booked, under maintenance, or closed for the season.'
+          answer: 'If a hostel is marked as "Not Accepting Bookings", you won\&apos;t be able to book any rooms there. This typically happens when the hostel is fully booked, under maintenance, or closed for the season.'
         },
         {
           id: 'book-4',
@@ -91,7 +91,7 @@ export default function HelpPage() {
         {
           id: 'acc-3',
           question: 'Can I cancel my account?',
-          answer: 'To cancel your account, please contact support. Note that cancelling your account may also cancel any active bookings, subject to the hostel\'s cancellation policy.'
+          answer: 'To cancel your account, please contact support. Note that cancelling your account may also cancel any active bookings, subject to the hostel\&apos;s cancellation policy.'
         }
       ]
     },
@@ -130,7 +130,7 @@ export default function HelpPage() {
         {
           id: 'can-2',
           question: 'What is the cancellation policy?',
-          answer: 'Cancellation policies vary by hostel. Some may offer full refunds if cancelled well in advance, while others may have stricter policies. Check the specific hostel\'s policy before booking.'
+          answer: 'Cancellation policies vary by hostel. Some may offer full refunds if cancelled well in advance, while others may have stricter policies. Check the specific hostel&apos;s policy before booking.'
         },
         {
           id: 'can-3',
