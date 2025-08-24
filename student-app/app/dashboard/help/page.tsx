@@ -224,7 +224,7 @@ export default function HelpPage() {
               <div className="mt-8 p-6 bg-gray-100 rounded-lg">
                 <h3 className="font-bold text-black mb-3">Still need help?</h3>
                 <p className="text-gray-800 text-sm mb-4">
-                  Can't find what you're looking for? Contact our support team for assistance.
+                  Can&apos;t find what you&apos;re looking for? Contact our support team for assistance.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center">
@@ -250,7 +250,7 @@ export default function HelpPage() {
             {searchTerm ? (
               <>
                 <h2 className="text-2xl font-bold text-black mb-6">
-                  Search Results for "{searchTerm}"
+                  Search Results for {searchTerm}
                 </h2>
                 {filteredQuestions.length > 0 ? (
                   <div className="space-y-4">
@@ -285,7 +285,7 @@ export default function HelpPage() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-gray-800">No results found for "{searchTerm}"</p>
+                    <p className="text-gray-800">No results found for {searchTerm}</p>
                     <p className="text-gray-800 mt-2">Try different keywords or browse the categories</p>
                   </div>
                 )}
