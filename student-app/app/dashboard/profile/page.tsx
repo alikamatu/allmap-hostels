@@ -108,12 +108,20 @@ const fetchProfile = async () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center ">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-black mx-auto"></div>
-          <p className="mt-4  text-sm">Loading your profile...</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-[400px] sm:h-[600px] flex items-center justify-center"
+    >
+      <div className="relative flex w-64 animate-pulse gap-2 p-4">
+        <div className="h-12 w-12 rounded-full bg-slate-400"></div>
+        <div className="flex-1">
+          <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
+          <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
         </div>
+        <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
       </div>
+    </motion.div>
     );
   }
 
@@ -148,7 +156,7 @@ const fetchProfile = async () => {
   }
 
   return (
-    <div className="min-h-screen  py-12 px-6 font-sans">
+    <div className="min-h-screen  py-12 px-6 font-sans text-gray-900">
       <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -168,11 +176,11 @@ const fetchProfile = async () => {
                   <FiUser className="h-6 w-6 " />
                   <div>
                     <h2 className="text-2xl font-bold ">{profile.name || 'User'}</h2>
-                    <p className="text-base text-gray-333">{profile.email}</p>
+                    <p className="text-base text-gray-800">{profile.email}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <FiShield className="h-4 w-4 " />
-                    <span className="text-sm text-gray-333 capitalize">{profile.role.replace('_', ' ')}</span>
+                    <span className="text-sm text-gray-800 capitalize">{profile.role.replace('_', ' ')}</span>
                   </div>
                 </div>
               </div>
@@ -229,7 +237,7 @@ const fetchProfile = async () => {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h4 className="text-xl font-bold  mb-2">{profile.school.name}</h4>
-                        <div className="flex items-center text-gray-333 mb-3">
+                        <div className="flex items-center text-gray-800 mb-3">
                           <FiGlobe className="h-4 w-4  mr-2" />
                           <span className="text-sm">{profile.school.domain}</span>
                         </div>
@@ -237,12 +245,12 @@ const fetchProfile = async () => {
                       <span className="text-sm ">Connected</span>
                     </div>
                     <div className=" text-sm mb-4">School Campus View (Not Available)</div>
-                    {profile.school.location && (
-                      <p className="text-sm text-gray-333 flex items-center">
-                        <FiMapPin className="h-4 w-4  mr-1" />
-                        {profile.school.location}
-                      </p>
-                    )}
+                    {/* <p className="text-sm text-gray-800 flex items-center">
+                      <FiMapPin className="h-4 w-4  mr-1" />
+                      {profile.school.location && typeof profile.school.location === 'object'
+                        ? JSON.stringify(profile.school.location)
+                        : profile.school.location}
+                    </p> */}
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}

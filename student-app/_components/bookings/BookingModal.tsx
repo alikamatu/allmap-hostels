@@ -405,9 +405,9 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mb-4 p-4 bg-white text-black flex items-center"
+                className="mb-4 p- bg-red-100 text-red-900 border-red-400 flex items-center"
               >
-                <FiAlertTriangle className="text-black mr-2" />
+                <FiAlertTriangle className="text-red-900 mr-2" />
                 <p className="text-sm">{bookingError}</p>
               </motion.div>
             )}
@@ -432,8 +432,8 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   </div>
                 )}
 
-                <div className="hidden grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className='hidden'>
                     <label className="block text-sm font-medium text-black mb-2">
                       <FaUser className="inline mr-2" />
                       Full Name *
@@ -458,8 +458,9 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       value={formData.checkOutDate}
                       onChange={(e) => handleInputChange('checkOutDate', e.target.value)}
                       min={formData.checkInDate}
-                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                      className="w-full px-3 py-2 border-b text-gray-900 border-gray-200 focus:border-black outline-none bg-white text-sm"
                       aria-label="Select check-out date"
+                      required
                     />
                     {errors.checkOutDate && <p className="text-black text-sm mt-1">{errors.checkOutDate}</p>}
                   </div>
@@ -470,7 +471,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <textarea
                     value={formData.specialRequests}
                     onChange={(e) => handleInputChange('specialRequests', e.target.value)}
-                    className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                    className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-gray-900 text-sm"
                     rows={3}
                     placeholder="Any special requirements or requests..."
                     aria-label="Enter special requests"

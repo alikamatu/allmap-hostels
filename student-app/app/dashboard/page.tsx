@@ -16,10 +16,20 @@ import { FaSpinner } from 'react-icons/fa';
 const MapView = dynamic(() => import('@/_components/hostels/MapView'), {
   ssr: false,
   loading: () => (
-    <div className="h-[400px] sm:h-[600px] bg-white flex items-center justify-center">
-      <FaSpinner className="animate-spin text-black h-6 w-6 mr-2" />
-      <span className="text-black">Loading map...</span>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-[400px] sm:h-[600px] flex items-center justify-center"
+    >
+      <div className="relative flex w-64 animate-pulse gap-2 p-4">
+        <div className="h-12 w-12 rounded-full bg-slate-400"></div>
+        <div className="flex-1">
+          <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
+          <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
+        </div>
+        <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
+      </div>
+    </motion.div>
   ),
 });
 
@@ -234,8 +244,14 @@ export default function HostelsPage() {
                 animate={{ opacity: 1 }}
                 className="h-[400px] sm:h-[600px] flex items-center justify-center"
               >
-                <FaSpinner className="animate-spin text-black h-6 w-6 mr-2" />
-                <span className="text-gray-800">Loading hostels...</span>
+                <div className="relative flex w-64 animate-pulse gap-2 p-4">
+                  <div className="h-12 w-12 rounded-full bg-slate-400"></div>
+                  <div className="flex-1">
+                    <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
+                    <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
+                  </div>
+                  <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
+                </div>
               </motion.div>
             )}
 

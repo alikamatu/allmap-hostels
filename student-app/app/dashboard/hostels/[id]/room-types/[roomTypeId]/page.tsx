@@ -141,12 +141,20 @@ export default function RoomDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-          <span className="mt-4 text-gray-600">Loading room details...</span>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="h-[400px] sm:h-[600px] flex items-center justify-center"
+      >
+        <div className="relative flex w-64 animate-pulse gap-2 p-4">
+          <div className="h-12 w-12 rounded-full bg-slate-400"></div>
+          <div className="flex-1">
+            <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
+            <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
+          </div>
+          <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 

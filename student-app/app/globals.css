@@ -149,7 +149,8 @@
 }
 
 body {
-  background: var(--background);
+  background: white;
+  color: black;
   color: var(--icon);
   font-family: var(--font-inter);
 }
