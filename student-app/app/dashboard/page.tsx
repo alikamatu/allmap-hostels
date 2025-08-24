@@ -87,7 +87,7 @@ export default function HostelsPage() {
       setError(null);
       try {
         const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/all`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

@@ -1,818 +1,406 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Star, 
-  MessageSquare, 
-  ThumbsUp, 
-  Calendar, 
-  User, 
-  Filter, 
-  Eye, 
-  EyeOff, 
-  Edit3, 
-  Flag, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  AlertTriangle,
-  Send,
-  X,
-  Search,
-  ChevronDown,
-  MoreVertical,
+import { MessageCircle } from "lucide-react";
+import { useState, useEffect, JSX } from "react";
+import RatingDistribution from "@/components/dashboard/components/review/RatingDistribution";
+import ReviewCard from "@/components/dashboard/components/review/ReviewCard";
+import ReviewFilters from "@/components/dashboard/components/review/ReviewFilters";
+import StatsCards from "@/components/dashboard/components/review/StatsCards";
+import ReviewResponseModal from "@/components/dashboard/components/review/ReviewResponseModal";
+import {
+  Review,
+  Hostel,
+  ReviewStats,
+  PaginationInfo,
+  ReviewFilterDto,
+  UseReviewsState
+} from "@/types/review";
+import reviewsAPI from "@/service/review";
 
-} from 'lucide-react';
-
-// Types based on your API
-interface DetailedRatings {
-  cleanliness?: number;
-  security?: number;
-  location?: number;
-  staff?: number;
-  facilities?: number;
-  valueForMoney?: number;
-}
-
-interface Review {
-  id: string;
-  hostelId: string;
-  bookingId: string;
-  studentId: string;
-  studentName: string;
-  rating: number;
-  reviewText: string;
-  detailedRatings: DetailedRatings;
-  status: 'pending' | 'approved' | 'rejected' | 'flagged';
-  helpfulCount: number;
-  images: string[];
-  adminNotes?: string;
-  moderatedBy?: string;
-  moderatedAt?: string;
-  hostelResponse?: string;
-  hostelRespondedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  hostel?: any;
-  booking?: any;
-}
-
-interface ReviewStats {
-  totalReviews: number;
-  averageRating: number;
-  ratingDistribution: { [key: number]: number };
-  averageDetailedRatings: DetailedRatings;
-  totalHelpfulVotes: number;
-}
-
-interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-interface ReviewsResponse {
-  reviews: Review[];
-  pagination: PaginationInfo;
-}
-
-export default function ReviewsPage() {
-  // State management
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [stats, setStats] = useState<ReviewStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  
-  // Filters and pagination
-  const [filters, setFilters] = useState({
-    status: 'all',
-    minRating: '',
-    maxRating: '',
-    search: '',
-    page: 1,
-    limit: 10,
-    sortBy: 'createdAt',
-    sortOrder: 'DESC' as 'ASC' | 'DESC'
+export default function ReviewsPage(): JSX.Element {
+  const [state, setState] = useState<UseReviewsState>({
+    loading: true,
+    hostels: [],
+    reviews: [],
+    stats: {
+      totalReviews: 0,
+      averageRating: 0,
+      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      averageDetailedRatings: {},
+      totalHelpfulVotes: 0
+    },
+    selectedReview: null,
+    responseModalOpen: false,
+    responseLoading: false,
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 0,
+      totalPages: 0
+    },
+    filters: {
+      hostelId: '',
+      rating: undefined,
+      sortBy: 'createdAt',
+      sortOrder: 'DESC',
+      search: '',
+      page: 1,
+      limit: 10
+    }
   });
 
-  // Modal states
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
-  const [showResponseModal, setShowResponseModal] = useState(false);
-  const [responseText, setResponseText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    loadHostels();
+  }, []);
 
-  // Get user info and find their hostel
-  const fetchUserProfile = async () => {
+  useEffect(() => {
+    if (state.hostels.length > 0) {
+      loadReviews();
+    }
+  }, [state.filters, state.hostels]);
+
+  useEffect(() => {
+    if (state.filters.hostelId) {
+      loadStats();
+    } else if (state.hostels.length > 0) {
+      loadCombinedStats();
+    }
+  }, [state.filters.hostelId, state.hostels]);
+
+  const loadHostels = async (): Promise<void> => {
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      if (!token) {
-        setError('No authentication token found');
-        setLoading(false);
-        return;
-      }
+      const data = await reviewsAPI.getHostels();
+      setState(prev => ({
+        ...prev,
+        hostels: Array.isArray(data) ? data : [],
+        loading: false
+      }));
+    } catch (error) {
+      console.error('Failed to load hostels:', error);
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  };
 
-      // First, let's get the user profile to understand their role and ID
-      const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  const loadReviews = async (): Promise<void> => {
+    setState(prev => ({ ...prev, loading: true }));
+    try {
+      let allReviews: Review[] = [];
+      let allPagination: PaginationInfo = { 
+        page: state.filters.page || 1,
+        limit: state.filters.limit || 10,
+        total: 0, 
+        totalPages: 0 
+      };
 
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        console.log('User data:', userData);
+      if (state.filters.hostelId) {
+        const data = await reviewsAPI.getHostelReviews(state.filters.hostelId, state.filters);
+        allReviews = data.reviews || [];
+        allPagination = data.pagination || allPagination;
+      } else {
+        const results = await Promise.allSettled(
+          state.hostels.map(hostel => 
+            reviewsAPI.getHostelReviews(hostel.id, { 
+              ...state.filters, 
+              page: 1, 
+              limit: 1000 
+            })
+          )
+        );
 
-        // Now try to find hostels where this user is the admin
-        const hostelResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value.reviews) {
+            allReviews = [...allReviews, ...result.value.reviews];
           }
         });
 
-        if (hostelResponse.ok) {
-          const hostelsData = await hostelResponse.json();
-          console.log('Hostels data:', hostelsData);
-          
-          // If hostelsData is an array, find the hostel where the user is the admin
-          let userHostel = null;
-          if (Array.isArray(hostelsData)) {
-            userHostel = hostelsData.find(hostel => hostel.adminId === userData.id);
-          } else if (hostelsData.adminId === userData.id) {
-            // If it's a single hostel object
-            userHostel = hostelsData;
-          }
+        allReviews.sort((a, b) => {
+          const sortBy = state.filters.sortBy || 'createdAt';
+          const aVal = sortBy === 'createdAt' ? new Date(a[sortBy]).getTime() : a[sortBy];
+          const bVal = sortBy === 'createdAt' ? new Date(b[sortBy]).getTime() : b[sortBy];
+          return state.filters.sortOrder === 'ASC' ? 
+            (aVal as number) - (bVal as number) : 
+            (bVal as number) - (aVal as number);
+        });
 
-          if (userHostel) {
-            const finalUserData = { ...userData, hostelId: userHostel.id, hostel: userHostel };
-            console.log('Final user data with hostel:', finalUserData);
-            setUser(finalUserData);
-            return finalUserData;
-          } else {
-            // If no hostel found, try alternative approach - maybe the API returns hostels differently
-            // Let's try getting all reviews and see if we can infer the hostel
-            console.warn('No hostel found for admin ID:', userData.id);
-            setError('No hostel found for your account. Please ensure you are logged in as a hostel administrator.');
-            setLoading(false);
-            return;
-          }
-        } else {
-          console.error('Failed to fetch hostels:', hostelResponse.status, await hostelResponse.text());
-          throw new Error('Failed to fetch hostel information');
-        }
-      } else {
-        console.error('Failed to fetch user profile:', userResponse.status, await userResponse.text());
-        throw new Error('Failed to fetch user profile');
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError(`Failed to fetch user information: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setLoading(false);
-    }
-  };
-
-  // Alternative approach - try to get reviews for all hostels and let backend filter
-  const fetchAllReviews = async () => {
-    try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      if (!token) {
-        setError('No authentication token found');
-        setLoading(false);
-        return;
+        const page = state.filters.page || 1;
+        const limit = state.filters.limit || 10;
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedReviews = allReviews.slice(startIndex, endIndex);
+        
+        allPagination = {
+          page,
+          limit,
+          total: allReviews.length,
+          totalPages: Math.ceil(allReviews.length / limit)
+        };
+        
+        allReviews = paginatedReviews;
       }
 
-      console.log('Attempting to fetch all reviews...');
-      const queryParams = new URLSearchParams();
-      
-      // Don't specify hostelId - let the backend determine based on user
-      if (filters.status !== 'all') queryParams.append('status', filters.status);
-      if (filters.minRating) queryParams.append('minRating', filters.minRating);
-      if (filters.maxRating) queryParams.append('maxRating', filters.maxRating);
-      if (filters.search) queryParams.append('search', filters.search);
-      queryParams.append('page', filters.page.toString());
-      queryParams.append('limit', filters.limit.toString());
-      queryParams.append('sortBy', filters.sortBy);
-      queryParams.append('sortOrder', filters.sortOrder);
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      console.log('Reviews response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Reviews API error:', errorText);
-        throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`);
-      }
-
-      const data: ReviewsResponse = await response.json();
-      console.log('Reviews data:', data);
-      setReviews(data.reviews || []);
-
-      // If we got reviews, try to get the hostel ID from the first review
-      if (data.reviews && data.reviews.length > 0) {
-        const firstReview = data.reviews[0];
-        if (firstReview.hostelId) {
-          fetchStats(firstReview.hostelId);
-        }
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching reviews:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setLoading(false);
-    }
-  };
-
-  // API functions
-  const fetchReviews = async (hostelId: string) => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      
-      console.log('Fetching reviews for hostel:', hostelId);
-      const queryParams = new URLSearchParams();
-      
-      queryParams.append('hostelId', hostelId);
-      if (filters.status !== 'all') queryParams.append('status', filters.status);
-      if (filters.minRating) queryParams.append('minRating', filters.minRating);
-      if (filters.maxRating) queryParams.append('maxRating', filters.maxRating);
-      if (filters.search) queryParams.append('search', filters.search);
-      queryParams.append('page', filters.page.toString());
-      queryParams.append('limit', filters.limit.toString());
-      queryParams.append('sortBy', filters.sortBy);
-      queryParams.append('sortOrder', filters.sortOrder);
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      console.log('Reviews response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Reviews API error:', errorText);
-        throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`);
-      }
-
-      const data: ReviewsResponse = await response.json();
-      console.log('Reviews data:', data);
-      setReviews(data.reviews || []);
-    } catch (err) {
-      console.error('Error fetching reviews:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setState(prev => ({
+        ...prev,
+        reviews: allReviews,
+        pagination: allPagination
+      }));
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+      setState(prev => ({ ...prev, reviews: [] }));
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, loading: false }));
     }
   };
 
-  const fetchStats = async (hostelId: string) => {
+  const loadStats = async (): Promise<void> => {
+    if (!state.filters.hostelId) return;
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      console.log('Fetching stats for hostel:', hostelId);
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/hostel/${hostelId}/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      console.log('Stats response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Stats API error:', errorText);
-        // Don't throw error for stats, just log it
-        return;
-      }
-
-      const data: ReviewStats = await response.json();
-      console.log('Stats data:', data);
-      setStats(data);
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-      // Don't throw error for stats
+      const data = await reviewsAPI.getHostelReviewStats(state.filters.hostelId);
+      setState(prev => ({ ...prev, stats: data }));
+    } catch (error) {
+      console.error('Failed to load stats:', error);
     }
   };
 
-  const addResponse = async (reviewId: string, response: string) => {
+  const loadCombinedStats = async (): Promise<void> => {
     try {
-      setSubmitting(true);
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const results = await Promise.allSettled(
+        state.hostels.map(hostel => reviewsAPI.getHostelReviewStats(hostel.id))
+      );
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/${reviewId}/response`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ response })
-      });
+      const combinedStats = results
+        .filter((result): result is PromiseFulfilledResult<ReviewStats> => 
+          result.status === 'fulfilled'
+        )
+        .reduce((acc, result) => {
+          const stat = result.value;
+          return {
+            totalReviews: acc.totalReviews + stat.totalReviews,
+            totalHelpfulVotes: acc.totalHelpfulVotes + stat.totalHelpfulVotes,
+            averageRating: 0,
+            ratingDistribution: {
+              1: acc.ratingDistribution[1] + stat.ratingDistribution[1],
+              2: acc.ratingDistribution[2] + stat.ratingDistribution[2],
+              3: acc.ratingDistribution[3] + stat.ratingDistribution[3],
+              4: acc.ratingDistribution[4] + stat.ratingDistribution[4],
+              5: acc.ratingDistribution[5] + stat.ratingDistribution[5],
+            },
+            averageDetailedRatings: {}
+          };
+        }, {
+          totalReviews: 0,
+          totalHelpfulVotes: 0,
+          averageRating: 0,
+          ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+          averageDetailedRatings: {}
+        });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to add response: ${errorText}`);
-      }
-
-      const updatedReview: Review = await res.json();
+      const totalRatingPoints = Object.entries(combinedStats.ratingDistribution)
+        .reduce((sum, [rating, count]) => sum + (parseInt(rating) * count), 0);
       
-      // Update reviews list
-      setReviews(prev => prev.map(r => 
-        r.id === reviewId ? updatedReview : r
-      ));
+      combinedStats.averageRating = combinedStats.totalReviews > 0 
+        ? Math.round((totalRatingPoints / combinedStats.totalReviews) * 10) / 10
+        : 0;
 
-      setShowResponseModal(false);
-      setResponseText('');
-      setSelectedReview(null);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add response');
+      setState(prev => ({ ...prev, stats: combinedStats }));
+    } catch (error) {
+      console.error('Failed to load combined stats:', error);
+    }
+  };
+
+  const handleRespond = (review: Review): void => {
+    setState(prev => ({
+      ...prev,
+      selectedReview: review,
+      responseModalOpen: true
+    }));
+  };
+
+  const handleSubmitResponse = async (response: string): Promise<void> => {
+    if (!state.selectedReview) return;
+    setState(prev => ({ ...prev, responseLoading: true }));
+    try {
+      await reviewsAPI.addHostelResponse(state.selectedReview.id, response);
+      setState(prev => ({
+        ...prev,
+        responseModalOpen: false,
+        selectedReview: null
+      }));
+      loadReviews();
+    } catch (error) {
+      console.error('Failed to submit response:', error);
+      alert('Failed to submit response. Please try again.');
     } finally {
-      setSubmitting(false);
+      setState(prev => ({ ...prev, responseLoading: false }));
     }
   };
 
-  // Load data on component mount
-  useEffect(() => {
-    const initializeData = async () => {
-      console.log('Initializing data...');
-      
-      // Try the user profile approach first
-      const userData = await fetchUserProfile();
-      
-      if (userData && userData.hostelId) {
-        console.log('User data loaded, fetching reviews...');
-        await Promise.all([
-          fetchReviews(userData.hostelId),
-          fetchStats(userData.hostelId)
-        ]);
-      } else {
-        // Fallback - try to fetch all reviews
-        console.log('No user hostel found, trying alternative approach...');
-        await fetchAllReviews();
-      }
-    };
-
-    initializeData();
-  }, []);
-
-  // Refetch when filters change
-  useEffect(() => {
-    if (user && user.hostelId) {
-      console.log('Filters changed, refetching reviews...');
-      fetchReviews(user.hostelId);
-    }
-  }, [filters, user]);
-
-  // Helper functions
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'text-green-600 bg-green-50';
-      case 'pending': return 'text-yellow-600 bg-yellow-50';
-      case 'rejected': return 'text-red-600 bg-red-50';
-      case 'flagged': return 'text-orange-600 bg-orange-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
+  const handleFiltersChange = (newFilters: ReviewFilterDto): void => {
+    setState(prev => ({
+      ...prev,
+      filters: { ...newFilters, page: 1 }
+    }));
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'rejected': return <XCircle className="w-4 h-4" />;
-      case 'flagged': return <AlertTriangle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
+  const handlePageChange = (newPage: number): void => {
+    setState(prev => ({
+      ...prev,
+      filters: { ...prev.filters, page: newPage }
+    }));
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleCloseModal = (): void => {
+    setState(prev => ({
+      ...prev,
+      responseModalOpen: false,
+      selectedReview: null
+    }));
   };
-
-  const renderStars = (rating: number, size: 'sm' | 'md' = 'sm') => {
-    const starSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-    return (
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`${starSize} ${
-              star <= rating
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
-            }`}
-          />
-        ))}
-        <span className="ml-1 text-sm font-medium">{rating.toFixed(1)}</span>
-      </div>
-    );
-  };
-
-  if (loading && reviews.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-48"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <AlertTriangle className="h-5 w-5 text-red-400" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
-              <div className="mt-3 space-x-2">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
-                >
-                  Reload Page
-                </button>
-                <button
-                  onClick={() => {
-                    setError(null);
-                    setLoading(true);
-                    fetchUserProfile();
-                  }}
-                  className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reviews Management</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Clock className="w-4 h-4" />
-          Last updated: {new Date().toLocaleTimeString()}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">Reviews Management</h1>
+        <p className="text-gray-500 text-sm max-w-2xl">
+          Monitor and respond to guest reviews to maintain excellent service and reputation across your hostels.
+        </p>
+      </div>
+
+      <StatsCards stats={state.stats} loading={state.loading && state.hostels.length === 0} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <div className="lg:col-span-2">
+          <ReviewFilters
+            filters={state.filters}
+            onFiltersChange={handleFiltersChange}
+            hostels={state.hostels}
+          />
+        </div>
+        <div>
+          <RatingDistribution 
+            distribution={state.stats.ratingDistribution} 
+            loading={state.loading && state.hostels.length === 0} 
+          />
         </div>
       </div>
 
-      {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-50 border rounded-lg p-3 text-xs">
-          <p><strong>Debug Info:</strong></p>
-          <p>User: {user ? 'Loaded' : 'Not loaded'}</p>
-          <p>User Hostel ID: {user?.hostelId || 'None'}</p>
-          <p>Reviews Count: {reviews.length}</p>
-          <p>Loading: {loading.toString()}</p>
-          <p>Error: {error || 'None'}</p>
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Reviews</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalReviews}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-50 rounded-lg">
-                <Star className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Clock className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Reviews</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reviews.filter(r => r.status === 'pending').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <ThumbsUp className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Helpful Votes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalHelpfulVotes}</p>
-              </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Reviews ({state.pagination.total || 0})
+            </h2>
+            <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+              {state.filters.hostelId ? 
+                state.hostels.find(h => h.id === state.filters.hostelId)?.name || 'Selected Hostel' :
+                'All Hostels'
+              }
             </div>
           </div>
         </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="flagged">Flagged</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
-            <select
-              value={filters.minRating}
-              onChange={(e) => setFilters(prev => ({ ...prev, minRating: e.target.value, page: 1 }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Any</option>
-              <option value="1">1+</option>
-              <option value="2">2+</option>
-              <option value="3">3+</option>
-              <option value="4">4+</option>
-              <option value="5">5</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-            <select
-              value={filters.sortBy}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value, page: 1 }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="createdAt">Date</option>
-              <option value="rating">Rating</option>
-              <option value="helpfulCount">Helpful Votes</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-            <select
-              value={filters.sortOrder}
-              onChange={(e) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as 'ASC' | 'DESC', page: 1 }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="DESC">Newest First</option>
-              <option value="ASC">Oldest First</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search reviews..."
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm"
-              />
+        
+        <div className="divide-y divide-gray-100">
+          {state.loading ? (
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-3 text-gray-500 font-medium">Loading reviews...</p>
             </div>
-          </div>
+          ) : state.reviews.length === 0 ? (
+            <div className="p-12 text-center">
+              <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">No reviews found</p>
+              <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto">
+                Guest reviews will appear here once they start submitting feedback for your hostels.
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              {state.reviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onRespond={handleRespond}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Reviews List */}
-      <div className="space-y-4">
-        {reviews.map((review) => (
-          <div key={review.id} className="bg-white rounded-lg shadow border p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-medium text-gray-900">{review.studentName}</h3>
-                    {renderStars(review.rating)}
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(review.status)}`}>
-                      {getStatusIcon(review.status)}
-                      {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-700 mb-3">{review.reviewText}</p>
-
-                  {/* Detailed Ratings */}
-                  {review.detailedRatings && Object.keys(review.detailedRatings).length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Detailed Ratings:</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                        {Object.entries(review.detailedRatings).map(([key, value]) => (
-                          value && (
-                            <div key={key} className="flex justify-between">
-                              <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                              <span className="font-medium">{value}/5</span>
-                            </div>
-                          )
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Images */}
-                  {review.images && review.images.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Images:</p>
-                      <div className="flex gap-2">
-                        {review.images.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`Review image ${index + 1}`}
-                            className="w-16 h-16 object-cover rounded border"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Hostel Response */}
-                  {review.hostelResponse && (
-                    <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Your Response</span>
-                        <span className="text-xs text-blue-600">
-                          {formatDate(review.hostelRespondedAt!)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-blue-700">{review.hostelResponse}</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(review.createdAt)}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <ThumbsUp className="w-4 h-4" />
-                      {review.helpfulCount} helpful votes
-                    </div>
-                  </div>
-                </div>
+        
+        {state.pagination.totalPages > 1 && (
+          <div className="p-6 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((state.pagination.page - 1) * state.pagination.limit) + 1} to{' '}
+                {Math.min(state.pagination.page * state.pagination.limit, state.pagination.total)} of{' '}
+                {state.pagination.total} reviews
               </div>
-
-              <div className="flex items-center gap-2">
-                {!review.hostelResponse && review.status === 'approved' && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(state.pagination.page - 1)}
+                  disabled={state.pagination.page <= 1}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-200"
+                >
+                  Previous
+                </button>
+                
+                {[...Array(Math.min(5, state.pagination.totalPages))].map((_, index) => {
+                  const page = state.pagination.page <= 3 
+                    ? index + 1 
+                    : state.pagination.page + index - 2;
+                  if (page <= state.pagination.totalPages) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 text-sm font-medium border ${
+                          page === state.pagination.page
+                            ? 'bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        } rounded-lg transition-colors duration-200`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                  return null;
+                })}
+                
+                {state.pagination.totalPages > 5 && state.pagination.page < state.pagination.totalPages - 2 && (
+                  <span className="px-3 py-2 text-sm text-gray-400">...</span>
+                )}
+                
+                {state.pagination.totalPages > 5 && (
                   <button
-                    onClick={() => {
-                      setSelectedReview(review);
-                      setShowResponseModal(true);
-                    }}
-                    className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                    onClick={() => handlePageChange(state.pagination.totalPages)}
+                    className={`px-4 py-2 text-sm font-medium border ${
+                      state.pagination.page === state.pagination.totalPages
+                        ? 'bg-blue-50 border-blue-500 text-blue-600'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    } rounded-lg transition-colors duration-200`}
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    Respond
+                    {state.pagination.totalPages}
                   </button>
                 )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {reviews.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No reviews found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {filters.status !== 'all' || filters.search || filters.minRating
-              ? 'Try adjusting your filters'
-              : 'Reviews will appear here once students start reviewing your hostel'}
-          </p>
-        </div>
-      )}
-
-      {/* Response Modal */}
-      {showResponseModal && selectedReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-96 overflow-y-auto">
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Respond to Review</h3>
+                
                 <button
-                  onClick={() => {
-                    setShowResponseModal(false);
-                    setSelectedReview(null);
-                    setResponseText('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => handlePageChange(state.pagination.page + 1)}
+                  disabled={state.pagination.page >= state.pagination.totalPages}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-200"
                 >
-                  <X className="w-5 h-5" />
+                  Next
                 </button>
               </div>
             </div>
-
-            <div className="p-4">
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">Review by {selectedReview.studentName}:</p>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    {renderStars(selectedReview.rating)}
-                  </div>
-                  <p className="text-sm text-gray-700">{selectedReview.reviewText}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Response
-                </label>
-                <textarea
-                  value={responseText}
-                  onChange={(e) => setResponseText(e.target.value)}
-                  placeholder="Write a professional response to this review..."
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="p-4 border-t bg-gray-50 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowResponseModal(false);
-                  setSelectedReview(null);
-                  setResponseText('');
-                }}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => addResponse(selectedReview.id, responseText)}
-                disabled={!responseText.trim() || submitting}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
-              >
-                {submitting ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                {submitting ? 'Sending...' : 'Send Response'}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      <ReviewResponseModal
+        review={state.selectedReview}
+        isOpen={state.responseModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitResponse}
+        loading={state.responseLoading}
+      />
     </div>
   );
 }

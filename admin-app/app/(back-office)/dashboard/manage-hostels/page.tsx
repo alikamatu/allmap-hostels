@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Plus, Edit, Trash2, Loader2, MapPin, Mail, Phone, Wifi, Shirt, 
   Coffee, Car, Shield, RefreshCw, ChevronLeft, ChevronRight, Info, Hotel,
-  Star, MoreVertical, Check, X, Users, Bed, Calendar, CalendarOff
+  Star, MoreVertical, Check, X, Users, Bed, Calendar, CalendarOff, Crown
 } from 'lucide-react';
 import img from 'next/image';
 import Swal from 'sweetalert2';
@@ -44,9 +44,17 @@ interface Hostel {
   rating?: number;
   capacity?: number;
   rooms?: number;
-  accepting_bookings?: boolean; // Added booking status
+  accepting_bookings?: boolean;
+  admin_id?: string; // Added to track ownership
   created_at: string;
   updated_at: string;
+}
+
+interface UserProfile {
+  id: string;
+  role: 'student' | 'hostel_admin' | 'super_admin';
+  name?: string;
+  email?: string;
 }
 
 export default function HostelManagementPage() {
@@ -56,21 +64,54 @@ export default function HostelManagementPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'wifi' | 'parking' | 'security' | 'accepting' | 'not-accepting'>('all');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showAllHostels, setShowAllHostels] = useState(false); // For super admin toggle
+
+  // Fetch user profile to determine role
+  const fetchUserProfile = useCallback(async () => {
+    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
+        method: 'GET',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
+      
+      if (response.ok) {
+        const profile = await response.json();
+        setUserProfile(profile);
+        console.log('User profile:', profile);
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  }, []);
 
   const fetchHostels = useCallback(async () => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`, {
+      
+      // Determine endpoint based on user role and toggle state
+      let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`;
+      
+      // Super admin can choose to view all hostels or just their own
+      if (userProfile?.role === 'super_admin' && showAllHostels) {
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/all`;
+      }
+      
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
+      
       if (!response.ok) {
         throw new Error(`Failed to fetch hostels: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
       setHostels(data);
+      console.log(`Fetched ${data.length} hostels for ${userProfile?.role || 'unknown'} user`);
     } catch (err) {
       console.error('Error fetching hostels:', err);
       setError(err instanceof Error ? err.message : 'An error occurred while fetching hostels');
@@ -83,11 +124,17 @@ export default function HostelManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userProfile, showAllHostels]);
 
   useEffect(() => {
-    fetchHostels();
-  }, [fetchHostels]);
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    if (userProfile) {
+      fetchHostels();
+    }
+  }, [fetchHostels, userProfile]);
 
   const filteredHostels = hostels.filter(hostel => {
     // Search filter
@@ -230,6 +277,10 @@ export default function HostelManagementPage() {
     }
   };
 
+  const toggleViewMode = () => {
+    setShowAllHostels(!showAllHostels);
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-gray-50 to-gray-100">
@@ -255,9 +306,17 @@ export default function HostelManagementPage() {
           className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text">
-              Hostel Management
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text">
+                Hostel Management
+              </h1>
+              {userProfile?.role === 'super_admin' && (
+                <div className="flex items-center bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Super Admin
+                </div>
+              )}
+            </div>
             <div className="flex items-center flex-wrap gap-2">
               <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-2.5 py-0.5 rounded-full flex items-center">
                 <Hotel className="mr-1.5 h-4 w-4" />
@@ -267,12 +326,29 @@ export default function HostelManagementPage() {
                 <Calendar className="mr-1.5 h-4 w-4" />
                 {hostels.filter(h => h.accepting_bookings).length} accepting bookings
               </span>
+              {userProfile?.role === 'super_admin' && (
+                <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full flex items-center ${
+                  showAllHostels 
+                    ? 'bg-purple-100 text-purple-800' 
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {showAllHostels ? 'Viewing: All Hostels' : 'Viewing: My Hostels'}
+                </span>
+              )}
               <p className="ml-3 text-gray-600 text-sm hidden sm:block">
-                Manage your hostel accommodations
+                {userProfile?.role === 'super_admin' && showAllHostels 
+                  ? 'Managing all hostel accommodations' 
+                  : 'Manage your hostel accommodations'}
               </p>
             </div>
           </div>
           <div className="flex gap-3">
+            {userProfile?.role === 'super_admin' && (
+              <SuperAdminToggleButton 
+                showAllHostels={showAllHostels} 
+                onToggle={toggleViewMode} 
+              />
+            )}
             <RefreshButton onClick={fetchHostels} />
             <AddHostelButton onClick={handleAddHostel} />
           </div>
@@ -334,7 +410,12 @@ export default function HostelManagementPage() {
         )}
 
         {filteredHostels.length === 0 ? (
-          <EmptyState onAddHostel={handleAddHostel} hasSearchQuery={!!searchQuery || filter !== 'all'} />
+          <EmptyState 
+            onAddHostel={handleAddHostel} 
+            hasSearchQuery={!!searchQuery || filter !== 'all'} 
+            userRole={userProfile?.role}
+            showingAllHostels={showAllHostels}
+          />
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
@@ -353,6 +434,8 @@ export default function HostelManagementPage() {
                   onToggleBooking={(currentStatus) => 
                     handleToggleBookingStatus(hostel.id, currentStatus, hostel.name)
                   }
+                  userProfile={userProfile}
+                  showingAllHostels={showAllHostels}
                 />
               ))}
             </AnimatePresence>
@@ -362,6 +445,25 @@ export default function HostelManagementPage() {
     </div>
   );
 }
+
+const SuperAdminToggleButton = ({ showAllHostels, onToggle }: { 
+  showAllHostels: boolean; 
+  onToggle: () => void; 
+}) => (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={onToggle}
+    className={`flex items-center px-4 py-2.5 border rounded-xl shadow-sm transition-all font-medium ${
+      showAllHostels
+        ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+    }`}
+  >
+    <Crown className="mr-2 h-4 w-4" />
+    <span>{showAllHostels ? 'View All' : 'View Mine'}</span>
+  </motion.button>
+);
 
 const RefreshButton = ({ onClick }: { onClick: () => void }) => (
   <motion.button
@@ -433,20 +535,25 @@ const HostelCard = ({
   index,
   onEdit,
   onDelete,
-  onToggleBooking
+  onToggleBooking,
+  userProfile,
+  showingAllHostels
 }: {
   hostel: Hostel;
   index: number;
   onEdit: (id: string) => void;
   onDelete: () => void;
   onToggleBooking: (currentStatus: boolean) => void;
+  userProfile: UserProfile | null;
+  showingAllHostels: boolean;
 }) => {
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const hasImages = hostel.images && hostel.images.length > 0;
-  const acceptingBookings = hostel.accepting_bookings ?? true; // Default to true if undefined
+  const acceptingBookings = hostel.accepting_bookings ?? true;
+  const isOwnHostel = userProfile?.id === hostel.admin_id;
 
   const formatLocation = (location: Hostel['location']): string => {
     if (typeof location === 'string') return location;
@@ -520,6 +627,14 @@ const HostelCard = ({
             </>
           )}
         </div>
+        {/* Show ownership indicator when super admin is viewing all hostels */}
+        {userProfile?.role === 'super_admin' && showingAllHostels && (
+          <div className={`text-white text-xs font-medium px-2 py-0.5 rounded-full flex items-center ${
+            isOwnHostel ? 'bg-blue-500' : 'bg-gray-500'
+          }`}>
+            {isOwnHostel ? 'Mine' : 'Other'}
+          </div>
+        )}
       </div>
 
       {/* Dropdown menu */}
@@ -756,7 +871,17 @@ const HostelCard = ({
   );
 };
 
-const EmptyState = ({ onAddHostel, hasSearchQuery }: { onAddHostel: () => void; hasSearchQuery: boolean }) => (
+const EmptyState = ({ 
+  onAddHostel, 
+  hasSearchQuery, 
+  userRole,
+  showingAllHostels 
+}: { 
+  onAddHostel: () => void; 
+  hasSearchQuery: boolean; 
+  userRole?: string;
+  showingAllHostels: boolean;
+}) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -783,6 +908,8 @@ const EmptyState = ({ onAddHostel, hasSearchQuery }: { onAddHostel: () => void; 
     <p className="text-gray-600 mb-8 leading-relaxed">
       {hasSearchQuery 
         ? 'Try adjusting your search or filter criteria to find what you\'re looking for.'
+        : userRole === 'super_admin' && showingAllHostels
+        ? 'No hostels have been created in the system yet.'
         : 'You haven\'t added any hostels yet. Start by creating your first property to manage accommodations.'}
     </p>
     <motion.button

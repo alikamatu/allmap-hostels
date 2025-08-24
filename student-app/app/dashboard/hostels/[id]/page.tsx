@@ -10,6 +10,7 @@ import { MapModal } from '@/_components/hostels/MapModal';
 import { RoomType } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { BookingModal } from '@/_components/bookings/BookingModal';
+import { ReviewsComponent } from '@/_components/hostels/reviews/ReviewsComponent';
 
 interface Hostel {
   id: string;
@@ -181,7 +182,7 @@ export default function HostelDetailPage() {
         if (!res.ok) throw new Error(`Failed to fetch hostel: ${res.statusText}`);
 
         const hostelData = await res.json();
-        const roomRes = await fetch(`${apiUrl}/hostels/${id}/room-types`, {
+        const roomRes = await fetch(`${apiUrl}/hostels/students/${id}/room-types`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -716,7 +717,10 @@ export default function HostelDetailPage() {
             </div>
           )}
         </motion.div>
+      <ReviewsComponent hostelId={hostel.id} hostelName={hostel.name} />
       </div>
+
+          
     </div>
   );
 }

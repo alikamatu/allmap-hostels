@@ -100,6 +100,8 @@ class ReviewService {
     }
   }
 
+// Update for the getBookingReview method in reviewService.ts
+
 async getBookingReview(bookingId: string): Promise<Review | null> {
   try {
     const token = localStorage.getItem('access_token');
@@ -125,7 +127,9 @@ async getBookingReview(bookingId: string): Promise<Review | null> {
       return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+    // Handle the new backend response format that wraps review in an object
+    return data.review || data;
   } catch (error) {
     // Handle JSON parsing errors and 404s gracefully
     if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('Unexpected end of JSON input'))) {
