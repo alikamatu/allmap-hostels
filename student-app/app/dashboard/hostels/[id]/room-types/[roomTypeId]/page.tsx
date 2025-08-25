@@ -47,7 +47,7 @@ export default function RoomDetailPage() {
         setHostel(hostelData);
 
         // Fetch room type details
-        const roomTypeRes = await fetch(`${apiUrl}/hostels/${id}/room-types/${roomTypeId}`, {
+        const roomTypeRes = await fetch(`${apiUrl}/hostels/${id}/students/room-types/${roomTypeId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!roomTypeRes.ok) throw new Error(`Failed to fetch room type: ${roomTypeRes.statusText}`);

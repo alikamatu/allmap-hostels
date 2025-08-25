@@ -76,7 +76,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           <label htmlFor="minPrice" className="block text-lg font-medium text-black mb-1 leading-relaxed">
-            Min Price (₦)
+            Min Price (GH¢)
           </label>
           <input
             type="number"
@@ -95,7 +95,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           transition={{ duration: 0.3, delay: 0.3 }}
         >
           <label htmlFor="maxPrice" className="block text-lg font-medium text-black mb-1 leading-relaxed">
-            Max Price (₦)
+            Max Price (GH¢)
           </label>
           <input
             type="number"

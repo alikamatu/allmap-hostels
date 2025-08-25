@@ -166,12 +166,13 @@ export default function SignUpPage() {
                 transition={{ duration: 0.3, delay: 0.15 }}
               >
                 <label htmlFor="gender" className="block text-lg font-medium text-black mb-1">
-                  Gender <span className="text-sm text-gray-666 font-normal">(Optional)</span>
+                  Gender 
                 </label>
                 <div className="relative flex items-center">
                   <UserIcon className="h-4 w-4 text-black absolute left-3" />
                   <select
                     id="gender"
+                    required
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                     className="w-full pl-10 pr-3 py-3 text-base text-black bg-white border-b border-gray-200 focus:border-black outline-none transition appearance-none"

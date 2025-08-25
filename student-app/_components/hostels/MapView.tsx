@@ -137,7 +137,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
                 class="mt-2 w-full px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 view-details"
                 data-hostel-id="${hostel.id}"
               >
-                View Details
+                View Hostel
               </button>
             </div>
           `
