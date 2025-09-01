@@ -94,7 +94,7 @@ const fetchHostels = useCallback(async () => {
     
     // Always use the /fetch endpoint for user-specific hostels
     // This ensures users only see their own hostels
-    let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`;
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`;
     
     const response = await fetch(endpoint, {
       method: 'GET',
