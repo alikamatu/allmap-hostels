@@ -163,6 +163,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                     Gender
                   </label>
                   <select
+                    disabled
                     id="gender"
                     value={formData.gender}
                     onChange={(e) => handleChange('gender', e.target.value)}
