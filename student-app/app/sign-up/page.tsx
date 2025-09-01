@@ -110,11 +110,11 @@ export default function SignUpPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="text-center"
+              className="w-full"
             >
               <div className="bg-gray-100 p-3 mb-6 flex items-center justify-center text-black">
-                <CheckCircleIcon className="h-4 w-4 mr-2 text-black" />
-                Registration successful! Check your email at <span className="font-semibold">{email}</span> to verify your account.
+                <CheckCircleIcon className="h-8 w-8 mr-2 text-black" />
+                Registration successful! Check your email at <br /> <span className="font-semibold">{email}</span> to verify your account.
               </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -356,7 +356,7 @@ export default function SignUpPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg text-white max-w-md text-center"
           >
-            Sign up to manage your hostel stay and connect with your community
+            Sign up to access exclusive hostels for your educational journey
           </motion.p>
         </div>
       </div>
