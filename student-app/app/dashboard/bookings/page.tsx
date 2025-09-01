@@ -10,6 +10,7 @@ import { bookingService } from '@/service/bookingService';
 import { reviewService } from '@/service/reviewService'; // Import the real review service
 import { useAuth } from '@/context/AuthContext';
 import WriteReviewModal from '@/_components/hostels/WriteReviewModal';
+import { useRouter } from 'next/navigation';
 
 interface ExtendedBooking extends Booking {
   hostel?: {
@@ -48,6 +49,7 @@ export default function UserBookingsPage() {
   const [newCheckOutDate, setNewCheckOutDate] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
 
 const fetchUserBookings = useCallback(async () => {
   try {
@@ -152,6 +154,8 @@ const fetchUserBookings = useCallback(async () => {
       await fetchUserBookings();
       setShowBookingDetails(false);
       setShowCancelModal(false);
+      //refresh page
+      router.push(`/dashboard`);
     } catch (error: any) {
       setError(`Failed to cancel booking: ${error.message}`);
     }
@@ -753,7 +757,7 @@ const fetchUserBookings = useCallback(async () => {
         </AnimatePresence>
 
         {/* Extend Booking Modal */}
-        <AnimatePresence>
+        {/* <AnimatePresence>
           {showExtendModal && selectedBooking && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -815,7 +819,7 @@ const fetchUserBookings = useCallback(async () => {
               </motion.div>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence> */}
 
         {/* Booking Details Modal */}
         <AnimatePresence>
@@ -824,7 +828,7 @@ const fetchUserBookings = useCallback(async () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center p-4 sm:p-6 font-sans"
+              className="fixed inset-0 bg-white/90 z-40 flex items-center justify-center p-4 sm:p-6 font-sans"
               onClick={(e) => e.target === e.currentTarget && setShowBookingDetails(false)}
             >
               <motion.div

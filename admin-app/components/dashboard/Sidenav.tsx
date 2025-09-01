@@ -9,7 +9,8 @@ import {
   Star, 
   Bell, 
   Settings,
-  ChevronLeft
+  ChevronLeft,
+  LucideTimer
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,8 +26,9 @@ const navItems = [
   { name: 'Manage Hostels', href: '/dashboard/manage-hostels', icon: Building },
   { name: 'Manage Rooms', href: '/dashboard/manage-room', icon: Bed },
   { name: 'Manage Bookings', href: '/dashboard/booking-management', icon: Calendar },
+  { name: 'Booking History', href: '/dashboard/booking-history', icon: LucideTimer },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
-  { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  // { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

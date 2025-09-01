@@ -162,7 +162,6 @@ const fetchStats = async (hostelId?: string) => {
     
     if (response.ok) {
       const statsData = await response.json();
-      console.log('Stats API response:', statsData);
       setStats(statsData);
     }
   } catch (error) {
@@ -173,9 +172,14 @@ const fetchStats = async (hostelId?: string) => {
   const createBooking = useCallback(async (bookingData: any): Promise<Booking> => {
     setLoading(true);
     try {
-      const data = await makeApiRequest('/bookings/create', {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const data = await makeApiRequest(`${process.env.NEXT_PUBLIC_API_URL}/bookings/admin-create`, {
         method: 'POST',
         body: JSON.stringify(bookingData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
       return data;
     } catch (err) {

@@ -1,5 +1,14 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { X, User, Calendar, MapPin, Phone, Mail, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+
+// Declare PaystackPop on window for TypeScript
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
 // Define types locally for the component
 interface Hostel {
@@ -13,6 +22,7 @@ interface Room {
   roomTypeId: string;
   maxOccupancy: number;
   currentOccupancy: number;
+  roomType: RoomType;
 }
 
 interface RoomType {
@@ -44,7 +54,7 @@ interface CreateBookingModalProps {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
-const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_your_key_here';
 const BOOKING_FEE = 70; // 70 GHS booking fee
 
 const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
@@ -77,23 +87,47 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [error, setError] = useState<string>('');
   const [calculatedAmount, setCalculatedAmount] = useState<number>(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [paystackLoaded, setPaystackLoaded] = useState(false);
 
   // Load Paystack script
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+    if (!paystackLoaded) {
+      const existingScript = document.getElementById('paystack-script');
+      if (existingScript) {
+        setPaystackLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'paystack-script';
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('Paystack script loaded');
+        setPaystackLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Paystack script');
+        setError('Failed to load payment processor. Please refresh the page.');
+      };
+      document.head.appendChild(script);
+    }
+  }, [paystackLoaded]);
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   // Fetch available rooms when hostel is selected
   useEffect(() => {
     if (formData.hostelId && formData.checkInDate && formData.checkOutDate) {
       fetchAvailableRooms();
+    } else {
+      setAvailableRooms([]);
+      setRoomTypes(new Map());
     }
   }, [formData.hostelId, formData.checkInDate, formData.checkOutDate]);
 
@@ -101,13 +135,23 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   useEffect(() => {
     if (formData.roomId && formData.bookingType && formData.checkInDate && formData.checkOutDate) {
       calculateBookingAmount();
+    } else {
+      setCalculatedAmount(0);
     }
   }, [formData.roomId, formData.bookingType, formData.checkInDate, formData.checkOutDate]);
 
   const fetchAvailableRooms = async () => {
     setLoadingRooms(true);
+    setError('');
+    
     try {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+
+      console.log('Fetching rooms for hostel:', formData.hostelId);
+      
       const response = await fetch(
         `${API_BASE_URL}/bookings/hostel/${formData.hostelId}/availability?` +
         `checkIn=${formData.checkInDate}&checkOut=${formData.checkOutDate}`,
@@ -119,86 +163,129 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         }
       );
       
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableRooms(data.rooms || []);
-        
-        // Store room type information
-        const typesMap = new Map<string, RoomType>();
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Room fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch rooms: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Rooms data:', data);
+      
+      setAvailableRooms(data.rooms || []);
+      
+      // Store room type information
+      const typesMap = new Map<string, RoomType>();
+      if (data.rooms) {
         data.rooms.forEach((room: any) => {
           if (room.roomType) {
             typesMap.set(room.roomType.id, room.roomType);
           }
         });
-        setRoomTypes(typesMap);
       }
-    } catch (error) {
+      setRoomTypes(typesMap);
+    } catch (error: any) {
       console.error('Failed to fetch available rooms:', error);
-      setError('Failed to fetch available rooms');
+      setError(`Failed to fetch available rooms: ${error.message}`);
+      setAvailableRooms([]);
+      setRoomTypes(new Map());
     } finally {
       setLoadingRooms(false);
     }
   };
 
-  const calculateBookingAmount = () => {
+const calculateBookingAmount = () => {
     const room = availableRooms.find(r => r.id === formData.roomId);
-    if (!room || !room.roomTypeId) return;
+    if (!room || !room.roomType) {
+      setCalculatedAmount(0);
+      return;
+    }
 
-    const roomType = roomTypes.get(room.roomTypeId);
-    if (!roomType) return;
-
+    const roomType = room.roomType;
+    if (!roomType) {
+      setCalculatedAmount(0);
+      return;
+    }
     const checkIn = new Date(formData.checkInDate);
     const checkOut = new Date(formData.checkOutDate);
     const days = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
     let amount = 0;
-    switch (formData.bookingType) {
-      case BookingType.SEMESTER:
-        amount = roomType.pricePerSemester;
-        break;
-      case BookingType.MONTHLY:
-        const months = Math.ceil(days / 30);
-        amount = roomType.pricePerMonth * months;
-        break;
-      case BookingType.WEEKLY:
-        const weeks = Math.ceil(days / 7);
-        amount = roomType.pricePerWeek ? roomType.pricePerWeek * weeks : roomType.pricePerMonth * weeks / 4;
-        break;
+    try {
+      switch (formData.bookingType) {
+        case BookingType.SEMESTER:
+          amount = roomType.pricePerSemester;
+          break;
+        case BookingType.MONTHLY:
+          const months = Math.ceil(days / 30);
+          amount = roomType.pricePerMonth * months;
+          break;
+        case BookingType.WEEKLY:
+          const weeks = Math.ceil(days / 7);
+          amount = roomType.pricePerWeek ? 
+            roomType.pricePerWeek * weeks : 
+            Math.ceil((roomType.pricePerMonth * weeks) / 4);
+          break;
+        default:
+          amount = 0;
+      }
+      
+      setCalculatedAmount(Math.max(0, amount));
+    } catch (error) {
+      console.error('Error calculating booking amount:', error);
+      setCalculatedAmount(0);
     }
-
-    setCalculatedAmount(amount);
   };
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!formData.studentName) errors.studentName = 'Student name is required';
-    if (!formData.studentEmail) errors.studentEmail = 'Student email is required';
-    if (!formData.studentPhone) errors.studentPhone = 'Student phone is required';
-    if (!formData.studentId) errors.studentId = 'Student ID is required';
+    // Required fields
+    if (!formData.studentName.trim()) errors.studentName = 'Student name is required';
+    if (!formData.studentEmail.trim()) errors.studentEmail = 'Student email is required';
+    if (!formData.studentPhone.trim()) errors.studentPhone = 'Student phone is required';
+    if (!formData.studentId.trim()) errors.studentId = 'Student ID is required';
     if (!formData.hostelId) errors.hostelId = 'Please select a hostel';
     if (!formData.roomId) errors.roomId = 'Please select a room';
     if (!formData.checkInDate) errors.checkInDate = 'Check-in date is required';
     if (!formData.checkOutDate) errors.checkOutDate = 'Check-out date is required';
 
     // Validate dates
-    const checkIn = new Date(formData.checkInDate);
-    const checkOut = new Date(formData.checkOutDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (formData.checkInDate && formData.checkOutDate) {
+      const checkIn = new Date(formData.checkInDate);
+      const checkOut = new Date(formData.checkOutDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    if (checkIn < today) {
-      errors.checkInDate = 'Check-in date cannot be in the past';
-    }
+      if (checkIn < today) {
+        errors.checkInDate = 'Check-in date cannot be in the past';
+      }
 
-    if (checkOut <= checkIn) {
-      errors.checkOutDate = 'Check-out date must be after check-in date';
+      if (checkOut <= checkIn) {
+        errors.checkOutDate = 'Check-out date must be after check-in date';
+      }
+
+      // Check minimum booking duration
+      const daysDiff = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff < 1) {
+        errors.checkOutDate = 'Minimum booking duration is 1 day';
+      }
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.studentEmail && !emailRegex.test(formData.studentEmail)) {
-      errors.studentEmail = 'Invalid email format';
+      errors.studentEmail = 'Please enter a valid email address';
+    }
+
+    // Phone validation (basic)
+    if (formData.studentPhone && formData.studentPhone.length < 10) {
+      errors.studentPhone = 'Please enter a valid phone number';
+    }
+
+    // Check if calculated amount is valid
+    if (calculatedAmount <= 0) {
+      errors.roomId = 'Unable to calculate room charges. Please select a different room or dates.';
     }
 
     setValidationErrors(errors);
@@ -207,6 +294,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear validation error for this field
@@ -217,10 +305,31 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         return newErrors;
       });
     }
+
+    // Clear room selection if hostel changes
+    if (name === 'hostelId' && value !== formData.hostelId) {
+      setFormData(prev => ({ ...prev, roomId: '' }));
+    }
   };
 
-  const initializePayment = () => {
+  const initializePayment = async () => {
     if (!validateForm()) {
+      setError('Please fix the validation errors below');
+      return;
+    }
+
+    if (!paystackLoaded) {
+      setError('Payment system is still loading. Please wait a moment and try again.');
+      return;
+    }
+
+    if (!PAYSTACK_PUBLIC_KEY || PAYSTACK_PUBLIC_KEY === 'pk_test_your_key_here') {
+      setError('Payment system is not properly configured. Please contact support.');
+      return;
+    }
+
+    if (!window.PaystackPop) {
+      setError('Payment system failed to load. Please refresh the page and try again.');
       return;
     }
 
@@ -231,47 +340,64 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const reference = `BKG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setPaymentReference(reference);
 
-    // Initialize Paystack payment
-    const handler = (window as any).PaystackPop.setup({
-      key: PAYSTACK_PUBLIC_KEY,
-      email: formData.studentEmail,
-      amount: BOOKING_FEE * 100, // Convert to pesewas
-      currency: 'GHS',
-      ref: reference,
-      metadata: {
-        custom_fields: [
-          {
-            display_name: 'Booking Type',
-            variable_name: 'booking_type',
-            value: 'Hostel Booking Fee'
-          },
-          {
-            display_name: 'Student Name',
-            variable_name: 'student_name',
-            value: formData.studentName
-          },
-          {
-            display_name: 'Hostel',
-            variable_name: 'hostel',
-            value: hostels.find(h => h.id === formData.hostelId)?.name || ''
-          }
-        ]
-      },
-      callback: function(response: any) {
-        handlePaymentSuccess(response.reference);
-      },
-      onClose: function() {
-        if (paymentStatus !== PaymentStatus.SUCCESS) {
-          setPaymentStatus(PaymentStatus.IDLE);
-          setError('Payment cancelled');
-        }
-      }
-    });
+    console.log('Initializing payment with reference:', reference);
 
-    handler.openIframe();
+    try {
+      // Initialize Paystack payment
+      const handler = window.PaystackPop.setup({
+        key: PAYSTACK_PUBLIC_KEY,
+        email: formData.studentEmail,
+        amount: BOOKING_FEE * 100, // Convert to pesewas (kobo)
+        currency: 'GHS',
+        ref: reference,
+        metadata: {
+          custom_fields: [
+            {
+              display_name: 'Booking Type',
+              variable_name: 'booking_type',
+              value: 'Hostel Booking Fee'
+            },
+            {
+              display_name: 'Student Name',
+              variable_name: 'student_name',
+              value: formData.studentName
+            },
+            {
+              display_name: 'Hostel',
+              variable_name: 'hostel',
+              value: hostels.find(h => h.id === formData.hostelId)?.name || 'Unknown'
+            },
+            {
+              display_name: 'Room Amount',
+              variable_name: 'room_amount',
+              value: calculatedAmount.toString()
+            }
+          ]
+        },
+        callback: function(response: any) {
+          console.log('Payment callback received:', response);
+          handlePaymentSuccess(response.reference);
+        },
+        onClose: function() {
+          console.log('Payment modal closed');
+          if (paymentStatus === PaymentStatus.PROCESSING) {
+            setPaymentStatus(PaymentStatus.IDLE);
+            setError('Payment was cancelled. Please try again.');
+          }
+        }
+      });
+
+      handler.openIframe();
+    } catch (error: any) {
+      console.error('Payment initialization failed:', error);
+      setPaymentStatus(PaymentStatus.FAILED);
+      setError(`Payment initialization failed: ${error.message}`);
+    }
   };
 
   const handlePaymentSuccess = async (reference: string) => {
+    console.log('Processing payment success for reference:', reference);
+    
     try {
       setPaymentStatus(PaymentStatus.SUCCESS);
       
@@ -288,14 +414,20 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         }] : []
       };
 
+      console.log('Submitting booking data:', bookingData);
+
       // Submit the booking
       await onSubmit(bookingData);
       
-      // Reset form and close modal
-      resetForm();
-      onClose();
+      // Reset form and close modal after successful submission
+      setTimeout(() => {
+        resetForm();
+        onClose();
+      }, 2000); // Give user time to see success message
+      
     } catch (error: any) {
-      setError(error.message || 'Failed to create booking after payment');
+      console.error('Booking creation failed:', error);
+      setError(`Failed to create booking: ${error.message || 'Please try again or contact support.'}`);
       setPaymentStatus(PaymentStatus.FAILED);
     }
   };
@@ -321,6 +453,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     setError('');
     setValidationErrors({});
     setCalculatedAmount(0);
+    setAvailableRooms([]);
+    setRoomTypes(new Map());
   };
 
   if (!isOpen) return null;
@@ -338,6 +472,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={paymentStatus === PaymentStatus.PROCESSING}
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -351,6 +486,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               <div>
                 <p className="text-sm font-medium text-green-800">Payment Successful!</p>
                 <p className="text-xs text-green-600">Reference: {paymentReference}</p>
+                <p className="text-xs text-green-600">Creating booking...</p>
               </div>
             </div>
           )}
@@ -360,6 +496,13 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-red-600" />
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {!paystackLoaded && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">Loading payment system...</p>
             </div>
           )}
 
@@ -389,6 +532,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.studentName ? 'border-red-500' : 'border-gray-300'
                 }`}
+                placeholder="Enter full name"
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.studentName && (
@@ -408,6 +553,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.studentEmail ? 'border-red-500' : 'border-gray-300'
                 }`}
+                placeholder="Enter email address"
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.studentEmail && (
@@ -427,6 +574,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.studentPhone ? 'border-red-500' : 'border-gray-300'
                 }`}
+                placeholder="Enter phone number"
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.studentPhone && (
@@ -446,6 +595,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.studentId ? 'border-red-500' : 'border-gray-300'
                 }`}
+                placeholder="Enter student ID"
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.studentId && (
@@ -467,6 +618,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.checkInDate ? 'border-red-500' : 'border-gray-300'
                 }`}
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.checkInDate && (
@@ -487,6 +639,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.checkOutDate ? 'border-red-500' : 'border-gray-300'
                 }`}
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               />
               {validationErrors.checkOutDate && (
@@ -506,8 +659,8 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.hostelId ? 'border-red-500' : 'border-gray-300'
                 }`}
+                disabled={!formData.checkInDate || !formData.checkOutDate || paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
-                disabled={!formData.checkInDate || !formData.checkOutDate}
               >
                 <option value="">Select Hostel</option>
                 {hostels.map(hostel => (
@@ -535,18 +688,19 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
                 }`}
+                disabled={!formData.hostelId || loadingRooms || paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
-                disabled={!formData.hostelId || loadingRooms}
               >
                 <option value="">
                   {loadingRooms ? 'Loading rooms...' : 'Select Room'}
                 </option>
                 {availableRooms.map(room => {
                   const roomType = roomTypes.get(room.roomTypeId);
+                  const availableBeds = room.maxOccupancy - room.currentOccupancy;
                   return (
                     <option key={room.id} value={room.id}>
                       Room {room.roomNumber} - {roomType?.name || 'Standard'} 
-                      ({room.maxOccupancy - room.currentOccupancy} beds available)
+                      ({availableBeds} bed{availableBeds !== 1 ? 's' : ''} available)
                     </option>
                   );
                 })}
@@ -569,6 +723,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 value={formData.bookingType}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 required
               >
                 <option value={BookingType.SEMESTER}>Semester</option>
@@ -589,6 +744,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Any special requirements or requests..."
+                disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
               />
             </div>
 
@@ -603,6 +759,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                   onChange={handleChange}
                   placeholder="Contact Name"
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={paymentStatus === PaymentStatus.PROCESSING || paymentStatus === PaymentStatus.SUCCESS}
                 />
                 <input
                   type="tel"
@@ -610,7 +767,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                   value={formData.emergencyContactPhone}
                   onChange={handleChange}
                   placeholder="Contact Phone"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                   type="text"

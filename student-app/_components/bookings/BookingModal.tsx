@@ -7,6 +7,7 @@ import { FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import { BookingType, RoomType, Room, BookingFormData, BookingFormErrors, ApiRoom, apiRoomToRoom } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useRouter } from 'next/navigation';
 
 declare global {
   interface Window {
@@ -53,6 +54,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [paymentReference, setPaymentReference] = useState<string>('');
+  const router = useRouter();
 
   // Fixed booking fee
   const BOOKING_FEE = 70; // 70 GHS
@@ -401,6 +403,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       const booking = await bookingService.createBooking(bookingData);
       onClose();
       alert(`Booking created successfully! Booking ID: ${booking.id}\nPayment Reference: ${paymentReference}`);
+      router.push(`/dashboard/bookings`);
     } catch (error: any) {
       console.error('Failed to create booking:', error);
       setBookingError(`Failed to create booking: ${error.message}`);
