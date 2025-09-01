@@ -8,7 +8,7 @@ import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'reac
 import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {
-  status: 'loading' | 'success' | 'error';
+  status: 'loading' | 'success' | 'error' | 'expired';
   message: string;
 }
 
@@ -59,31 +59,36 @@ function VerifyEmailContent() {
 
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`, {
+      // Fixed URL construction - using correct backend route format
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+      const response = await fetch(`${apiUrl}/auth/verify-email/${token}`, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Accept: 'application/json',
         },
       });
 
       if (response.ok) {
+        const data = await response.json();
         setVerification({
           status: 'success',
-          message: 'Your email has been verified successfully!'
+          message: data.message || 'Your email has been verified successfully!',
         });
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || 'Verification failed';
+        const isExpired = errorMessage.toLowerCase().includes('expired');
+
         setVerification({
-          status: 'error',
-          message: errorMessage
+          status: isExpired ? 'expired' : 'error',
+          message: errorMessage,
         });
       }
-    } catch {
+    } catch (error) {
+      console.error('Verification error:', error);
       setVerification({
         status: 'error',
-        message: 'Could not connect to the server. Please try again later.'
+        message: 'Could not connect to the server. Please try again later.',
       });
     }
   };
