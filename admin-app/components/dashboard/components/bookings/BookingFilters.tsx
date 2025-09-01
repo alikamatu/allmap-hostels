@@ -47,6 +47,11 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
     });
   };
 
+  // Handle hostel selection - only fetch bookings when a hostel is selected
+  const handleHostelChange = (hostelId: string) => {
+    onFilterChange({ hostelId });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
@@ -84,17 +89,17 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
           </div>
         </div>
 
-        {/* Hostel Filter */}
+        {/* Hostel Filter - Modified to trigger fetch only on selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Hostel
           </label>
           <select
             value={filters.hostelId}
-            onChange={(e) => onFilterChange({ hostelId: e.target.value })}
+            onChange={(e) => handleHostelChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">All Hostels</option>
+            <option value="">Select a hostel to view bookings</option>
             {hostels.map(hostel => (
               <option key={hostel.id} value={hostel.id}>
                 {hostel.name}

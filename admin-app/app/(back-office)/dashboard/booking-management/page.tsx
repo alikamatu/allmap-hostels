@@ -83,13 +83,21 @@ const BookingManagementPage: React.FC = () => {
     checkInBooking,
     checkOutBooking,
     getBookingById,
-    fetchStats // Make sure this method exists in your hook
+    fetchStats
   } = useBookings();
 
   const {
     recordPayment,
     loading: paymentLoading
   } = usePayments();
+
+  // Function to filter out checked-out and cancelled bookings
+  const filterActiveBookings = useCallback((bookings: Booking[]) => {
+    return bookings.filter(booking => 
+      booking.status !== BookingStatus.CHECKED_OUT && 
+      booking.status !== BookingStatus.CANCELLED
+    );
+  }, []);
 
   // Fetch hostels on mount
   useEffect(() => {
@@ -115,13 +123,13 @@ const BookingManagementPage: React.FC = () => {
     fetchHostels();
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     console.log('Stats from useBookings hook:', stats);
     console.log('Bookings loading state:', bookingsLoading);
     console.log('Bookings data:', bookings);
   }, [stats, bookingsLoading, bookings]);
 
-    useEffect(() => {
+  useEffect(() => {
     const loadStats = async () => {
       try {
         if (fetchStats) {
@@ -135,8 +143,13 @@ const BookingManagementPage: React.FC = () => {
     loadStats();
   }, [fetchStats]);
 
-  // Fetch bookings when filters change
+  // Modified: Only fetch bookings when hostel is selected or other filters change (excluding hostelId changes)
   useEffect(() => {
+    // Only fetch if hostel is selected
+    if (!filters.hostelId) {
+      return;
+    }
+
     const filterParams = {
       page: currentPage,
       limit: pageSize,
@@ -194,64 +207,56 @@ const BookingManagementPage: React.FC = () => {
     if (modalType === 'details') setSelectedBooking(null);
   }, []);
 
-// Updated payment handler in page.tsx
-const handlePayment = async (bookingId: string, paymentData: any) => {
-  try {
-    console.log('Recording payment...', { bookingId, paymentData });
+  // Updated payment handler
+  const handlePayment = async (bookingId: string, paymentData: any) => {
+    try {
+      console.log('Recording payment...', { bookingId, paymentData });
 
-        const formattedPaymentData = {
-      ...paymentData,
-      transactionRef: paymentData.transactionRef || null // Convert empty string to null
-    };
-    
-    // Record the payment using the hook
-    const result = await recordPayment(bookingId, formattedPaymentData);
-
-    console.log('Payment recorded successfully:', result);
-    
-    // The result structure from your backend should be { payment, booking }
-    if (result.booking) {
-      // Force update the selected booking with the fresh data from server
-      console.log('Updating selected booking with fresh data:', {
-        bookingId: result.booking.id,
-        previousAmountPaid: selectedBooking?.amountPaid,
-        newAmountPaid: result.booking.amountPaid,
-        previousAmountDue: selectedBooking?.amountDue,
-        newAmountDue: result.booking.amountDue,
-        paymentStatus: result.booking.paymentStatus
-      });
+      const formattedPaymentData = {
+        ...paymentData,
+        transactionRef: paymentData.transactionRef || null
+      };
       
-           setSelectedBooking(prev => prev ? {
-      ...prev,
-      amountPaid: result.booking.amountPaid,
-      amountDue: result.booking.amountDue,
-      paymentStatus: result.booking.paymentStatus
-    } : null);
+      const result = await recordPayment(bookingId, formattedPaymentData);
+
+      console.log('Payment recorded successfully:', result);
+      
+      if (result.booking) {
+        console.log('Updating selected booking with fresh data:', {
+          bookingId: result.booking.id,
+          previousAmountPaid: selectedBooking?.amountPaid,
+          newAmountPaid: result.booking.amountPaid,
+          previousAmountDue: selectedBooking?.amountDue,
+          newAmountDue: result.booking.amountDue,
+          paymentStatus: result.booking.paymentStatus
+        });
+        
+        setSelectedBooking(prev => prev ? {
+          ...prev,
+          amountPaid: result.booking.amountPaid,
+          amountDue: result.booking.amountDue,
+          paymentStatus: result.booking.paymentStatus
+        } : null);
+      }
+      
+      // Always refresh the bookings list to ensure consistency
+      const filterParams = {
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+        ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
+        ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
+      };
+      
+      await fetchBookings(filterParams);
+      closeModal('payment');
+      console.log('Payment processing complete');
+      
+    } catch (error) {
+      console.error('Payment failed:', error);
+      throw error;
     }
-    
-    // Always refresh the bookings list to ensure consistency
-    const filterParams = {
-      page: currentPage,
-      limit: pageSize,
-      ...filters,
-      ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
-      ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
-    };
-    
-    await fetchBookings(filterParams);
-    
-    // Close the payment modal
-    closeModal('payment');
-    
-    console.log('Payment processing complete');
-    
-  } catch (error) {
-    console.error('Payment failed:', error);
-    // Re-throw to let PaymentModal handle the error display
-    throw error;
-  }
-};
-  
+  };
 
   const handleCheckIn = async (bookingId: string, checkInData: any) => {
     try {
@@ -268,9 +273,22 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
   const handleCheckOut = async (bookingId: string, checkOutData: any) => {
     try {
       const updatedBooking = await checkOutBooking(bookingId, checkOutData);
-      setSelectedBooking(updatedBooking);
-      await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
+      
+      // Clear selection if the checked-out booking was selected
+      setSelectedBookings(prev => prev.filter(id => id !== bookingId));
+      
       closeModal('checkOut');
+      
+      // Refresh the list to ensure consistency
+      const filterParams = {
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+        ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
+        ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
+      };
+      await fetchBookings(filterParams);
+      
     } catch (error) {
       console.error('Check-out failed:', error);
       throw error;
@@ -290,11 +308,24 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
             reason: 'Bulk cancellation', 
             notes: 'Cancelled via bulk action' 
           })));
+          
+          // Remove cancelled bookings from the list immediately
+          setSelectedBookings(prev => prev.filter(id => !selectedBookings.includes(id)));
           break;
       }
       
       setSelectedBookings([]);
-      await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
+      
+      // Refresh the list
+      const filterParams = {
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+        ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
+        ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
+      };
+      await fetchBookings(filterParams);
+      
     } catch (error) {
       console.error('Bulk action failed:', error);
     }
@@ -327,6 +358,9 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
     }
   };
 
+  // Get filtered bookings (automatically remove checked-out and cancelled)
+  const activeBookings = filterActiveBookings(bookings);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -342,7 +376,8 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              disabled={!filters.hostelId}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Download className="h-4 w-4" />
               Export
@@ -350,7 +385,8 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
             
             <button
               onClick={() => openModal('create')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={!filters.hostelId}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Plus className="h-4 w-4" />
               New Booking
@@ -358,8 +394,10 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <BookingStatsCards stats={stats} loading={bookingsLoading} />
+        {/* Stats Cards - Only show when hostel is selected */}
+        {filters.hostelId && (
+          <BookingStatsCards stats={stats} loading={bookingsLoading} />
+        )}
 
         {/* Filters */}
         <BookingFilters
@@ -377,23 +415,41 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
           />
         )}
 
-        {/* Bookings List */}
-        <BookingsList
-          bookings={bookings}
-          loading={bookingsLoading}
-          selectedBookings={selectedBookings}
-          onBookingSelect={handleBookingSelect}
-          onSelectAll={handleSelectAll}
-          onViewDetails={(booking) => openModal('details', booking)}
-          onPayment={(booking) => openModal('payment', booking)}
-          onCheckIn={(booking) => openModal('checkIn', booking)}
-          onCheckOut={(booking) => openModal('checkOut', booking)}
-          onConfirm={confirmBooking}
-          onCancel={cancelBooking}
-          pagination={pagination}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
+        {/* Show message when no hostel is selected */}
+        {!filters.hostelId ? (
+          <div className="bg-white shadow rounded-lg">
+            <div className="p-8 text-center">
+              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Download className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Hostel</h3>
+              <p className="text-gray-500">Please select a hostel from the filters above to view bookings.</p>
+            </div>
+          </div>
+        ) : (
+          /* Bookings List - Show filtered bookings (excluding checked-out and cancelled) */
+          <BookingsList
+            bookings={activeBookings}
+            loading={bookingsLoading}
+            selectedBookings={selectedBookings}
+            onBookingSelect={handleBookingSelect}
+            onSelectAll={handleSelectAll}
+            onViewDetails={(booking) => openModal('details', booking)}
+            onPayment={(booking) => openModal('payment', booking)}
+            onCheckIn={(booking) => openModal('checkIn', booking)}
+            onCheckOut={(booking) => openModal('checkOut', booking)}
+            onConfirm={confirmBooking}
+            onCancel={async (bookingId: string, data: any) => {
+              await cancelBooking(bookingId, data);
+              // Remove cancelled booking from the list immediately
+              setSelectedBookings(prev => prev.filter(id => id !== bookingId));
+              setSelectedBookings(prev => prev.filter(id => id !== bookingId));
+            }}
+            pagination={pagination}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
         {/* Modals */}
         {selectedBooking && (
@@ -405,30 +461,6 @@ const handlePayment = async (bookingId: string, paymentData: any) => {
               onPayment={() => openModal('payment', selectedBooking)}
               onCheckIn={() => openModal('checkIn', selectedBooking)}
               onCheckOut={() => openModal('checkOut', selectedBooking)}
-            />
-
-            <PaymentModal
-              isOpen={modals.payment}
-              onClose={() => closeModal('payment')}
-              booking={selectedBooking}
-              onSubmit={(data) => handlePayment(selectedBooking.id, data)}
-              loading={paymentLoading}
-            />
-
-            <CheckInModal
-              isOpen={modals.checkIn}
-              onClose={() => closeModal('checkIn')}
-              booking={selectedBooking}
-              onSubmit={(data) => handleCheckIn(selectedBooking.id, data)}
-              loading={bookingsLoading}
-            />
-
-            <CheckOutModal
-              isOpen={modals.checkOut}
-              onClose={() => closeModal('checkOut')}
-              booking={selectedBooking}
-              onSubmit={(data) => handleCheckOut(selectedBooking.id, data)}
-              loading={bookingsLoading}
             />
           </>
         )}

@@ -411,6 +411,14 @@ export default function HostelDetailPage() {
               </motion.div>
               <motion.button
                 whileHover={{ scale: 1.1 }}
+                onClick={closeGallery}
+                className="absolute top-4 right-4 text-black"
+                aria-label="Close gallery"
+              >
+                <FaTimes className="text-2xl" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
                 onClick={() => navigateImage('next')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-black"
                 aria-label="Next image"

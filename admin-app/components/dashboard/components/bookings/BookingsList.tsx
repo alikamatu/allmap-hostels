@@ -274,8 +274,14 @@ const BookingsList: React.FC<BookingsListProps> = ({
       <div className="bg-white shadow rounded-lg">
         <div className="p-8 text-center">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
-          <p className="text-gray-500">Try adjusting your filters or create a new booking.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No active bookings found</h3>
+          <p className="text-gray-500">
+            No pending, confirmed, or checked-in bookings match your current filters.
+            <br />
+            <span className="text-xs text-gray-400 mt-1 block">
+              Note: Checked-out and cancelled bookings are automatically hidden from this view.
+            </span>
+          </p>
         </div>
       </div>
     );
@@ -324,7 +330,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {memoizedBookings.map((booking) => (
               <BookingRow
-                key={`${booking.id}-${booking.amountPaid}-${booking.paymentStatus}`} // Include payment data in key
+                key={`${booking.id}-${booking.amountPaid}-${booking.paymentStatus}`}
                 booking={booking}
                 selected={selectedBookings.includes(booking.id)}
                 onSelect={(selected) => onBookingSelect(booking.id, selected)}
@@ -374,7 +380,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
                   {Math.min(currentPage * pagination.limit, pagination.total)}
                 </span>{' '}
                 of{' '}
-                <span className="font-medium">{pagination.total}</span> results
+                <span className="font-medium">{pagination.total}</span> active bookings
+                <br />
+                <span className="text-xs text-gray-400">
+                  Checked-out and cancelled bookings are hidden
+                </span>
               </p>
             </div>
             <div>

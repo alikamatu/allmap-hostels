@@ -146,6 +146,21 @@ export interface BookingModalProps {
   availableRooms: Room[];
 }
 
+export interface BookingFilters {
+  search: string;
+  status: BookingStatus | 'all';
+  paymentStatus: PaymentStatus | 'all';
+  bookingType: BookingType | 'all';
+  hostelId: string;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  sortBy: string;
+  sortOrder: 'ASC' | 'DESC';
+  excludeStatuses: BookingStatus[]; // <-- Add this property
+}
+
 export interface BookingConfirmationProps {
   booking: Booking;
   onClose: () => void;

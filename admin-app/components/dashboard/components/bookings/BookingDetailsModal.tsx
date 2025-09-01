@@ -17,6 +17,7 @@ interface BookingDetailsModalProps {
   onPayment: () => void;
   onCheckIn: () => void;
   onCheckOut: () => void;
+  isHistorical?: boolean; // New prop to indicate historical bookings
 }
 
 const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({

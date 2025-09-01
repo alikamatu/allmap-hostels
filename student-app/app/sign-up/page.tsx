@@ -177,11 +177,9 @@ export default function SignUpPage() {
                     onChange={(e) => setGender(e.target.value)}
                     className="w-full pl-10 pr-3 py-3 text-base text-black bg-white border-b border-gray-200 focus:border-black outline-none transition appearance-none"
                   >
-                    <option value="">Select gender (optional)</option>
+                    <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="prefer_not_to_say">Prefer not to say</option>
                   </select>
                 </div>
               </motion.div>

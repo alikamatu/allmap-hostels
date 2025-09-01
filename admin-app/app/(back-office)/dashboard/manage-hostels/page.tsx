@@ -8,9 +8,9 @@ import {
   Coffee, Car, Shield, RefreshCw, ChevronLeft, ChevronRight, Info, Hotel,
   Star, MoreVertical, Check, X, Users, Bed, Calendar, CalendarOff, Crown
 } from 'lucide-react';
-import img from 'next/image';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { LoaderFive } from '@/components/ui/loader';
 
 const MySwal = withReactContent(Swal);
 
@@ -86,45 +86,41 @@ export default function HostelManagementPage() {
     }
   }, []);
 
-  const fetchHostels = useCallback(async () => {
-    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Determine endpoint based on user role and toggle state
-      let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`;
-      
-      // Super admin can choose to view all hostels or just their own
-      if (userProfile?.role === 'super_admin' && showAllHostels) {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/all`;
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch hostels: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setHostels(data);
-      console.log(`Fetched ${data.length} hostels for ${userProfile?.role || 'unknown'} user`);
-    } catch (err) {
-      console.error('Error fetching hostels:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred while fetching hostels');
-      MySwal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: err instanceof Error ? err.message : 'Failed to fetch hostels',
-        confirmButtonColor: '#4F46E5',
-      });
-    } finally {
-      setLoading(false);
+const fetchHostels = useCallback(async () => {
+  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  try {
+    setLoading(true);
+    setError('');
+    
+    // Always use the /fetch endpoint for user-specific hostels
+    // This ensures users only see their own hostels
+    let endpoint = `${process.env.NEXT_PUBLIC_API_URL}/hostels/fetch`;
+    
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch hostels: ${response.status} ${response.statusText}`);
     }
-  }, [userProfile, showAllHostels]);
+    
+    const data = await response.json();
+    setHostels(data);
+    console.log(`Fetched ${data.length} hostels for ${userProfile?.role || 'unknown'} user`);
+  } catch (err) {
+    console.error('Error fetching hostels:', err);
+    setError(err instanceof Error ? err.message : 'An error occurred while fetching hostels');
+    MySwal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err instanceof Error ? err.message : 'Failed to fetch hostels',
+      confirmButtonColor: '#4F46E5',
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [userProfile, showAllHostels]);
 
   useEffect(() => {
     fetchUserProfile();
@@ -283,17 +279,10 @@ export default function HostelManagementPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <div className="relative">
-            <Loader2 className="animate-spin text-4xl mx-auto mb-4 text-indigo-600" />
-            <div className="absolute inset-0 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin"></div>
-          </div>
-          <p className="text-gray-600 text-lg font-medium">Loading hostels...</p>
-          <p className="text-gray-400 text-sm mt-1">This may take a moment</p>
-        </div>
+      <div className="flex w-full h-full items-center justify-center">
+        <LoaderFive text="Loading Hostel(s)..." />
       </div>
-    );
+    )
   }
 
   return (

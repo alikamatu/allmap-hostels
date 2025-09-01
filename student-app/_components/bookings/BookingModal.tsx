@@ -2,11 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaExclamationTriangle, FaSync, FaSpinner } from 'react-icons/fa';
-import { FiAlertTriangle } from 'react-icons/fi';
+import { FaTimes, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaExclamationTriangle, FaSync, FaSpinner, FaCreditCard, FaLock } from 'react-icons/fa';
+import { FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import { BookingType, RoomType, Room, BookingFormData, BookingFormErrors, ApiRoom, apiRoomToRoom } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useUserProfile } from '@/hooks/useUserProfile';
+
+declare global {
+  interface Window {
+    PaystackPop?: {
+      setup: (config: any) => {
+        openIframe: () => void;
+      };
+    };
+  }
+}
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -36,10 +46,16 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
-  const [step, setStep] = useState<'details' | 'room-selection' | 'confirmation'>('details');
+  const [step, setStep] = useState<'details' | 'room-selection' | 'payment' | 'confirmation'>('details');
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [paymentReference, setPaymentReference] = useState<string>('');
+
+  // Fixed booking fee
+  const BOOKING_FEE = 70; // 70 GHS
 
   // Auto-populate form with user profile data
   useEffect(() => {
@@ -76,8 +92,24 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       setSelectedRoomId('');
       setAvailableRooms([]);
       setBookingError(null);
+      setPaymentCompleted(false);
+      setPaymentReference('');
     }
   }, [isOpen, profile]);
+
+  // Load Paystack script
+  useEffect(() => {
+    if (isOpen && !window.PaystackPop) {
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      document.body.appendChild(script);
+      
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [isOpen]);
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -167,14 +199,12 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         roomType.id
       );
 
-      console.log('Availability response:', availability); // Debug log
+      console.log('Availability response:', availability);
       
-      // Handle the API response which returns ApiRoom format
       const apiRooms = availability.rooms || [];
       const roomsOfType = apiRooms
         .filter((room: any) => room.roomType.id === roomType.id)
         .map((apiRoom: any) => {
-          // Convert API room format to our Room interface
           const convertedRoom: Room = {
             id: apiRoom.id,
             hostelId: apiRoom.hostelId || hostel.id,
@@ -271,6 +301,64 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     }
   }, [refetchProfile, profile]);
 
+  const handlePayment = useCallback(() => {
+    if (!window.PaystackPop) {
+      setBookingError('Payment system not loaded. Please refresh and try again.');
+      return;
+    }
+
+    setProcessingPayment(true);
+    setBookingError(null);
+
+    const reference = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const handler = window.PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_your_paystack_public_key', // Replace with your Paystack public key
+      email: formData.studentEmail,
+      amount: BOOKING_FEE * 100, // Amount in kobo (70 GHS = 7000 kobo)
+      currency: 'GHS',
+      ref: reference,
+      metadata: {
+        custom_fields: [
+          {
+            display_name: 'Booking Type',
+            variable_name: 'booking_type',
+            value: formData.bookingType
+          },
+          {
+            display_name: 'Room Type',
+            variable_name: 'room_type',
+            value: roomType.name
+          },
+          {
+            display_name: 'Hostel',
+            variable_name: 'hostel',
+            value: hostel.name
+          },
+          {
+            display_name: 'Student Name',
+            variable_name: 'student_name',
+            value: formData.studentName
+          }
+        ]
+      },
+      callback: function(response: any) {
+        console.log('Payment successful:', response);
+        setPaymentReference(response.reference);
+        setPaymentCompleted(true);
+        setProcessingPayment(false);
+        setStep('confirmation');
+      },
+      onClose: function() {
+        console.log('Payment window closed');
+        setProcessingPayment(false);
+        setBookingError('Payment was cancelled. Please try again to complete your booking.');
+      }
+    });
+
+    handler.openIframe();
+  }, [formData, roomType.name, hostel.name]);
+
   const handleNextStep = useCallback(async () => {
     if (step === 'details') {
       if (validateForm()) {
@@ -281,13 +369,13 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       }
     } else if (step === 'room-selection') {
       if (selectedRoomId) {
-        setStep('confirmation');
+        setStep('payment');
       }
     }
   }, [step, validateForm, checkAvailability, availableRooms.length, errors.checkInDate, selectedRoomId]);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedRoomId || !profile) return;
+    if (!selectedRoomId || !profile || !paymentCompleted || !paymentReference) return;
 
     setLoading(true);
     setBookingError(null);
@@ -306,17 +394,20 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         emergencyContacts: formData.emergencyContacts?.filter(
           contact => contact.name.trim() && contact.relationship.trim() && contact.phone.trim()
         ),
+        paymentReference: paymentReference,
+        bookingFeeAmount: BOOKING_FEE,
       };
+      
       const booking = await bookingService.createBooking(bookingData);
       onClose();
-      alert(`Booking created successfully! Booking ID: ${booking.id}`);
+      alert(`Booking created successfully! Booking ID: ${booking.id}\nPayment Reference: ${paymentReference}`);
     } catch (error: any) {
       console.error('Failed to create booking:', error);
       setBookingError(`Failed to create booking: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [selectedRoomId, hostel.id, formData, profile, onClose]);
+  }, [selectedRoomId, hostel.id, formData, profile, onClose, paymentCompleted, paymentReference]);
 
   if (!isOpen) return null;
 
@@ -374,23 +465,27 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
             <hr className="border-t border-gray-200 mt-4" />
             {/* Progress indicator */}
             <div className="flex items-center mt-4 space-x-2">
-              {['details', 'room-selection', 'confirmation'].map((stepName, index) => (
+              {['details', 'room-selection', 'payment', 'confirmation'].map((stepName, index) => (
                 <div key={stepName} className="flex items-center">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
                       step === stepName
                         ? 'bg-black text-white'
-                        : index < ['details', 'room-selection', 'confirmation'].indexOf(step)
+                        : index < ['details', 'room-selection', 'payment', 'confirmation'].indexOf(step)
                         ? 'bg-black text-white'
                         : 'bg-gray-200 text-gray-800'
                     }`}
                   >
-                    {index + 1}
+                    {stepName === 'payment' && paymentCompleted ? (
+                      <FiCheck className="text-sm" />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
-                  {index < 2 && (
+                  {index < 3 && (
                     <div
                       className={`w-8 h-0.5 ${
-                        index < ['details', 'room-selection', 'confirmation'].indexOf(step) ? 'bg-black' : 'bg-gray-200'
+                        index < ['details', 'room-selection', 'payment', 'confirmation'].indexOf(step) ? 'bg-black' : 'bg-gray-200'
                       }`}
                     />
                   )}
@@ -405,7 +500,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mb-4 p- bg-red-100 text-red-900 border-red-400 flex items-center"
+                className="mb-4 p-4 bg-red-100 text-red-900 border border-red-400 rounded-lg flex items-center"
               >
                 <FiAlertTriangle className="text-red-900 mr-2" />
                 <p className="text-sm">{bookingError}</p>
@@ -432,8 +527,8 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   </div>
                 )}
 
-                <div className="grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className='hidden'>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-sm font-medium text-black mb-2">
                       <FaUser className="inline mr-2" />
                       Full Name *
@@ -443,9 +538,72 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       value={formData.studentName}
                       onChange={(e) => handleInputChange('studentName', e.target.value)}
                       className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
+                      aria-label="Enter your full name"
+                    />
+                    {errors.studentName && <p className="text-red-600 text-sm mt-1">{errors.studentName}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-2">
+                      <FaEnvelope className="inline mr-2" />
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.studentEmail}
+                      onChange={(e) => handleInputChange('studentEmail', e.target.value)}
+                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
+                      aria-label="Enter your email address"
+                    />
+                    {errors.studentEmail && <p className="text-red-600 text-sm mt-1">{errors.studentEmail}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-2">
+                      <FaPhone className="inline mr-2" />
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.studentPhone}
+                      onChange={(e) => handleInputChange('studentPhone', e.target.value)}
+                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
+                      aria-label="Enter your phone number"
+                    />
+                    {errors.studentPhone && <p className="text-red-600 text-sm mt-1">{errors.studentPhone}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-2">
+                      <FaCalendarAlt className="inline mr-2" />
+                      Booking Type *
+                    </label>
+                    <select
+                      value={formData.bookingType}
+                      onChange={(e) => handleInputChange('bookingType', e.target.value)}
+                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
+                      aria-label="Select booking type"
+                    >
+                      <option value={BookingType.SEMESTER}>Semester</option>
+                      <option value={BookingType.MONTHLY}>Monthly</option>
+                      <option value={BookingType.WEEKLY}>Weekly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-black mb-2">
+                      <FaCalendarAlt className="inline mr-2" />
+                      Check-in Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.checkInDate}
+                      onChange={(e) => handleInputChange('checkInDate', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm text-gray-800"
                       aria-label="Select check-in date"
                     />
-                    {errors.checkInDate && <p className="text-black text-sm mt-1">{errors.checkInDate}</p>}
+                    {errors.checkInDate && <p className="text-red-600 text-sm mt-1">{errors.checkInDate}</p>}
                   </div>
 
                   <div>
@@ -462,7 +620,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                       aria-label="Select check-out date"
                       required
                     />
-                    {errors.checkOutDate && <p className="text-black text-sm mt-1">{errors.checkOutDate}</p>}
+                    {errors.checkOutDate && <p className="text-red-600 text-sm mt-1">{errors.checkOutDate}</p>}
                   </div>
                 </div>
 
@@ -482,14 +640,14 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 <div>
                   <label className="block text-sm font-medium text-black mb-2">Emergency Contacts *</label>
                   {formData.emergencyContacts?.map((contact, index) => (
-                    <div key={index} className="p-4 mb-3">
+                    <div key={index} className="p-4 border border-gray-200 rounded-lg mb-3">
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-medium text-black">Contact {index + 1}</h4>
                         {formData.emergencyContacts!.length > 1 && (
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             onClick={() => removeEmergencyContact(index)}
-                            className="text-black"  
+                            className="text-red-600"  
                             aria-label={`Remove emergency contact ${index + 1}`}
                           >
                             <FaTimes />
@@ -525,7 +683,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                     </div>
                   ))}
                   {errors.emergencyContacts && (
-                    <p className="text-black text-sm mt-1">{errors.emergencyContacts}</p>
+                    <p className="text-red-600 text-sm mt-1">{errors.emergencyContacts}</p>
                   )}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -538,7 +696,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 </div>
 
                 {/* Pricing Summary */}
-                <div className="p-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <h3 className="font-medium text-black mb-2">Pricing Summary</h3>
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
@@ -558,11 +716,20 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         </span>
                       </div>
                     )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-800">Room Price</span>
+                      <span className="font-medium text-black">{bookingService.formatPrice(totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between text-orange-600">
+                      <span className="font-medium">Booking Fee (Pay Now)</span>
+                      <span className="font-bold">{bookingService.formatPrice(BOOKING_FEE)}</span>
+                    </div>
                     <div className="pt-2 border-t border-gray-200">
                       <div className="flex justify-between font-bold text-black">
-                        <span>Total Amount</span>
+                        <span>Total Room Cost</span>
                         <span>{bookingService.formatPrice(totalAmount)}</span>
                       </div>
+                      <p className="text-xs text-gray-600 mt-1">*Room payment due on check-in</p>
                     </div>
                   </div>
                 </div>
@@ -600,8 +767,8 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                     {availableRooms.map((room) => (
                       <motion.div
                         key={room.id}
-                        className={`p-4 cursor-pointer transition-colors ${
-                          selectedRoomId === room.id ? 'bg-black/5' : 'hover:bg-gray-100'
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedRoomId === room.id ? 'bg-black/5 border-black' : 'hover:bg-gray-50 border-gray-200'
                         }`}
                         onClick={() => setSelectedRoomId(room.id)}
                         whileHover={{ scale: 1.02 }}
@@ -622,7 +789,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         <div className="mt-3">
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-800">Status:</span>
-                            <span className="font-medium text-black">Available</span>
+                            <span className="font-medium text-green-600">Available</span>
                           </div>
                           <div className="flex justify-between text-sm mt-1">
                             <span className="text-gray-800">Gender:</span>
@@ -648,11 +815,123 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
               </motion.div>
             )}
 
+            {step === 'payment' && (
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                <div className="text-center">
+                  <FaCreditCard className="text-4xl text-black mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-black">Secure Payment</h3>
+                  <p className="text-gray-800">Complete your booking with a secure payment</p>
+                </div>
+
+                {/* Payment Details */}
+                <div className="p-6 bg-gray-50 rounded-lg">
+                  <h4 className="font-bold text-black mb-4">Payment Summary</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-800">Booking Fee</span>
+                      <span className="font-medium text-black">{bookingService.formatPrice(BOOKING_FEE)}</span>
+                    </div>
+                    <hr className="border-t border-gray-200" />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span className="text-black">Amount to Pay Now</span>
+                      <span className="text-orange-600">{bookingService.formatPrice(BOOKING_FEE)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-blue-800 text-sm">
+                      <FaLock className="inline mr-2" />
+                      This booking fee secures your room. The remaining balance of {bookingService.formatPrice(totalAmount)} will be due on check-in.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selected Room Details */}
+                <div className="p-4 border border-gray-200 rounded-lg">
+                  <h4 className="font-bold text-black mb-2">Selected Room</h4>
+                  {selectedRoomId && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-800">Room Number:</span>
+                        <span className="font-medium text-black">
+                          {availableRooms.find(r => r.id === selectedRoomId)?.roomNumber || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-800">Floor:</span>
+                        <span className="font-medium text-black">
+                          {availableRooms.find(r => r.id === selectedRoomId)?.floor || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-800">Duration:</span>
+                        <span className="font-medium text-black">
+                          {bookingService.getDurationInDays(new Date(formData.checkInDate), new Date(formData.checkOutDate))} days
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {paymentCompleted && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 bg-green-50 border border-green-200 rounded-lg"
+                  >
+                    <div className="flex items-center">
+                      <FiCheck className="text-green-600 text-xl mr-3" />
+                      <div>
+                        <p className="font-medium text-green-800">Payment Successful!</p>
+                        <p className="text-green-700 text-sm">Reference: {paymentReference}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {!paymentCompleted && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handlePayment}
+                    disabled={processingPayment}
+                    className="w-full px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center"
+                    aria-label="Pay booking fee with Paystack"
+                  >
+                    {processingPayment ? (
+                      <>
+                        <FaSpinner className="animate-spin mr-2" />
+                        Processing Payment...
+                      </>
+                    ) : (
+                      <>
+                        <FaCreditCard className="mr-2" />
+                        Pay {bookingService.formatPrice(BOOKING_FEE)} with Paystack
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <FaLock className="text-sm" />
+                    <span className="text-sm">Secured by Paystack</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Your payment information is encrypted and secure
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
             {step === 'confirmation' && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                <h3 className="text-lg font-bold text-black">Confirm Your Booking</h3>
+                <div className="text-center">
+                  <FiCheck className="text-4xl text-green-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-black">Ready to Confirm</h3>
+                  <p className="text-gray-800">Review your booking details and confirm</p>
+                </div>
 
-                <div className="p-5">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-bold text-black mb-3">Booking Summary</h4>
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
@@ -688,16 +967,32 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                         {bookingService.getDurationInDays(new Date(formData.checkInDate), new Date(formData.checkOutDate))} days
                       </span>
                     </div>
-                    <div className="pt-2 border-t border-gray-200">
-                      <div className="flex justify-between font-bold text-black">
-                        <span>Total Amount:</span>
-                        <span>{bookingService.formatPrice(totalAmount)}</span>
-                      </div>
+                  </div>
+                </div>
+
+                {/* Payment Confirmation */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <FiCheck className="text-green-600 mr-2" />
+                    <span className="font-medium text-green-800">Payment Completed</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Booking Fee Paid:</span>
+                      <span className="font-medium text-green-800">{bookingService.formatPrice(BOOKING_FEE)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Payment Reference:</span>
+                      <span className="font-mono text-green-800 text-xs">{paymentReference}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Remaining Balance:</span>
+                      <span className="font-medium text-green-800">{bookingService.formatPrice(totalAmount)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-5">
+                <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-bold text-black mb-3">Personal Information</h4>
                   <hr className="border-t border-gray-200 mb-4" />
                   <div className="space-y-2">
@@ -717,7 +1012,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 </div>
 
                 {formData.specialRequests && (
-                  <div className="p-5">
+                  <div className="p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-bold text-black mb-3">Special Requests</h4>
                     <hr className="border-t border-gray-200 mb-4" />
                     <p className="text-gray-800">{formData.specialRequests}</p>
@@ -725,7 +1020,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 )}
 
                 {formData.emergencyContacts && formData.emergencyContacts.length > 0 && (
-                  <div className="p-5">
+                  <div className="p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-bold text-black mb-3">Emergency Contacts</h4>
                     <hr className="border-t border-gray-200 mb-4" />
                     <div className="space-y-3">
@@ -740,6 +1035,13 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                     </div>
                   </div>
                 )}
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-800 text-sm">
+                    <FaExclamationTriangle className="inline mr-2" />
+                    By confirming this booking, you agree to pay the remaining balance of {bookingService.formatPrice(totalAmount)} on check-in day.
+                  </p>
+                </div>
               </motion.div>
             )}
 
@@ -750,9 +1052,13 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 {step !== 'details' && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
-                    onClick={() => setStep(step === 'room-selection' ? 'details' : 'room-selection')}
+                    onClick={() => {
+                      if (step === 'room-selection') setStep('details');
+                      else if (step === 'payment') setStep('room-selection');
+                      else if (step === 'confirmation') setStep('payment');
+                    }}
                     disabled={loading}
-                    className="px-6 py-2 bg-white text-black border-b border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                    className="px-6 py-2 bg-white text-black border border-gray-300 hover:bg-gray-100 disabled:opacity-50 rounded-lg"
                     aria-label="Go back to previous step"
                   >
                     Back
@@ -761,40 +1067,66 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
 
                 {step === 'details' && <div className="ml-auto"></div>}
 
-                {step !== 'confirmation' ? (
+                {step === 'details' && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleNextStep}
-                    disabled={loading || checkingAvailability || (step === 'room-selection' && !selectedRoomId)}
-                    className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center"
-                    aria-label={step === 'details' ? 'Check room availability' : 'Continue to confirmation'}
+                    disabled={loading || checkingAvailability}
+                    className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center rounded-lg"
+                    aria-label="Check room availability"
                   >
                     {checkingAvailability ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
                         Checking Availability
                       </>
-                    ) : step === 'details' ? (
-                      'Check Availability'
                     ) : (
-                      'Continue to Confirmation'
+                      'Check Availability'
                     )}
                   </motion.button>
-                ) : (
+                )}
+
+                {step === 'room-selection' && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handleNextStep}
+                    disabled={loading || !selectedRoomId}
+                    className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50 rounded-lg"
+                    aria-label="Proceed to payment"
+                  >
+                    Proceed to Payment
+                  </motion.button>
+                )}
+
+                {step === 'payment' && paymentCompleted && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => setStep('confirmation')}
+                    className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 rounded-lg ml-auto"
+                    aria-label="Continue to confirmation"
+                  >
+                    Continue to Confirmation
+                  </motion.button>
+                )}
+
+                {step === 'confirmation' && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="px-6 py-2 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center ml-auto"
+                    className="px-6 py-2 bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 flex items-center ml-auto rounded-lg"
                     aria-label="Confirm booking"
                   >
                     {loading ? (
                       <>
                         <FaSpinner className="animate-spin mr-2" />
-                        Processing Booking...
+                        Creating Booking...
                       </>
                     ) : (
-                      'Confirm Booking'
+                      <>
+                        <FiCheck className="mr-2" />
+                        Confirm Booking
+                      </>
                     )}
                   </motion.button>
                 )}
