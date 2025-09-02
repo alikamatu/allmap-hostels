@@ -21,11 +21,19 @@ function VerifyEmailContent() {
   });
   const [isResending, setIsResending] = useState(false);
   const [showResendSuccess, setShowResendSuccess] = useState(false);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
 
   useEffect(() => {
     const status = searchParams.get('status');
     const message = searchParams.get('message');
     const token = searchParams.get('token');
+    const email = searchParams.get('email');
+
+    // If email is in URL params, store it
+    if (email) {
+      setEmailInput(email);
+    }
 
     if (status) {
       handleStatusResponse(status, message);
@@ -93,28 +101,28 @@ function VerifyEmailContent() {
     }
   };
 
-  const handleResendEmail = async () => {
-    const email = searchParams.get('email');
-    if (!email) {
-      setVerification({
-        status: 'error',
-        message: 'No email provided for resending verification.'
-      });
+  const handleResendEmail = async (email?: string) => {
+    const emailToUse = email || emailInput || searchParams.get('email');
+    
+    if (!emailToUse) {
+      setShowEmailInput(true);
       return;
     }
 
     setIsResending(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/resend-verification`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+      const response = await fetch(`${apiUrl}/auth/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: emailToUse }),
       });
 
       if (response.ok) {
         setShowResendSuccess(true);
+        setShowEmailInput(false);
         setTimeout(() => setShowResendSuccess(false), 3000);
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -128,6 +136,13 @@ function VerifyEmailContent() {
       });
     } finally {
       setIsResending(false);
+    }
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (emailInput.trim()) {
+      handleResendEmail(emailInput.trim());
     }
   };
 
@@ -179,10 +194,69 @@ function VerifyEmailContent() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-gray-100 p-3 mb-6 flex items-center text-black"
+                className="bg-green-50 border border-green-200 p-3 mb-6 flex items-center text-green-800"
               >
-                <FiCheckCircle className="h-4 w-4 mr-2 text-black" />
-                Verification email sent successfully!
+                <FiCheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                Verification email sent successfully! Check your inbox.
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showEmailInput && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mb-6"
+              >
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter your email address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="your.email@example.com"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={isResending || !emailInput.trim()}
+                      className={`flex-1 py-2 px-4 font-medium transition flex items-center justify-center gap-2 ${
+                        isResending || !emailInput.trim()
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                          : 'bg-black text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      {isResending ? (
+                        <>
+                          <FaSpinner className="animate-spin h-4 w-4" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <FiMail className="h-4 w-4" />
+                          Send Email
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailInput(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </motion.div>
             )}
           </AnimatePresence>
@@ -204,30 +278,32 @@ function VerifyEmailContent() {
 
             {verification.status === 'error' && (
               <>
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleResendEmail}
-                  disabled={isResending}
-                  className={`w-full py-3 px-6 font-medium transition flex items-center justify-center gap-2 ${
-                    isResending ? 'bg-gray-999 cursor-not-allowed' : 'bg-white text-black hover:bg-gray-100'
-                  }`}
-                >
-                  {isResending ? (
-                    <>
-                      <FaSpinner className="animate-spin h-4 w-4 mr-2" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <FiMail className="h-4 w-4" />
-                      Resend Verification
-                    </>
-                  )}
-                </motion.button>
+                {!showEmailInput && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleResendEmail()}
+                    disabled={isResending}
+                    className={`w-full py-3 px-6 font-medium transition flex items-center justify-center gap-2 ${
+                      isResending ? 'bg-gray-200 cursor-not-allowed text-gray-400' : 'bg-gray-100 text-black hover:bg-gray-200 border border-gray-300'
+                    }`}
+                  >
+                    {isResending ? (
+                      <>
+                        <FaSpinner className="animate-spin h-4 w-4 mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <FiMail className="h-4 w-4" />
+                        Resend Verification
+                      </>
+                    )}
+                  </motion.button>
+                )}
 
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
@@ -236,7 +312,7 @@ function VerifyEmailContent() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => router.push('/sign-up')}
-                  className="w-full bg-white text-black py-3 px-6 font-medium transition hover:bg-gray-100 flex items-center justify-center gap-2"
+                  className="w-full bg-white text-black py-3 px-6 font-medium transition hover:bg-gray-100 border border-gray-300 flex items-center justify-center gap-2"
                 >
                   <FiUserPlus className="h-4 w-4" />
                   Back to Registration

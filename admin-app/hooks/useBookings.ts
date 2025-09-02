@@ -308,9 +308,14 @@ const fetchStats = async (hostelId?: string) => {
   const checkOutBooking = useCallback(async (bookingId: string, checkOutData: { notes?: string, [key: string]: unknown }): Promise<Booking> => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('access_token')
       const data = await makeApiRequest(`/bookings/${bookingId}/checkout`, {
         method: 'PATCH',
         body: JSON.stringify(checkOutData),
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       // Update local state

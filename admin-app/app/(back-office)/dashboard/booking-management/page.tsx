@@ -454,6 +454,7 @@ const BookingManagementPage: React.FC = () => {
         {/* Modals */}
         {selectedBooking && (
           <>
+            {/* Booking Details Modal */}
             <BookingDetailsModal
               isOpen={modals.details}
               onClose={() => closeModal('details')}
@@ -462,9 +463,37 @@ const BookingManagementPage: React.FC = () => {
               onCheckIn={() => openModal('checkIn', selectedBooking)}
               onCheckOut={() => openModal('checkOut', selectedBooking)}
             />
+
+            {/* Payment Modal */}
+            <PaymentModal
+              isOpen={modals.payment}
+              onClose={() => closeModal('payment')}
+              booking={selectedBooking}
+              onSubmit={(paymentData) => handlePayment(selectedBooking.id, paymentData)}
+              loading={paymentLoading}
+            />
+
+            {/* Check-in Modal */}
+            <CheckInModal
+              isOpen={modals.checkIn}
+              onClose={() => closeModal('checkIn')}
+              booking={selectedBooking}
+              onSubmit={(checkInData) => handleCheckIn(selectedBooking.id, checkInData)}
+              loading={bookingsLoading}
+            />
+
+            {/* Check-out Modal */}
+            <CheckOutModal
+              isOpen={modals.checkOut}
+              onClose={() => closeModal('checkOut')}
+              booking={selectedBooking}
+              onSubmit={(checkOutData) => handleCheckOut(selectedBooking.id, checkOutData)}
+              loading={bookingsLoading}
+            />
           </>
         )}
 
+        {/* Create Booking Modal */}
         <CreateBookingModal
           isOpen={modals.create}
           onClose={() => closeModal('create')}
