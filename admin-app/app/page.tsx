@@ -183,7 +183,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Hero Section */}
-      <div className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 hidden md:flex flex-col justify-center relative overflow-hidden">
+      <div className="w-full md:w-1/2 bg-[url('/assets/mange.jpg')] bg-cover bg-center p-8 md:p-12 hidden md:flex flex-col justify-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10">
           <div className="absolute top-20 right-20 w-48 h-48 rounded-full bg-white"></div>
           <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full bg-white"></div>

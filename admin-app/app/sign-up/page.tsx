@@ -1,4 +1,3 @@
-// app/register/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -87,7 +86,7 @@ export default function Register() {
       >
         {/* Hero Section */}
         <motion.div 
-          className="w-full md:w-1/2 bg-gradient-to-r from-blue-600 to-indigo-800 p-8 md:p-12 hidden md:flex flex-col justify-center relative overflow-hidden"
+          className="w-full md:w-1/2 bg-[url('/assets/hostel.jpg')] bg-cover bg-center p-8 md:p-12 hidden md:flex flex-col justify-center relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
@@ -111,7 +110,7 @@ export default function Register() {
               transition={{ duration: 0.5 }}
               className="mb-12"
             >
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">HostelHub Admin</h1>
+              <h1 className="mont text-4xl md:text-5xl mb-4">HostelHub Admin</h1>
               
               <AnimatePresence mode="wait">
                 <motion.p
@@ -149,7 +148,7 @@ export default function Register() {
                   <svg className="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
-                  <span>{text}</span>
+                  <span className='mont text-2xl font-bold'>{text}</span>
                 </motion.div>
               ))}
             </motion.div>
