@@ -340,7 +340,7 @@ export default function SignUpPage() {
           alt="Hostel Community"
           className="absolute inset-0 object-cover w-full h-full"
         />
-        <div className="absolute inset-0 bg-black/70 z-10" />
+        <div className="absolute inset-0 bg-black/75 z-10" />
         <div className="absolute inset-0 z-20 flex flex-col justify-center items-center p-12">
           <motion.h2
             initial={{ opacity: 0, y: 10 }}
