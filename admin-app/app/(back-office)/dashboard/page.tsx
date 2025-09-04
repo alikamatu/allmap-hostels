@@ -346,7 +346,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening with your hostels today.</p>
+          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening with your hostels today.</p>
         </div>
 
         {/* Stats Grid */}
