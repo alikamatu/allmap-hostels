@@ -34,7 +34,7 @@ export default function SettingsPage() {
     email: '',
     phone: '',
     gender: '',
-    role: '',
+    role: 'male',
     is_verified: false,
     school: null
   });

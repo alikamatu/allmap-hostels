@@ -386,7 +386,6 @@ useEffect(() => {
         maxOccupancy: '',
         notes: ''
       });
-      alert('Room created successfully!');
       
     } catch (error) {
       console.error('Error creating room:', error);
@@ -470,8 +469,6 @@ const handleBulkCreate = async (formData: BulkCreateFormData) => {
       roomNumbers: '',
       notes: ''
     });
-    alert(`Successfully created ${roomNumbers.length} rooms!`);
-    
   } catch (error) {
     console.error('Error creating rooms:', error);
     alert((error as Error).message || 'Failed to create rooms. Please try again.');
@@ -721,8 +718,7 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
       throw new Error('Failed to create room type');
     }
 
-    const newRoomType = await response.json();
-    console.log('Successfully created room type:', newRoomType);
+    // const newRoomType = await response.json();
     
     // Handle success
     setShowCreateRoomTypeModal(false);

@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { AllowedGender } from '@/types/room';
-
+import Swal from 'sweetalert2';
 
 type HostelOption = {
   id: string;
@@ -19,7 +19,7 @@ type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-  allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
+  allowedGenders: AllowedGender[];
   total_rooms: number;
   available_rooms: number;
   images: string[];
@@ -30,7 +30,7 @@ interface CreateRoomTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
   hostels: HostelOption[];
-  onSubmit: (data: CreateRoomTypeFormData) => void;
+  onSubmit: (data: CreateRoomTypeFormData) => Promise<void>;
   loading: boolean;
 }
 
@@ -49,7 +49,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: string;
     pricePerWeek: string;
     capacity: string;
-    allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
+    allowedGenders: AllowedGender[];
     total_rooms: string;
     available_rooms: string;
     images: string[];
@@ -62,7 +62,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     pricePerMonth: '',
     pricePerWeek: '',
     capacity: '1',
-    allowedGenders: [AllowedGender.MIXED], // Default to mixed
+    allowedGenders: [AllowedGender.MIXED],
     total_rooms: '1',
     available_rooms: '1',
     images: [],
@@ -71,6 +71,23 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
 
   const [newAmenity, setNewAmenity] = useState('');
 
+  const showAlert = (title: string, text: string, icon: 'error' | 'success' | 'warning' | 'info' = 'error') => {
+    Swal.fire({
+      title,
+      text,
+      icon,
+      confirmButtonColor: '#1a73e8', // Google blue
+      confirmButtonText: 'OK',
+      background: '#fff',
+      customClass: {
+        popup: 'rounded-xl shadow-lg',
+        title: 'text-lg font-medium text-gray-900',
+        htmlContainer: 'text-sm text-gray-600',
+        confirmButton: 'px-4 py-2 font-medium',
+      },
+    });
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -78,24 +95,21 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle checkbox changes for allowed genders
   const handleGenderToggle = (gender: AllowedGender) => {
     setFormData((prev) => {
       const currentGenders = prev.allowedGenders;
       const isSelected = currentGenders.includes(gender);
 
       if (isSelected) {
-        // Remove if already selected (but ensure at least one remains)
-        const newGenders = currentGenders.filter(g => g !== gender);
+        const newGenders = currentGenders.filter((g) => g !== gender);
         return {
           ...prev,
-          allowedGenders: newGenders.length > 0 ? newGenders : [AllowedGender.MIXED]
+          allowedGenders: newGenders.length > 0 ? newGenders : [AllowedGender.MIXED],
         };
       } else {
-        // Add if not selected
         return {
           ...prev,
-          allowedGenders: [...currentGenders, gender]
+          allowedGenders: [...currentGenders, gender],
         };
       }
     });
@@ -119,33 +133,29 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.hostelId) {
-      alert('Please select a hostel');
+      showAlert('Hostel Required', 'Please select a hostel', 'warning');
       return;
     }
 
     if (!formData.name) {
-      alert('Room type name is required');
+      showAlert('Name Required', 'Room type name is required', 'warning');
       return;
     }
 
     if (!formData.pricePerSemester || !formData.pricePerMonth) {
-      alert('Pricing information is required');
+      showAlert('Pricing Required', 'Pricing information is required', 'warning');
       return;
     }
 
     if (formData.allowedGenders.length === 0) {
-      alert('Please select at least one allowed gender');
+      showAlert('Gender Selection Required', 'Please select at least one allowed gender', 'warning');
       return;
     }
 
-    // Debug logging
-    console.log('Form data allowedGenders before submission:', formData.allowedGenders);
-
-    // Convert string values to numbers and include allowedGenders
     const data: CreateRoomTypeFormData = {
       hostelId: formData.hostelId,
       name: formData.name,
@@ -154,19 +164,22 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       pricePerMonth: parseFloat(formData.pricePerMonth),
       pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : undefined,
       capacity: parseInt(formData.capacity),
-      allowedGenders: [...formData.allowedGenders], // Ensure it's a proper array copy
+      allowedGenders: [...formData.allowedGenders],
       total_rooms: parseInt(formData.total_rooms),
       available_rooms: parseInt(formData.available_rooms),
       amenities: formData.amenities,
       images: formData.images,
     };
 
-    console.log('Submitting Room Type:', data);
-    console.log('allowedGenders in final data:', data.allowedGenders);
-    onSubmit(data);
+    try {
+      await onSubmit(data);
+      showAlert('Success', 'Room type created successfully!', 'success');
+      onClose();
+    } catch (error) {
+      showAlert('Error', 'Failed to create room type. Please try again.', 'error');
+    }
   };
 
-  // Helper function to get gender display name
   const getGenderDisplayName = (gender: AllowedGender): string => {
     switch (gender) {
       case AllowedGender.MALE:
@@ -182,11 +195,10 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
     }
   };
 
-  // Helper function to get selected genders display
   const getSelectedGendersDisplay = (): string => {
     if (formData.allowedGenders.length === 0) return 'None selected';
     if (formData.allowedGenders.length === 1) {
-      return getGenderDisplayName(formData.allowedGenders[0] as AllowedGender);
+      return getGenderDisplayName(formData.allowedGenders[0]);
     }
     return `${formData.allowedGenders.length} genders selected`;
   };
@@ -198,26 +210,41 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-4">Create New Room Type</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Create New Room Type</h3>
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hostel</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hostel *</label>
                 <select
                   name="hostelId"
                   value={formData.hostelId}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                 >
-                  <option value="">Select Hostel</option>
+                  <option value="">Select a hostel</option>
                   {hostels.map((hostel) => (
                     <option key={hostel.id} value={hostel.id}>
                       {hostel.name}
@@ -227,50 +254,45 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Room Type Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Room Type Name *</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                   placeholder="e.g., Deluxe Single"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  rows={3}
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                   placeholder="Describe the room type..."
                 />
               </div>
 
-              {/* Debug Section - Remove this after fixing */}
-              <div className="p-3 bg-gray-100 rounded-lg text-xs">
-                <strong>Debug Info:</strong>
-                <div>Selected genders: {JSON.stringify(formData.allowedGenders)}</div>
-                <div>Array length: {formData.allowedGenders.length}</div>
-              </div>
-
-              {/* Allowed Genders Selection Field - Now with checkboxes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Allowed Genders
+                  Allowed Genders *
                 </label>
-                <div className="space-y-2 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   {Object.values(AllowedGender).map((gender) => (
                     <label key={gender} className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.allowedGenders.includes(gender)}
                         onChange={() => handleGenderToggle(gender)}
-                        className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black focus:ring-2"
+                        disabled={loading}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-sm text-gray-700">
                         {getGenderDisplayName(gender)}
@@ -278,85 +300,100 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Select who can be assigned to rooms of this type. You can select multiple options.
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Select who can be assigned to this room type. Multiple selections allowed.
                 </p>
-                <div className="mt-1 text-sm text-gray-600">
+                <div className="mt-1.5 text-sm text-blue-600 font-medium">
                   Selected: {getSelectedGendersDisplay()}
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price/Semester</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Semester *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      name="pricePerSemester"
+                      value={formData.pricePerSemester}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      disabled={loading}
+                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Month *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      name="pricePerMonth"
+                      value={formData.pricePerMonth}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      disabled={loading}
+                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Week</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      name="pricePerWeek"
+                      value={formData.pricePerWeek}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      disabled={loading}
+                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Capacity *</label>
                   <input
                     type="number"
-                    name="pricePerSemester"
-                    value={formData.pricePerSemester}
+                    name="capacity"
+                    value={formData.capacity}
                     onChange={handleChange}
                     required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    min="1"
+                    max="2000"
+                    disabled={loading}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price/Month</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Rooms *</label>
                   <input
                     type="number"
-                    name="pricePerMonth"
-                    value={formData.pricePerMonth}
+                    name="total_rooms"
+                    value={formData.total_rooms}
                     onChange={handleChange}
                     required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price/Week</label>
-                  <input
-                    type="number"
-                    name="pricePerWeek"
-                    value={formData.pricePerWeek}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                    min="1"
+                    max="1000"
+                    disabled={loading}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Room Type</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  max="2000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Rooms</label>
-                <input
-                  type="number"
-                  name="total_rooms"
-                  value={formData.total_rooms}
-                  onChange={handleChange}
-                  required
-                  min="1"
-                  max="1000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Available Rooms</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Available Rooms *</label>
                 <input
                   type="number"
                   name="available_rooms"
@@ -365,42 +402,45 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                   required
                   min="0"
                   max="1000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={newAmenity}
                     onChange={(e) => setNewAmenity(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="Add an amenity..."
+                    disabled={loading}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                    placeholder="Add an amenity (e.g., Wi-Fi, AC)..."
                   />
                   <button
                     type="button"
                     onClick={addAmenity}
-                    className="px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                    disabled={loading || !newAmenity.trim()}
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
                   >
-                    Add
+                    <Plus size={18} />
                   </button>
                 </div>
-
                 {formData.amenities.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {formData.amenities.map((amenity) => (
                       <span
                         key={amenity}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
                       >
                         {amenity}
                         <button
                           type="button"
                           onClick={() => removeAmenity(amenity)}
-                          className="text-gray-500 hover:text-gray-700"
+                          disabled={loading}
+                          className="text-blue-500 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <X size={14} />
                         </button>
@@ -414,16 +454,24 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors flex items-center justify-center"
                 >
-                  {loading ? 'Creating...' : 'Create Room Type'}
+                  {loading ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Room Type'
+                  )}
                 </button>
               </div>
             </form>
