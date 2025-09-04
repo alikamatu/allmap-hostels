@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { FiUser, FiMail, FiPhone, FiShield, FiCheckCircle, FiXCircle, FiEdit, FiMapPin, FiGlobe } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiShield, FiCheckCircle, FiXCircle, FiEdit, FiMapPin, FiGlobe, FiLock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import EditProfileModal from '@/_components/profile/EditProfileModal';
+import ChangePasswordModal from '@/_components/profile/ChangePasswordModal';
 
 interface School {
   id: string;
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   useEffect(() => {
     if (!authUser) {
@@ -209,7 +211,7 @@ const fetchProfile = async () => {
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
                     onClick={() => setShowEditModal(true)}
-                    className="flex items-center px-6 py-2   hover:bg-gray-800 transition duration-200"
+                    className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
                   >
                     <FiEdit className="h-4 w-4 mr-2" />
                     Edit Profile
@@ -217,10 +219,61 @@ const fetchProfile = async () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
-                    className="px-6 py-2   hover:bg-gray-100 transition duration-200"
+                    onClick={() => setShowChangePasswordModal(true)}
+                    className="flex items-center px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition duration-200"
                   >
+                    <FiLock className="h-4 w-4 mr-2" />
                     Change Password
                   </motion.button>
+                </div>
+              </div>
+
+              <hr className="border-t border-gray-200" />
+
+              {/* Security Settings */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4 flex items-center">
+                  <FiLock className="h-6 w-6 mr-2" />
+                  Security Settings
+                </h3>
+                <div className="space-y-4 bg-gray-50 rounded-lg p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Password</h4>
+                      <p className="text-sm text-gray-600">
+                        Keep your account secure with a strong password
+                      </p>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => setShowChangePasswordModal(true)}
+                      className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition duration-200"
+                    >
+                      Change
+                    </motion.button>
+                  </div>
+                  <div className="flex items-start justify-between pt-4 border-t border-gray-200">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Account Verification</h4>
+                      <p className="text-sm text-gray-600">
+                        {profile.is_verified ? "Your account is verified" : "Verify your account for enhanced security"}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      {profile.is_verified ? (
+                        <span className="flex items-center px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">
+                          <FiCheckCircle className="h-4 w-4 mr-1" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="flex items-center px-3 py-1 text-sm bg-red-100 text-red-800 rounded-full">
+                          <FiXCircle className="h-4 w-4 mr-1" />
+                          Not Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -291,6 +344,12 @@ const fetchProfile = async () => {
               onUpdate={handleProfileUpdate}
             />
           )}
+
+          {/* Change Password Modal */}
+          <ChangePasswordModal
+            isOpen={showChangePasswordModal}
+            onClose={() => setShowChangePasswordModal(false)}
+          />
         </motion.div>
       </div>
     </div>

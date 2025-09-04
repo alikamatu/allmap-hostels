@@ -177,7 +177,7 @@ export default function HostelsPage() {
     }
     if (filters.maxDistance) parts.push(`within ${filters.maxDistance} km`);
     if (filters.minPrice || filters.maxPrice) {
-      parts.push(`₦${filters.minPrice || '0'}–${filters.maxPrice || '∞'}`);
+      parts.push(`¢${filters.minPrice || '0'}–${filters.maxPrice || '∞'}`);
     }
     if (filters.searchTerm) parts.push(`matching "${filters.searchTerm}"`);
     return parts.join(', ');
