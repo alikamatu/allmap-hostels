@@ -13,7 +13,7 @@ import {
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
-import { Booking, BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
+import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
 import { Hostel } from '@/types/hostel';
 import { useBookings } from '@/hooks/useBookings';
 import { formatCurrency } from '@/utils/currency';
@@ -25,7 +25,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
 interface HistoryFilters {
   search: string;
-  status: 'checked_out' | 'cancelled' | 'all';
+  status: BookingStatus[] | 'all'; // Changed to support array
   hostelId: string;
   dateRange: {
     from: string;
@@ -117,8 +117,7 @@ export default function BookingHistoryPage() {
     fetchHostels();
   }, []);
 
-  // Fetch history bookings
-  const fetchHistoryBookings = useCallback(async () => {
+const fetchHistoryBookings = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -130,10 +129,14 @@ export default function BookingHistoryPage() {
         sortOrder: filters.sortOrder,
       });
 
-      // Add status filter for checked out and cancelled bookings
+      // Fix: Handle multiple statuses correctly
       if (filters.status === 'all') {
-        params.append('status', BookingStatus.CHECKED_OUT);
-        params.append('status', BookingStatus.CANCELLED);
+        // Use excludeStatuses to get all except active ones
+        params.append('excludeStatuses', BookingStatus.PENDING);
+        params.append('excludeStatuses', BookingStatus.CONFIRMED);
+        params.append('excludeStatuses', BookingStatus.CHECKED_IN);
+      } else if (Array.isArray(filters.status)) {
+        filters.status.forEach(status => params.append('status', status));
       } else {
         params.append('status', filters.status);
       }
@@ -153,16 +156,10 @@ export default function BookingHistoryPage() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Filter client-side to ensure we only get checked out and cancelled bookings
-        const filteredBookings = data.bookings.filter((booking: Booking) => 
-          booking.status === BookingStatus.CHECKED_OUT || 
-          booking.status === BookingStatus.CANCELLED ||
-          booking.status === BookingStatus.NO_SHOW
-        );
-        
-        setHistoryBookings(filteredBookings);
+        setHistoryBookings(data.bookings || []);
         setPagination(data.pagination || { page: 1, totalPages: 1, total: 0, limit: 20 });
+      } else {
+        console.error('Failed to fetch bookings:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch history bookings:', error);
@@ -170,6 +167,7 @@ export default function BookingHistoryPage() {
       setLoading(false);
     }
   }, [filters, currentPage, pageSize]);
+
 
   // Fetch bookings when filters change
   useEffect(() => {
@@ -239,9 +237,36 @@ export default function BookingHistoryPage() {
     }
   };
 
+    const renderStatusFilter = () => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Status
+      </label>
+      <select
+        value={filters.status === 'all' ? 'all' : 
+               Array.isArray(filters.status) ? filters.status[0] || 'all' : filters.status}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === 'all') {
+            handleFilterChange({ status: 'all' });
+          } else {
+            handleFilterChange({ status: [value as BookingStatus] });
+          }
+        }}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="all">All History</option>
+        <option value={BookingStatus.CHECKED_OUT}>Checked Out</option>
+        <option value={BookingStatus.CANCELLED}>Cancelled</option>
+        <option value={BookingStatus.NO_SHOW}>No Show</option>
+      </select>
+    </div>
+  );
+
   const hasActiveFilters = 
     filters.search || 
-    filters.status !== 'all' ||
+    (filters.status !== 'all' && 
+     (!Array.isArray(filters.status) || filters.status.length > 0)) ||
     filters.hostelId ||
     filters.dateRange.from ||
     filters.dateRange.to;
@@ -385,7 +410,14 @@ export default function BookingHistoryPage() {
               </label>
               <select
                 value={filters.status}
-                onChange={(e) => handleFilterChange({ status: e.target.value as 'checked_out' | 'cancelled' | 'all' })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'all') {
+                    handleFilterChange({ status: 'all' });
+                  } else {
+                    handleFilterChange({ status: [value as BookingStatus] });
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All History</option>
@@ -482,7 +514,9 @@ export default function BookingHistoryPage() {
                   )}
                   {filters.status !== 'all' && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                      Status: {filters.status.replace('_', ' ')}
+                      Status: {Array.isArray(filters.status)
+                        ? filters.status.map(s => s.replace('_', ' ')).join(', ')
+                        : (filters.status as string).replace('_', ' ')}
                       <X 
                         className="h-3 w-3 cursor-pointer" 
                         onClick={() => handleFilterChange({ status: 'all' })}

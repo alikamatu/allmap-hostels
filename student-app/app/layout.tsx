@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
-import Navbar from "@/_components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AllMap Hostels | Student Hostel Booking Platform",
     description: "Find, compare, and book student hostels easily. AllMap Hostels helps students discover the best accommodation options near their campus.",
-    images: ["https://students.allmap-hostels.com/students.jpg"]
+    images: ["https://student.allmap-hostels.com/students.jpg"]
   },
   robots: {
     index: true,
