@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ClockIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import { ClockIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 interface VerificationStatus {
   status: 'pending' | 'approved' | 'rejected' | 'unverified';
@@ -21,7 +21,7 @@ export default function VerificationStatusPage() {
     const fetchVerificationStatus = async () => {
       try {
         if (!user) {
-          router.push('/login');
+          router.push('/');
           return;
         }
 

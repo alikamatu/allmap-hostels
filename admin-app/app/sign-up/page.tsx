@@ -148,7 +148,7 @@ export default function Register() {
               </p>
               <div className="bg-blue-50 p-4 rounded-lg mb-6">
                 <p className="text-blue-800 text-sm">
-                  <strong>Note:</strong> If you don%apos;t see the email, check your spam folder or 
+                  <strong>Note:</strong> If you don&apos;t see the email, check your spam folder or 
                   click <button className="text-blue-600 font-medium underline">here</button> to resend.
                 </p>
               </div>
