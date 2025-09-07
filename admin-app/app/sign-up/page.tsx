@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,10 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [role, setRole] = useState('hostel_admin'); // Default role for hostel admin
+
+  const { register } = useAuth();
+  const router = useRouter();
 
   const heroTexts = [
     "Streamline Your Hostel Management",
@@ -30,34 +36,69 @@ export default function Register() {
     return () => clearInterval(interval);
   }, [heroTexts.length]);
 
+  const validatePassword = (password: string) => {
+    const errors = [];
+    if (password.length < 8) {
+      errors.push("Password must be at least 8 characters long");
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      errors.push("Password must contain at least one lowercase letter");
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      errors.push("Password must contain at least one uppercase letter");
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      errors.push("Password must contain at least one number");
+    }
+    if (!/(?=.*[!@#$%^&*(),.?":{}|<>])/.test(password)) {
+      errors.push("Password must contain at least one special character");
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    // Client-side validation
     if (password !== repeatPassword) {
       setError("Passwords don't match");
       return;
     }
 
     if (!acceptTerms) {
-      setError("You must accept the terms");
+      setError("You must accept the terms and conditions");
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      setError(passwordErrors[0]);
+      return;
+    }
+
+    if (!email.includes('@')) {
+      setError("Please enter a valid email address");
       return;
     }
 
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Call the register function from AuthContext
+      await register(email, password, role);
       
       // Show success message
       setSuccess(true);
-    } catch (err: unknown) {
-      setError('Registration failed. Please try again.');
+      
+      // Optional: Redirect to verification page after a delay
+      setTimeout(() => {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      }, 3000);
+      
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,8 +106,14 @@ export default function Register() {
 
   // Password strength indicators
   const hasNumber = /\d/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasUpperCase = /[A-Z]/.test(password);
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   const hasMinLength = password.length >= 8;
+
+  // Calculate password strength
+  const strengthChecks = [hasMinLength, hasLowerCase, hasUpperCase, hasNumber, hasSpecialChar];
+  const strengthScore = strengthChecks.filter(Boolean).length;
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -149,14 +196,14 @@ export default function Register() {
               <div className="bg-blue-50 p-4 rounded-lg mb-6">
                 <p className="text-blue-800 text-sm">
                   <strong>Note:</strong> If you don&apos;t see the email, check your spam folder or 
-                  click <button className="text-blue-600 font-medium underline">here</button> to resend.
+                  wait a moment for it to arrive.
                 </p>
               </div>
               <Link 
                 href="/"
                 className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
               >
-                Return to Login
+                Go to Login
               </Link>
             </motion.div>
           ) : (
@@ -165,16 +212,20 @@ export default function Register() {
               <h2 className="text-3xl font-bold text-gray-800 mb-6">Create Admin Account</h2>
               
               {error && (
-                <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4">
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4"
+                >
                   {error}
-                </div>
+                </motion.div>
               )}
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="email"
@@ -184,13 +235,31 @@ export default function Register() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="admin@hostelhub.com"
                     required
+                    disabled={loading}
                   />
+                </div>
+                
+                {/* Role Selection (Optional - you might want to hide this for a specific admin type) */}
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Type
+                  </label>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    disabled={loading}
+                  >
+                    <option value="admin">Hostel Administrator</option>
+                    <option value="super_admin">Super Administrator</option>
+                  </select>
                 </div>
                 
                 {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
+                    Password <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="password"
@@ -200,45 +269,79 @@ export default function Register() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     placeholder="••••••••"
                     required
+                    disabled={loading}
                   />
                   <p className="mt-2 text-xs text-gray-500">
-                    Use 8 or more characters with a mix of letters, numbers & symbols
+                    Use 8+ characters with uppercase, lowercase, numbers & symbols
                   </p>
                   
-                  {/* Password strength indicators */}
-                  <div className="flex space-x-2 mt-2">
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        hasMinLength ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    ></div>
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        hasNumber ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    ></div>
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        hasSpecialChar ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    ></div>
-                  </div>
+                  {/* Enhanced Password strength indicators */}
+                  {password && (
+                    <div className="mt-3">
+                      <div className="flex space-x-1 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div 
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-colors ${
+                              i < strengthScore 
+                                ? strengthScore <= 2 
+                                  ? 'bg-red-500' 
+                                  : strengthScore <= 3 
+                                    ? 'bg-yellow-500' 
+                                    : 'bg-green-500'
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <div className={`flex items-center ${hasMinLength ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="mr-2">{hasMinLength ? '✓' : '○'}</span>
+                          At least 8 characters
+                        </div>
+                        <div className={`flex items-center ${hasLowerCase ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="mr-2">{hasLowerCase ? '✓' : '○'}</span>
+                          One lowercase letter
+                        </div>
+                        <div className={`flex items-center ${hasUpperCase ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="mr-2">{hasUpperCase ? '✓' : '○'}</span>
+                          One uppercase letter
+                        </div>
+                        <div className={`flex items-center ${hasNumber ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="mr-2">{hasNumber ? '✓' : '○'}</span>
+                          One number
+                        </div>
+                        <div className={`flex items-center ${hasSpecialChar ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="mr-2">{hasSpecialChar ? '✓' : '○'}</span>
+                          One special character
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Repeat Password */}
                 <div>
                   <label htmlFor="repeatPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Repeat Password
+                    Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="repeatPassword"
                     type="password"
                     value={repeatPassword}
                     onChange={(e) => setRepeatPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                      repeatPassword && password !== repeatPassword 
+                        ? 'border-red-300 bg-red-50' 
+                        : 'border-gray-300'
+                    }`}
                     placeholder="••••••••"
                     required
+                    disabled={loading}
                   />
+                  {repeatPassword && password !== repeatPassword && (
+                    <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                  )}
                 </div>
                 
                 {/* Terms */}
@@ -251,11 +354,12 @@ export default function Register() {
                       onChange={(e) => setAcceptTerms(e.target.checked)}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="ml-3 text-sm">
                     <label htmlFor="terms" className="text-gray-700">
-                      I accept the <Link href="#" className="text-blue-600 hover:underline">Terms and Conditions</Link>
+                      I accept the <Link href="/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link> and <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
                     </label>
                   </div>
                 </div>
@@ -264,10 +368,10 @@ export default function Register() {
                 <div>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !acceptTerms || password !== repeatPassword || strengthScore < 5}
                     className={`w-full py-3 px-4 rounded-lg text-white font-medium transition ${
-                      loading
-                        ? 'bg-blue-400 cursor-not-allowed'
+                      loading || !acceptTerms || password !== repeatPassword || strengthScore < 5
+                        ? 'bg-gray-400 cursor-not-allowed'
                         : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
@@ -285,32 +389,6 @@ export default function Register() {
                   </button>
                 </div>
               </form>
-              
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-              
-              {/* Social Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button className="w-full py-2 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium flex items-center justify-center hover:bg-gray-50 transition">
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/>
-                  </svg>
-                  Google
-                </button>
-                <button className="w-full py-2 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium flex items-center justify-center hover:bg-gray-50 transition">
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C9.5 3.5 8.5 4.85 8.5 6.5c0 .649.175 1.272.5 1.816-1.3.088-2.42.86-2.92 1.992-.5 1.15-.5 2.35 0 3.5.5 1.132 1.62 1.904 2.92 1.992.325.544.5 1.167.5 1.816 0 1.65-1 3-2.336 3.25.415.166.866.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.495-.084-.965-.238-1.4 1.272-.65 2.147-2.018 2.147-3.6zM12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-                  </svg>
-                  Apple
-                </button>
-              </div>
               
               {/* Sign In Link */}
               <div className="mt-8 text-center">
