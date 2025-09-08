@@ -2,74 +2,79 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
-type Style = "classic" | "web3";
+type Theme = "light" | "dark" | "system";
 
 interface ThemeContextType {
   theme: Theme;
-  style: Style;
-  toggleTheme: () => void;
-  toggleStyle: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [style, setStyle] = useState<Style>("classic");
+  const [theme, setTheme] = useState<Theme>("system");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     
-    // Get saved preferences or use system defaults
+    // Get saved theme preference
     const savedTheme = localStorage.getItem("theme") as Theme | null;
-    const savedStyle = localStorage.getItem("style") as Style | null;
-    
-    const systemPrefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    
-    // Set initial theme
-    setTheme(savedTheme || (systemPrefersDark ? "dark" : "light"));
-    
-    // Set initial style
-    setStyle(savedStyle || "classic");
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
   }, []);
 
   useEffect(() => {
     if (!isMounted) return;
+
+    const root = window.document.documentElement;
     
-    // Update document classes and localStorage
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.setAttribute("data-style", style);
-    
+    // Remove existing theme classes
+    root.classList.remove("light", "dark");
+
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+
+    // Save to localStorage
     localStorage.setItem("theme", theme);
-    localStorage.setItem("style", style);
+  }, [theme, isMounted]);
+
+  // Listen for system theme changes when in system mode
+  useEffect(() => {
+    if (!isMounted || theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     
-    // Update CSS variables based on theme+style combination
-    document.documentElement.className = `${theme} ${style}`;
-  }, [theme, style, isMounted]);
+    const handleChange = () => {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(mediaQuery.matches ? "dark" : "light");
+    };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
-  };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme, isMounted]);
 
-  const toggleStyle = () => {
-    setStyle(prev => prev === "classic" ? "web3" : "classic");
-  };
-
-  if (!isMounted) return null;
+  if (!isMounted) {
+    return <div className="theme-loading">{children}</div>;
+  }
 
   return (
-    <ThemeContext.Provider value={{ theme, style, toggleTheme, toggleStyle }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export function useTheme() {
+export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error("useTheme must be used within ThemeProvider");
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider");
+  }
   return context;
-}
+};

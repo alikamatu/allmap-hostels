@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const LoginPage = () => {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,11 +18,11 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if user is already logged in
-  useEffect(() => {
-    if (user) {
-      router.push('/dashboard');
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (user) {
+  //     router.push('/dashboard');
+  //   }
+  // }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,7 +1,10 @@
 const API_BASE_URL = 'http://localhost:1000/admin';
 
-export const fetchPendingVerifications = async () => {
-  const response = await fetch(`${API_BASE_URL}/verification/pending`, {
+export const fetchVerifications = async (status?: string) => {
+  const params = new URLSearchParams();
+  if (status && status !== 'all') params.append('status', status);
+  
+  const response = await fetch(`${API_BASE_URL}/verifications?${params}`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`
     }

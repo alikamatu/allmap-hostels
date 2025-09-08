@@ -1,101 +1,191 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiFileText, FiUser, FiCheck, FiX, FiLoader, FiDownload } from 'react-icons/fi';
-import { fetchPendingVerifications, approveVerification, rejectVerification } from '@/services/api';
+import { FiFileText, FiUser, FiCheck, FiX, FiLoader, FiDownload, FiChevronDown, FiFilter, FiSearch } from 'react-icons/fi';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fetchVerifications, approveVerification, rejectVerification } from '@/services/api';
 
 interface AdminVerification {
   id: string;
-  user: { email: string; school_id: string };
+  user: { 
+    id: string;
+    email: string; 
+    school_id: string;
+    name?: string;
+    phone?: string;
+  };
   hostel_name: string;
   hostel_address: string;
   id_documents: string[];
   hostel_proof_documents: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  reviewed_by_id?: string;
+  reviewed_at?: string;
+  created_at: string;
 }
 
 export default function AdminVerificationsPage() {
   const [verifications, setVerifications] = useState<AdminVerification[]>([]);
+  const [filteredVerifications, setFilteredVerifications] = useState<AdminVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [processingId, setProcessingId] = useState<string>('');
   const [rejectModal, setRejectModal] = useState({
     open: false,
     id: '',
     reason: ''
   });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const data = await fetchVerifications(statusFilter);
+      setVerifications(data);
+      setFilteredVerifications(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadData();
+}, [statusFilter]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchPendingVerifications();
-        setVerifications(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+    let result = verifications;
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(v => v.status === statusFilter);
+    }
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(v => 
+        v.hostel_name.toLowerCase().includes(query) ||
+        v.user.email.toLowerCase().includes(query) ||
+        (v.user.name && v.user.name.toLowerCase().includes(query))
+      );
+    }
+    
+    setFilteredVerifications(result);
+  }, [verifications, statusFilter, searchQuery]);
 
   const handleApprove = async (id: string) => {
+    setProcessingId(id);
     try {
       await approveVerification(id);
       setVerifications(prev => prev.filter(v => v.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Approval failed');
+    } finally {
+      setProcessingId('');
     }
   };
 
   const handleReject = async () => {
+    setProcessingId(rejectModal.id);
     try {
       await rejectVerification(rejectModal.id, rejectModal.reason);
       setVerifications(prev => prev.filter(v => v.id !== rejectModal.id));
       setRejectModal({ open: false, id: '', reason: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Rejection failed');
+    } finally {
+      setProcessingId('');
     }
   };
 
-const getDocumentUrl = (filePath: string, bucket: string) => {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${filePath}`;
-};
+  const getDocumentUrl = (filePath: string, bucket: string) => {
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${filePath}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState error={error} />;
-
+ 
   return (
-    <div className="flex-1 overflow-auto p-8">
+    <div className="flex-1 overflow-auto p-8 bg-background">
       <Header />
       
-      {verifications.length === 0 ? (
-        <EmptyState />
+      {error && (
+        <div className="mb-6">
+          <Alert variant="destructive">
+            <FiX className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <FiSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by hostel name or email..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="w-full md:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <div className="flex items-center">
+                    <FiFilter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filter by status" />
+                  </div>
+                </SelectTrigger>
+<SelectContent>
+  <SelectItem value="all">All Statuses</SelectItem>
+  <SelectItem value="pending">Pending</SelectItem>
+  <SelectItem value="approved">Approved</SelectItem>
+  <SelectItem value="rejected">Rejected</SelectItem>
+</SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {filteredVerifications.length === 0 ? (
+        <EmptyState hasFilters={statusFilter !== 'all' || searchQuery !== ''} />
       ) : (
-        <div className="max-w-7xl mx-auto">
-          <motion.ul className="space-y-4">
-            <AnimatePresence>
-              {verifications.map((verification, index) => (
-                <motion.li
-                  key={verification.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    transition: { delay: index * 0.05 }
-                  }}
-                  exit={{ opacity: 0, x: -100 }}
-                  layout
-                  className="rounded-2xl shadow-md overflow-hidden"
-                >
-                  <VerificationListItem
-                    verification={verification}
-                    onApprove={handleApprove}
-                    onReject={(id) => setRejectModal({ open: true, id, reason: '' })}
-                    getDocumentUrl={getDocumentUrl}
-                  />
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
+        <div className="space-y-6">
+          {filteredVerifications.map((verification) => (
+            <VerificationCard
+              key={verification.id}
+              verification={verification}
+              onApprove={handleApprove}
+              onReject={(id) => setRejectModal({ open: true, id, reason: '' })}
+              getDocumentUrl={getDocumentUrl}
+              isProcessing={processingId === verification.id}
+              formatDate={formatDate}
+            />
+          ))}
         </div>
       )}
 
@@ -105,82 +195,156 @@ const getDocumentUrl = (filePath: string, bucket: string) => {
         setReason={(reason) => setRejectModal(prev => ({ ...prev, reason }))}
         onConfirm={handleReject}
         onCancel={() => setRejectModal({ open: false, id: '', reason: '' })}
-        isLoading={false}
+        isLoading={processingId === rejectModal.id}
       />
     </div>
   );
 }
 
-const VerificationListItem = ({ 
+const VerificationCard = ({ 
   verification, 
   onApprove, 
   onReject,
-  getDocumentUrl
+  getDocumentUrl,
+  isProcessing,
+  formatDate
 }: { 
   verification: AdminVerification; 
   onApprove: (id: string) => void; 
   onReject: (id: string) => void;
   getDocumentUrl: (path: string, bucket: string) => string;
+  isProcessing: boolean;
+  formatDate: (dateString: string) => string;
 }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Approved</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Rejected</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">Pending</Badge>;
+    }
+  };
 
   return (
-    <div>
-      <div 
-        className="p-6 flex items-center justify-between cursor-pointer hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200 rounded-lg"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center">
-            <FiUser className="text-blue-600 text-xl" />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold">{verification.hostel_name}</h3>
-            <p className="">{verification.user.email}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-            Pending
-          </span>
-          <motion.div
-            animate={{ rotate: expanded ? 180 : 0 }}
-            className="text-gray-400"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          </motion.div>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="px-6 pb-6"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t">
-              <div>
-                <h4 className="text-xl font-semibold mb-3 flex items-center">
-                  <FiUser className="mr-2" /> User Details
-                </h4>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Email:</span> {verification.user.email}</p>
-                  <p><span className="font-medium">School ID:</span> {verification.user.school_id}</p>
-                  <p><span className="font-medium">Hostel Address:</span> {verification.hostel_address}</p>
+    <Card className="overflow-hidden border border-border bg-card">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <div className="cursor-pointer">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      <FiUser className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-xl font-semibold text-foreground">
+                      {verification.hostel_name}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {verification.user.email}
+                      {verification.user.name && ` • ${verification.user.name}`}
+                    </CardDescription>
+                  </div>
                 </div>
+                <div className="flex items-center space-x-3">
+                  {getStatusBadge(verification.status)}
+                  <div className="text-muted-foreground">
+                    <FiChevronDown className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </div>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent className="space-y-0">
+          <CardContent className="pt-0">
+            <Separator className="mb-6" />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-3">User Details</h4>
+                  <div className="space-y-3 pl-2">
+                    <div className="grid grid-cols-3 gap-4">
+                      <span className="font-medium text-muted-foreground">Email:</span>
+                      <span className="col-span-2 text-foreground">{verification.user.email}</span>
+                    </div>
+                    {verification.user.name && (
+                      <div className="grid grid-cols-3 gap-4">
+                        <span className="font-medium text-muted-foreground">Name:</span>
+                        <span className="col-span-2 text-foreground">{verification.user.name}</span>
+                      </div>
+                    )}
+                    {verification.user.phone && (
+                      <div className="grid grid-cols-3 gap-4">
+                        <span className="font-medium text-muted-foreground">Phone:</span>
+                        <span className="col-span-2 text-foreground">{verification.user.phone}</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-4">
+                      <span className="font-medium text-muted-foreground">School ID:</span>
+                      <span className="col-span-2 text-foreground">{verification.user.school_id}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <span className="font-medium text-muted-foreground">Submitted:</span>
+                      <span className="col-span-2 text-foreground">{formatDate(verification.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-3">Hostel Details</h4>
+                  <div className="space-y-3 pl-2">
+                    <div className="grid grid-cols-3 gap-4">
+                      <span className="font-medium text-muted-foreground">Name:</span>
+                      <span className="col-span-2 text-foreground">{verification.hostel_name}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <span className="font-medium text-muted-foreground">Address:</span>
+                      <span className="col-span-2 text-foreground">{verification.hostel_address}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review details for approved/rejected applications */}
+                {(verification.status === 'approved' || verification.status === 'rejected') && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-foreground mb-3">
+                      {verification.status === 'approved' ? 'Approval' : 'Rejection'} Details
+                    </h4>
+                    <div className="space-y-3 pl-2">
+                      <div className="grid grid-cols-3 gap-4">
+                        <span className="font-medium text-muted-foreground">Status:</span>
+                        <span className="col-span-2 text-foreground capitalize">{verification.status}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <span className="font-medium text-muted-foreground">Reviewed at:</span>
+                        <span className="col-span-2 text-foreground">
+                          {verification.reviewed_at ? formatDate(verification.reviewed_at) : 'N/A'}
+                        </span>
+                      </div>
+                      {verification.rejection_reason && (
+                        <div className="grid grid-cols-3 gap-4">
+                          <span className="font-medium text-muted-foreground">Reason:</span>
+                          <span className="col-span-2 text-foreground">{verification.rejection_reason}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-xl font-semibold mb-3 flex items-center">
-                    <FiFileText className="mr-2" /> Documents
-                  </h4>
-                  <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-foreground mb-3">Documents</h4>
+                  <div className="space-y-4 pl-2">
                     <DocumentSection 
                       title="ID Documents" 
                       documents={verification.id_documents} 
@@ -198,28 +362,38 @@ const VerificationListItem = ({
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 mt-6">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => onReject(verification.id)}
-                className="px-6 py-2 bg-red-50 text-red-600 rounded-lg flex items-center"
-              >
-                <FiX className="mr-2" /> Reject
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => onApprove(verification.id)}
-                className="px-6 py-2 bg-green-50 text-green-600 rounded-lg flex items-center"
-              >
-                <FiCheck className="mr-2" /> Approve
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            {verification.status === 'pending' && (
+              <>
+                <Separator className="my-6" />
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => onReject(verification.id)}
+                    disabled={isProcessing}
+                    className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <FiX className="mr-2 h-4 w-4" />
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => onApprove(verification.id)}
+                    disabled={isProcessing}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isProcessing ? (
+                      <FiLoader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FiCheck className="mr-2 h-4 w-4" />
+                    )}
+                    {isProcessing ? 'Processing...' : 'Approve'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 };
 
@@ -234,67 +408,77 @@ const DocumentSection = ({
   bucket: string;
   getDocumentUrl: (path: string, bucket: string) => string;
 }) => (
-  <div>
-    <h5 className="font-medium mb-2">{title}</h5>
+  <div className="space-y-2">
+    <h5 className="font-medium text-foreground">{title}</h5>
     <div className="flex flex-wrap gap-2">
       {documents.map((path, index) => {
         const fileName = path.split('/').pop() || `Document ${index + 1}`;
-        const fileUrl = getDocumentUrl(path, bucket); // Use the URL builder
+        const fileUrl = getDocumentUrl(path, bucket);
         
         return (
-          <motion.a
+          <a
             key={index}
             href={fileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center px-3 py-1.5 bg-gray-100 rounded-lg text-sm"
+            className="inline-flex items-center px-3 py-2 bg-muted hover:bg-muted/80 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <FiDownload className="mr-1.5" /> {fileName}
-          </motion.a>
+            <FiDownload className="mr-1.5 h-3 w-3" />
+            {fileName}
+          </a>
         );
       })}
     </div>
   </div>
 );
 
-// State components remain the same as previous example
 const LoadingState = () => (
-  <div className="flex-1 flex items-center justify-center">
-    <FiLoader className="animate-spin text-6xl text-gray-600" />
-  </div>
-);
-
-const ErrorState = ({ error }: { error: string }) => (
-  <div className="flex-1 flex items-center justify-center">
-    <div className="text-center">
-      <div className="text-4xl font-bold text-red-500 mb-4">Error</div>
-      <p className="text-2xl text-gray-700">{error}</p>
+  <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div className="text-center space-y-4">
+      <FiLoader className="animate-spin text-4xl text-muted-foreground mx-auto" />
+      <p className="text-muted-foreground">Loading verifications...</p>
     </div>
   </div>
 );
 
-const EmptyState = () => (
+const EmptyState = ({ hasFilters }: { hasFilters: boolean }) => (
   <div className="text-center py-20">
-    <FiFileText className="mx-auto text-gray-300 text-9xl mb-6" />
-    <h2 className="text-4xl font-bold text-gray-700 mb-4">No Pending Requests</h2>
-    <p className="text-2xl text-gray-500">All verification requests have been processed</p>
+    <div className="space-y-6">
+      <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center">
+        <FiFileText className="text-muted-foreground text-3xl" />
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">
+          {hasFilters ? 'No Matching Requests' : 'No Verification Requests'}
+        </h2>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          {hasFilters 
+            ? 'No verification requests match your current filters. Try adjusting your search criteria.'
+            : 'All verification requests have been processed. New requests will appear here when submitted.'
+          }
+        </p>
+      </div>
+    </div>
   </div>
 );
 
 const Header = () => (
-  <motion.div
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="mb-8"
-  >
-    <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Verifications</h1>
-    <p className="text-xl text-gray-600">Review and approve hostel admin applications</p>
-  </motion.div>
+  <div className="mb-8">
+    <div className="space-y-2">
+      <h1 className="text-3xl font-bold text-foreground">Admin Verifications</h1>
+      <p className="text-muted-foreground">Review and manage hostel admin applications</p>
+    </div>
+  </div>
 );
 
-const RejectModal = ({ isOpen, reason, setReason, onConfirm, onCancel, isLoading }: {
+const RejectModal = ({ 
+  isOpen, 
+  reason, 
+  setReason, 
+  onConfirm, 
+  onCancel, 
+  isLoading 
+}: {
   isOpen: boolean;
   reason: string;
   setReason: (value: string) => void;
@@ -302,46 +486,42 @@ const RejectModal = ({ isOpen, reason, setReason, onConfirm, onCancel, isLoading
   onCancel: () => void;
   isLoading: boolean;
 }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      >
-        <motion.div
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          className="rounded-xl p-6 max-w-md w-full"
+  <Dialog open={isOpen} onOpenChange={() => !isLoading && onCancel()}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle className="text-foreground">Reason for Rejection</DialogTitle>
+        <DialogDescription className="text-muted-foreground">
+          Please provide a clear reason for rejecting this verification request.
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="space-y-4">
+        <Textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Please specify the reason for rejection..."
+          className="min-h-[100px] resize-none"
+          disabled={isLoading}
+        />
+      </div>
+      
+      <DialogFooter className="space-x-2">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
         >
-          <h3 className="text-2xl font-bold mb-4">Reason for Rejection</h3>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="w-full h-32 p-3 border border-gray-600 rounded-lg mb-4"
-            placeholder="Please specify the reason..."
-          />
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={isLoading || !reason}
-              className={`px-4 py-2 rounded-lg text-white ${
-                isLoading || !reason ? 'bg-red-300' : 'bg-red-500'
-              }`}
-            >
-              {isLoading ? <FiLoader className="animate-spin mr-2 inline" /> : null}
-              Confirm
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          disabled={isLoading || !reason.trim()}
+          variant="destructive"
+        >
+          {isLoading && <FiLoader className="mr-2 h-4 w-4 animate-spin" />}
+          Confirm Rejection
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 );
