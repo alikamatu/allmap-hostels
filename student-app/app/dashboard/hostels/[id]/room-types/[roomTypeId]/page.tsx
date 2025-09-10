@@ -530,7 +530,7 @@ export default function RoomDetailPage() {
           className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8"
         >
           {/* Hostel Policies */}
-          <div className="bg-white rounded-xl shadow-md p-6">
+          {/* <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-bold text-black mb-4">Hostel Policies</h2>
             <div className="space-y-3 text-sm">
               <div className="flex items-start">
@@ -554,10 +554,10 @@ export default function RoomDetailPage() {
                 <p className="text-gray-600">Guests allowed with prior notice</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Location Info */}
-          <div className="bg-white rounded-xl shadow-md p-6">
+          {/* <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-bold text-black mb-4">Location & Transport</h2>
             <div className="space-y-3 text-sm">
               <p className="text-gray-600 mb-3">{hostel.address}</p>
@@ -578,7 +578,7 @@ export default function RoomDetailPage() {
                 <p className="text-gray-600">Easy access to public transportation</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </motion.div>
       </div>
     </div>

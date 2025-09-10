@@ -459,8 +459,8 @@ export default function HostelDetailPage() {
           <div className="mt-2 text-gray-800">{hostel.address}</div>
           {hostel.roomTypes[0] && (
             <div className="mt-4">
-              <div className="text-lg font-bold text-black">{formatPrice(hostel.roomTypes[0].pricePerMonth)}</div>
-              <div className="text-sm text-gray-800">Starting price per month</div>
+              <div className="text-lg font-bold text-black">{formatPrice(hostel.roomTypes[0].pricePerSemester)}</div>
+              <div className="text-sm text-gray-800">Starting price per Semester</div>
             </div>
           )}
         </motion.div>
@@ -692,7 +692,7 @@ export default function HostelDetailPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <motion.button
+            {/* <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="bg-black text-white py-3 px-8 font-medium rounded-lg transition hover:bg-gray-800"
@@ -705,7 +705,7 @@ export default function HostelDetailPage() {
               disabled={!hostel.roomTypes.some(rt => rt.availableRooms > 0)}
             >
               Book Your Room Now
-            </motion.button>
+            </motion.button> */}
             
             <motion.button
               whileHover={{ scale: 1.05 }}

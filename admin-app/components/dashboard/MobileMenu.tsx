@@ -9,7 +9,8 @@ import {
   Star, 
   Bell, 
   Settings,
-  X
+  X,
+  LucideTimer
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -21,13 +22,14 @@ interface MobileMenuProps {
 }
 
 const navItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Manage Hostels', href: '/admin/hostels', icon: Building },
-  { name: 'Manage Rooms', href: '/admin/rooms', icon: Bed },
-  { name: 'Bookings Calendar', href: '/admin/calendar', icon: Calendar },
-  { name: 'Reviews', href: '/admin/reviews', icon: Star },
-  { name: 'Notifications', href: '/admin/notifications', icon: Bell },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Manage Hostels', href: '/dashboard/manage-hostels', icon: Building },
+  { name: 'Manage Rooms', href: '/dashboard/manage-room', icon: Bed },
+  { name: 'Manage Bookings', href: '/dashboard/booking-management', icon: Calendar },
+  { name: 'Booking History', href: '/dashboard/booking-history', icon: LucideTimer },
+  { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
+  // { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export default function MobileMenu({ isOpen, toggleMenu }: MobileMenuProps) {

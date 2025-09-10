@@ -99,7 +99,7 @@ const login = async (email: string, password: string, rememberMe: boolean) => {
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const forgotPassword = async (email: string) => {

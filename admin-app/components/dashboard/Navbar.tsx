@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, Bell, LogOut } from 'lucide-react';
 import { DropdownMenu, IconButton } from './components/AnimatedDropdown';
 import LocationIndicator from './components/LocationIndicator';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
   toggleSidenav: () => void;
@@ -12,6 +13,7 @@ interface NavbarProps {
 
 export default function Navbar({ toggleSidenav }: NavbarProps) {
   const [notifications] = useState(3);
+  const { logout } = useAuth();
   
   return (
     <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
@@ -38,7 +40,9 @@ export default function Navbar({ toggleSidenav }: NavbarProps) {
             <Bell className="w-5 h-5" />
           </IconButton>
 
-          <DropdownMenu />
+          <IconButton onClick={logout}>
+            <LogOut className="w-5 h-5" />
+          </IconButton>
         </div>
       </div>
     </header>

@@ -99,7 +99,7 @@ export default function Sidenav({ isCollapsed, toggleSidenav }: SidenavProps) {
       {!isCollapsed && (
         <div className="p-4 mt-auto border-t border-gray-200">
           <div className="text-sm text-gray-500">
-            © {new Date().getFullYear()} HostelFinder
+            © {new Date().getFullYear()} AllmapHostels
           </div>
         </div>
       )}
