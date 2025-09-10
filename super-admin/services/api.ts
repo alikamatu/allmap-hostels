@@ -1,10 +1,8 @@
-const API_BASE_URL = 'http://localhost:1000/admin';
-
 export const fetchVerifications = async (status?: string) => {
   const params = new URLSearchParams();
   if (status && status !== 'all') params.append('status', status);
-  
-  const response = await fetch(`${API_BASE_URL}/verifications?${params}`, {
+
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/verifications?${params}`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`
     }
@@ -14,7 +12,7 @@ export const fetchVerifications = async (status?: string) => {
 };
 
 export const approveVerification = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/verification/${id}/approve`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/verification/${id}/approve`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -25,7 +23,7 @@ export const approveVerification = async (id: string) => {
 };
 
 export const rejectVerification = async (id: string, reason: string) => {
-  const response = await fetch(`${API_BASE_URL}/verification/${id}/reject`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/verification/${id}/reject`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
