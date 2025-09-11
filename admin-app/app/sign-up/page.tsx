@@ -239,23 +239,6 @@ export default function Register() {
                   />
                 </div>
                 
-                {/* Role Selection (Optional - you might want to hide this for a specific admin type) */}
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                    Account Type
-                  </label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    disabled={loading}
-                  >
-                    <option value="admin">Hostel Administrator</option>
-                    <option value="super_admin">Super Administrator</option>
-                  </select>
-                </div>
-                
                 {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">

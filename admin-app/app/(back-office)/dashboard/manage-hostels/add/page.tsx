@@ -241,7 +241,7 @@ export default function AddHostelPage() {
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       
       // Submit to backend
-      await axios.post('http://localhost:1000/hostels/create', formData, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/hostels/create`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
