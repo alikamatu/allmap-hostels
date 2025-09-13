@@ -1,11 +1,10 @@
-// app/login/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiTerminal } from 'react-icons/fi';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -16,13 +15,30 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [terminalText, setTerminalText] = useState<string[]>([]);
 
-  // Redirect if user is already logged in
-  // useEffect(() => {
-  //   if (user) {
-  //     router.push('/dashboard');
-  //   }
-  // }, [user, router]);
+  useEffect(() => {
+    // Simulate terminal boot-up sequence
+    const bootSequence = [
+      "INITIALIZING SYSTEM...",
+      "LOADING SECURITY PROTOCOLS...",
+      "AUTHENTICATION MODULE READY",
+      "ACCESS GRANTED: LEVEL 0 SECURITY",
+      "WELCOME, ADMIN"
+    ];
+    
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < bootSequence.length) {
+        setTerminalText(prev => [...prev, bootSequence[currentIndex]]);
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,78 +49,113 @@ const LoginPage = () => {
       await login(email, password, rememberMe);
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'AUTHENTICATION FAILED');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Floating background elements
-  const FloatingShapes = () => (
-    <>
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20"
-          initial={{ scale: 0 }}
-          animate={{ 
-            scale: 1,
-            x: [0, 100, 0],
-            y: [0, -100, 0],
-          }}
-          transition={{
-            duration: 15 + i * 3,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut"
-          }}
-          style={{
-            width: `${100 + i * 50}px`,
-            height: `${100 + i * 50}px`,
-            top: `${10 + i * 10}%`,
-            left: `${5 + i * 15}%`,
-          }}
-        />
-      ))}
-    </>
+  // Matrix-like code rain effect in background
+  const MatrixRain = () => {
+    return (
+      <div className="absolute inset-0 overflow-hidden opacity-20 z-0">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-green-400 text-xs font-mono"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ 
+              y: '100vh', 
+              opacity: [0, 1, 0],
+            }}
+            transition={{
+              duration: 10 + Math.random() * 20,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: "linear"
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+            }}
+          >
+            {Math.random().toString(36).substring(2, 3)}
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  // Hacker-style terminal output
+  const TerminalOutput = () => (
+    <div className="absolute top-4 left-4 w-80 h-40 bg-black/80 border border-green-500/50 rounded-md p-3 font-mono text-xs text-green-400 overflow-hidden z-10">
+      <div className="flex items-center mb-2">
+        <FiTerminal className="text-green-500 mr-2" />
+        <span className="text-green-500">SYSTEM TERMINAL</span>
+        <div className="ml-2 flex">
+          <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        </div>
+      </div>
+      <div className="overflow-y-auto h-28">
+        {terminalText.map((line, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-1"
+          >
+            <span className="text-green-500">$ </span>
+            {line}
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden relative">
-      <FloatingShapes />
+    <div className="min-h-screen flex items-center justify-center bg-black overflow-hidden relative">
+      <MatrixRain />
+      <TerminalOutput />
+      
+      {/* Scanline effect */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/70 pointer-events-none z-10"></div>
+      <div className="absolute inset-0 pointer-events-none z-20 scanlines"></div>
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 w-full max-w-md px-6"
+        className="relative z-30 w-full max-w-md px-6"
       >
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="bg-black/90 backdrop-blur-md rounded-md shadow-xl p-8 border border-green-500/30 glitch-effect">
           <div className="text-center mb-10">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="mx-auto bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mb-4"
+              className="mx-auto bg-gradient-to-r from-green-600 to-green-800 w-16 h-16 rounded-full flex items-center justify-center mb-4 glitch-box"
             >
               <FiUser className="text-white text-2xl" />
             </motion.div>
             
             <motion.h1 
-              className="text-3xl font-bold text-white"
+              className="text-3xl font-bold text-green-400 glitch-text"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
+              data-text="ACCESS CONTROL"
             >
-              Welcome Back
+              ACCESS CONTROL
             </motion.h1>
             <motion.p 
-              className="text-slate-300 mt-2"
+              className="text-green-600 mt-2 font-mono"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              Sign in to continue your journey
+              IDENTIFY YOURSELF
             </motion.p>
           </div>
 
@@ -115,12 +166,12 @@ const LoginPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">
-                  Email
+                <label htmlFor="email" className="block text-sm font-medium text-green-500 mb-1 font-mono">
+                  USER_ID
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="text-slate-400" />
+                    <FiMail className="text-green-600" />
                   </div>
                   <input
                     id="email"
@@ -130,8 +181,8 @@ const LoginPage = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-3 py-3 bg-black/50 border border-green-700/50 rounded-md text-green-400 placeholder-green-800 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all font-mono"
+                    placeholder="admin@domain.com"
                   />
                 </div>
               </motion.div>
@@ -141,12 +192,12 @@ const LoginPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">
-                  Password
+                <label htmlFor="password" className="block text-sm font-medium text-green-500 mb-1 font-mono">
+                  ENCRYPTION_KEY
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="text-slate-400" />
+                    <FiLock className="text-green-600" />
                   </div>
                   <input
                     id="password"
@@ -155,7 +206,7 @@ const LoginPage = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-10 py-3 bg-black/50 border border-green-700/50 rounded-md text-green-400 placeholder-green-800 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all font-mono"
                     placeholder="••••••••"
                   />
                   <button
@@ -164,9 +215,9 @@ const LoginPage = () => {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <FiEyeOff className="text-slate-400 hover:text-white transition-colors" />
+                      <FiEyeOff className="text-green-600 hover:text-green-400 transition-colors" />
                     ) : (
-                      <FiEye className="text-slate-400 hover:text-white transition-colors" />
+                      <FiEye className="text-green-600 hover:text-green-400 transition-colors" />
                     )}
                   </button>
                 </div>
@@ -185,19 +236,19 @@ const LoginPage = () => {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-slate-700 bg-slate-800"
+                    className="h-4 w-4 text-green-600 rounded focus:ring-green-500 border-green-700 bg-black/50"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-300">
-                    Remember me
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-green-500 font-mono">
+                    PERSIST_SESSION
                   </label>
                 </div>
 
                 <div className="text-sm">
                   <a 
                     href="/forgot-password" 
-                    className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                    className="font-mono text-green-600 hover:text-green-400 transition-colors"
                   >
-                    Forgot password?
+                    KEY_RECOVERY
                   </a>
                 </div>
               </motion.div>
@@ -210,10 +261,10 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all ${
+                  className={`w-full py-3 px-4 rounded-md font-mono font-medium text-white transition-all ${
                     isLoading 
-                      ? 'bg-blue-600/50 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-blue-500/20'
+                      ? 'bg-green-800/50 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-green-700 to-green-900 hover:from-green-600 hover:to-green-800 shadow-lg hover:shadow-green-500/10 border border-green-600/50'
                   }`}
                 >
                   {isLoading ? (
@@ -222,10 +273,10 @@ const LoginPage = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Signing in...
+                      AUTHENTICATING...
                     </span>
                   ) : (
-                    'Sign in'
+                    'EXECUTE_LOGIN'
                   )}
                 </button>
               </motion.div>
@@ -234,8 +285,9 @@ const LoginPage = () => {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="text-red-400 text-sm p-3 bg-red-900/30 rounded-lg border border-red-800"
+                  className="text-red-400 text-sm p-3 bg-red-900/30 rounded-md border border-red-800 font-mono"
                 >
+                  <span className="text-red-500">ERROR: </span>
                   {error}
                 </motion.div>
               )}
@@ -243,23 +295,165 @@ const LoginPage = () => {
           </form>
 
           <motion.div
-            className="mt-8 text-center text-slate-400"
+            className="mt-8 text-center text-green-700 font-mono"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
             <p>
-              Don&apos;t have an account?{' '}
+              NO CREDENTIALS?{' '}
               <a 
                 href="/register" 
-                className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                className="font-medium text-green-600 hover:text-green-400 transition-colors"
               >
-                Create one
+                REQUEST_ACCESS
               </a>
             </p>
           </motion.div>
         </div>
       </motion.div>
+
+      <style jsx global>{`
+        @keyframes scanline {
+          0% {
+            transform: translateY(-100%);
+          }
+          100% {
+            transform: translateY(100%);
+          }
+        }
+        
+        .scanlines {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .scanlines:before {
+          content: '';
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(0, 255, 0, 0.05) 50%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          z-index: 20;
+          animation: scanline 8s linear infinite;
+          pointer-events: none;
+        }
+        
+        .glitch-effect {
+          box-shadow: 0 0 10px rgba(0, 255, 0, 0.2),
+                      0 0 20px rgba(0, 255, 0, 0.1),
+                      0 0 30px rgba(0, 255, 0, 0.05);
+        }
+        
+        .glitch-box {
+          position: relative;
+        }
+        
+        .glitch-box:before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          z-index: -1;
+          background: linear-gradient(45deg, #00ff00, #000000, #000000, #00ff00);
+          background-size: 400%;
+          border-radius: 50%;
+          animation: glowing 3s ease infinite;
+          opacity: 0.7;
+        }
+        
+        .glitch-text {
+          position: relative;
+          display: inline-block;
+        }
+        
+        .glitch-text:before,
+        .glitch-text:after {
+          content: attr(data-text);
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .glitch-text:before {
+          left: 2px;
+          text-shadow: -2px 0 #ff00ff;
+          clip: rect(44px, 450px, 56px, 0);
+          animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        
+        .glitch-text:after {
+          left: -2px;
+          text-shadow: -2px 0 #00ffff;
+          clip: rect(44px, 450px, 56px, 0);
+          animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        
+        @keyframes glitch-anim {
+          0% { clip: rect(42px, 9999px, 44px, 0); }
+          5% { clip: rect(12px, 9999px, 59px, 0); }
+          10% { clip: rect(48px, 9999px, 29px, 0); }
+          15% { clip: rect(42px, 9999px, 73px, 0); }
+          20% { clip: rect(63px, 9999px, 27px, 0); }
+          25% { clip: rect(34px, 9999px, 55px, 0); }
+          30% { clip: rect(86px, 9999px, 73px, 0); }
+          35% { clip: rect(20px, 9999px, 20px, 0); }
+          40% { clip: rect(26px, 9999px, 60px, 0); }
+          45% { clip: rect(25px, 9999px, 66px, 0); }
+          50% { clip: rect(57px, 9999px, 98px, 0); }
+          55% { clip: rect(5px, 9999px, 46px, 0); }
+          60% { clip: rect(82px, 9999px, 31px, 0); }
+          65% { clip: rect(54px, 9999px, 27px, 0); }
+          70% { clip: rect(28px, 9999px, 99px, 0); }
+          75% { clip: rect(45px, 9999px, 69px, 0); }
+          80% { clip: rect(23px, 9999px, 85px, 0); }
+          85% { clip: rect(54px, 9999px, 84px, 0); }
+          90% { clip: rect(45px, 9999px, 47px, 0); }
+          95% { clip: rect(24px, 9999px, 23px, 0); }
+          100% { clip: rect(32px, 9999px, 92px, 0); }
+        }
+        
+        @keyframes glitch-anim2 {
+          0% { clip: rect(65px, 9999px, 100px, 0); }
+          5% { clip: rect(52px, 9999px, 74px, 0); }
+          10% { clip: rect(79px, 9999px, 85px, 0); }
+          15% { clip: rect(75px, 9999px, 5px, 0); }
+          20% { clip: rect(67px, 9999px, 61px, 0); }
+          25% { clip: rect(14px, 9999px, 79px, 0); }
+          30% { clip: rect(1px, 9999px, 66px, 0); }
+          35% { clip: rect(86px, 9999px, 30px, 0); }
+          40% { clip: rect(23px, 9999px, 98px, 0); }
+          45% { clip: rect(85px, 9999px, 72px, 0); }
+          50% { clip: rect(71px, 9999px, 75px, 0); }
+          55% { clip: rect(2px, 9999px, 48px, 0); }
+          60% { clip: rect(30px, 9999px, 16px, 0); }
+          65% { clip: rect(59px, 9999px, 50px, 0); }
+          70% { clip: rect(41px, 9999px, 62px, 0); }
+          75% { clip: rect(2px, 9999px, 82px, 0); }
+          80% { clip: rect(47px, 9999px, 73px, 0); }
+          85% { clip: rect(3px, 9999px, 27px, 0); }
+          90% { clip: rect(26px, 9999px, 55px, 0); }
+          95% { clip: rect(42px, 9999px, 97px, 0); }
+          100% { clip: rect(38px, 9999px, 49px, 0); }
+        }
+        
+        @keyframes glowing {
+          0% { background-position: 0 0; }
+          50% { background-position: 400% 0; }
+          100% { background-position: 0 0; }
+        }
+      `}</style>
     </div>
   );
 };
