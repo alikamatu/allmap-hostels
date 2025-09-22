@@ -660,7 +660,7 @@ const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
     console.log('allowedGenders from parent:', formData.allowedGenders);
 
     // Make sure to include ALL fields in the API call
-    const response = await fetch('http://localhost:1000/rooms/create-room-type', {
+    const response = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -703,8 +703,8 @@ const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
 const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
   try {
     console.log('Creating room type with payload:', formData);
-    
-    const response = await fetch('http://localhost:1000/rooms/create-room-type', {
+
+    const response = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
