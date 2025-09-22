@@ -54,7 +54,7 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom, acceptingBookings
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-xl font-bold text-black">{roomType.name}</h3>
           <span
-            className={`text-xs px-3 py-1 rounded-full font-medium ${
+            className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
               roomType.availableRooms > 3 
                 ? 'bg-green-100 text-green-800' 
                 : roomType.availableRooms > 0 
@@ -74,11 +74,7 @@ const MemoizedRoomCard = memo(({ roomType, onBook, onViewRoom, acceptingBookings
           <div>
             <p className="text-lg font-bold text-black">{formatPrice(roomType.pricePerSemester)}</p>
             <p className="text-xs text-gray-800">per semester</p>
-            <p className='text-xs py-1 rounded-full font-medium w-contain text-red-800'>{roomType.allowedGenders}</p>
-          </div>
-          <div>
-            <p className="text-gray-800 font-medium">{formatPrice(roomType.pricePerMonth)}</p>
-            <p className="text-xs text-gray-800">per month</p>
+            <p className='text-sm uppercase py-1 rounded-full font-medium w-contain text-red-800'>{roomType.allowedGenders}</p>
           </div>
         </div>
         
