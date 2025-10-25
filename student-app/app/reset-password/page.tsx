@@ -99,7 +99,7 @@ function ResetPasswordContent() {
       const result = await resetPassword(token, formData.newPassword);
       if (result?.ok) {
         setSuccessMessage('Your password has been successfully reset!');
-        setTimeout(() => router.push('/login'), 3000);
+        setTimeout(() => router.push('/'), 3000);
       } else {
         throw new Error('Failed to reset password.');
       }
@@ -274,7 +274,7 @@ function ResetPasswordContent() {
 
           <div className="mt-6 text-center text-sm text-gray-666">
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/')}
               className="text-black hover:underline"
               disabled={isLoading}
             >

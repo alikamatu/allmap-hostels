@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'react-icons/fi';
@@ -23,8 +23,16 @@ function VerifyEmailContent() {
   const [showResendSuccess, setShowResendSuccess] = useState(false);
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  
+  // Use ref to track if verification has been attempted
+  const hasVerified = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple verification attempts
+    if (hasVerified.current) {
+      return;
+    }
+
     const status = searchParams.get('status');
     const message = searchParams.get('message');
     const token = searchParams.get('token');
@@ -36,19 +44,22 @@ function VerifyEmailContent() {
     }
 
     if (status) {
+      hasVerified.current = true;
       handleStatusResponse(status, message);
       return;
     }
 
     if (token) {
+      hasVerified.current = true;
       verifyToken(token);
     } else {
+      hasVerified.current = true;
       setVerification({
         status: 'error',
         message: 'No verification token provided.'
       });
     }
-  }, [searchParams]);
+  }, []); // Remove searchParams from dependencies to prevent re-runs
 
   const handleStatusResponse = (status: string, message: string | null) => {
     if (status === 'success') {
@@ -67,7 +78,7 @@ function VerifyEmailContent() {
 
   const verifyToken = async (token: string) => {
     try {
-      // Fixed URL construction - using correct backend route format
+      console.log('Verifying token:', token);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
       const response = await fetch(`${apiUrl}/auth/verify-email/${token}`, {
         method: 'GET',
@@ -76,16 +87,38 @@ function VerifyEmailContent() {
         },
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed response data:', data);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error('Invalid response from server');
+      }
+
       if (response.ok) {
-        const data = await response.json();
+        // Set success and don't allow any further verification attempts
         setVerification({
           status: 'success',
           message: data.message || 'Your email has been verified successfully!',
         });
+        
+        // Optional: Redirect to login after a delay
+        setTimeout(() => {
+          router.push('/?verified=true');
+        }, 3000);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || 'Verification failed';
+        const errorMessage = data.message || 'Verification failed';
         const isExpired = errorMessage.toLowerCase().includes('expired');
+
+        console.log('Error message:', errorMessage);
+        console.log('Is expired:', isExpired);
 
         setVerification({
           status: isExpired ? 'expired' : 'error',

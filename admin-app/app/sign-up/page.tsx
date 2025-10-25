@@ -60,7 +60,6 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    // Client-side validation
     if (password !== repeatPassword) {
       setError("Passwords don't match");
       return;
@@ -85,16 +84,12 @@ export default function Register() {
     try {
       setLoading(true);
       
-      // Call the register function from AuthContext
-      await register(email, password, role);
+      // Call the register function from AuthContext with all required fields
+      await register(email, password, role, acceptTerms);
       
       // Show success message
       setSuccess(true);
       
-      // Optional: Redirect to verification page after a delay
-      setTimeout(() => {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-      }, 3000);
       
     } catch (err: any) {
       console.error('Registration error:', err);
@@ -238,7 +233,7 @@ export default function Register() {
                     disabled={loading}
                   />
                 </div>
-                
+
                 {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
