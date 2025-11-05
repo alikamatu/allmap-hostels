@@ -10,7 +10,6 @@ import { FilterPanel } from '@/_components/hostels/FilterPanel';
 import { HostelList } from '@/_components/hostels/HostelList';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMap, FiList, FiAlertTriangle, FiFilter } from 'react-icons/fi';
-import { FaSpinner } from 'react-icons/fa';
 
 // Dynamically import MapView
 const MapView = dynamic(() => import('@/_components/hostels/MapView'), {

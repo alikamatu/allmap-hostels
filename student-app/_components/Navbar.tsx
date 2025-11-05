@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiBell, FiHelpCircle, FiSun, FiMoon } from "react-icons/fi";
+import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiHelpCircle, FiSun, FiMoon } from "react-icons/fi";
 import { useTheme } from "@/context/ThemeProvider";
 
 export default function Navbar() {
@@ -60,12 +60,10 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-3 max-w-7xl">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <div className="w-4 h-4 bg-white"></div>
-            </div>
+          <Link href="/dashboard" className="flex items-center space-x-2">
+          <img src="/logo.png" alt="Allmap Hostels Logo" className="w-8 h-8" />
             <span className="text-xl font-bold text-black">
-              Hostel<span className="font-light">Hub</span>
+              Allmap<span className="font-light">Hostels</span>
             </span>
           </Link>
 
@@ -81,33 +79,8 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {mounted && (
-              <button
-                onClick={toggleTheme}
-                className="px-4 py-2 text-black hover:bg-gray-100 transition flex items-center"
-              >
-                {theme === "light" ? <FiMoon className="mr-2" /> : <FiSun className="mr-2" />}
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
-              </button>
-            )}
-
             {user ? (
               <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <button className="p-2">
-                    <FiBell className="text-black text-xl" />
-                  </button>
-                  {notificationCount > 0 && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="absolute top-0 right-0 bg-gray-200 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                    >
-                      {notificationCount}
-                    </motion.span>
-                  )}
-                </div>
-                
                 <div className="relative group">
                   <button className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-medium">
@@ -168,7 +141,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white absolute top-full left-0 right-0"
+            className="md:hidden bg-white min-h-screen absolute top-full left-0 right-0"
           >
             <div className="container mx-auto px-4 py-4">
               <div className="space-y-1">
@@ -195,22 +168,6 @@ export default function Navbar() {
               </div>
 
               <hr className="my-4 border-t border-gray-200" />
-
-              {mounted && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: navLinks.length * 0.1 }}
-                >
-                  <button
-                    onClick={toggleTheme}
-                    className="w-full flex items-center px-4 py-3 text-black hover:bg-gray-100"
-                  >
-                    {theme === "light" ? <FiMoon className="mr-2" /> : <FiSun className="mr-2" />}
-                    {theme === "light" ? "Dark Mode" : "Light Mode"}
-                  </button>
-                </motion.div>
-              )}
 
               {user ? (
                 <div className="space-y-1">
@@ -239,22 +196,6 @@ export default function Navbar() {
                     >
                       <FiUser className="mr-2" /> Profile
                     </Link>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: (navLinks.length + 3) * 0.1 }}
-                  >
-                    <div className="flex items-center px-4 py-3 text-black hover:bg-gray-100">
-                      <FiBell className="mr-2" />
-                      Notifications
-                      {notificationCount > 0 && (
-                        <span className="ml-auto bg-gray-200 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {notificationCount}
-                        </span>
-                      )}
-                    </div>
                   </motion.div>
 
                   <motion.div
