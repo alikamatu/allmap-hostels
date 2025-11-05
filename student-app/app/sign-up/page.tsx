@@ -148,7 +148,7 @@ export default function SignUpPage() {
                   Check your email at <span className="font-semibold">{email}</span> to verify your account.
                 </p>
                 <p className="text-center text-xs text-gray-600 mt-2">
-                  After verification, you'll complete your profile setup.
+                  After verification, you will complete your profile setup.
                 </p>
               </div>
               <motion.button
