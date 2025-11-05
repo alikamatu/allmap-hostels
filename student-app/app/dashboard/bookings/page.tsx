@@ -54,6 +54,10 @@ export default function UserBookingsPage() {
 const fetchUserBookings = useCallback(async () => {
   try {
     setLoading(true);
+    if (!user) {
+      setError('User not authenticated');
+      return;
+    }
     const bookingsData = await bookingService.getUserBookings(user.id);
 
     const bookingsWithReviews = await Promise.allSettled(
@@ -85,7 +89,7 @@ const fetchUserBookings = useCallback(async () => {
   } finally {
     setLoading(false);
   }
-}, [user.id]);
+}, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
