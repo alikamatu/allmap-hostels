@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiEye, FiEyeOff, FiLock, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiEye, FiEyeOff, FiLock, FiSave } from 'react-icons/fi';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -139,171 +139,189 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 bg-opacity-50 p-4"
-          onClick={handleClose}
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 sm:p-6 font-sans"
+          onClick={(e) => e.target === e.currentTarget && !loading && handleClose()}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white w-full max-w-md border border-gray-200 shadow-lg"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <FiLock className="h-5 w-5 mr-2" />
-                Change Password
-              </h2>
-              <button
-                onClick={handleClose}
-                disabled={loading}
-                className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-              >
-                <FiX className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Content */}
             <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-black flex items-center">
+                  <FiLock className="mr-2" />
+                  Change Password
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  onClick={handleClose}
+                  disabled={loading}
+                  className="text-black hover:text-gray-600 disabled:opacity-50"
+                  aria-label="Close modal"
+                >
+                  <FiX className="text-xl" />
+                </motion.button>
+              </div>
+
+              {/* Success Message */}
               {success ? (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-center py-8"
                 >
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                    <FiCheck className="h-6 w-6 text-green-600" />
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                    <FiLock className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Password Changed Successfully</h3>
-                  <p className="text-gray-600">Your password has been updated successfully.</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Password Changed</h3>
+                  <p className="text-gray-600 text-sm">Your password has been updated successfully</p>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <>
+                  {/* Error Message */}
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-red-50 border border-red-200 rounded-md p-4 flex items-start"
+                      className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 mb-6 text-sm"
                     >
-                      <FiAlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm text-red-800">{error}</p>
-                      </div>
+                      {error}
                     </motion.div>
                   )}
 
-                  {/* Current Password */}
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.current ? 'text' : 'password'}
-                        id="currentPassword"
-                        name="currentPassword"
-                        value={formData.currentPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter your current password"
-                        required
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('current')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        disabled={loading}
-                      >
-                        {showPasswords.current ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-                      </button>
+                  {/* Form */}
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Current Password */}
+                    <div>
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-black mb-2">
+                        <FiLock className="inline mr-2" />
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.current ? 'text' : 'password'}
+                          id="currentPassword"
+                          name="currentPassword"
+                          value={formData.currentPassword}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 pr-10 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          placeholder="Enter your current password"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('current')}
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          disabled={loading}
+                          tabIndex={-1}
+                        >
+                          {showPasswords.current ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* New Password */}
-                  <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.new ? 'text' : 'password'}
-                        id="newPassword"
-                        name="newPassword"
-                        value={formData.newPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter your new password"
-                        required
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('new')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        disabled={loading}
-                      >
-                        {showPasswords.new ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-                      </button>
+                    {/* New Password */}
+                    <div>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-black mb-2">
+                        <FiLock className="inline mr-2" />
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.new ? 'text' : 'password'}
+                          id="newPassword"
+                          name="newPassword"
+                          value={formData.newPassword}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 pr-10 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          placeholder="Enter your new password"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('new')}
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          disabled={loading}
+                          tabIndex={-1}
+                        >
+                          {showPasswords.new ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters long</p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
-                  </div>
 
-                  {/* Confirm New Password */}
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPasswords.confirm ? 'text' : 'password'}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Confirm your new password"
-                        required
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility('confirm')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        disabled={loading}
-                      >
-                        {showPasswords.confirm ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-                      </button>
+                    {/* Confirm New Password */}
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-black mb-2">
+                        <FiLock className="inline mr-2" />
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.confirm ? 'text' : 'password'}
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 pr-10 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
+                          placeholder="Confirm your new password"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('confirm')}
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          disabled={loading}
+                          tabIndex={-1}
+                        >
+                          {showPasswords.confirm ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      disabled={loading}
-                      className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Changing...
-                        </>
-                      ) : (
-                        'Change Password'
-                      )}
-                    </button>
-                  </div>
-                </form>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        type="button"
+                        onClick={handleClose}
+                        disabled={loading}
+                        className="flex-1 px-4 py-2 text-black border-b border-gray-200 hover:bg-gray-100 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Cancel
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        type="submit"
+                        disabled={loading}
+                        className={`flex-1 px-4 py-2 font-medium text-white transition duration-200 ${
+                          loading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-black hover:bg-gray-800'
+                        }`}
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white mr-2"></div>
+                            Changing...
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center">
+                            <FiSave className="mr-2" />
+                            Change Password
+                          </div>
+                        )}
+                      </motion.button>
+                    </div>
+                  </form>
+                </>
               )}
             </div>
           </motion.div>

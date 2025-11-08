@@ -285,47 +285,6 @@ const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
               </div>
             </div>
 
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-black mb-2">Add Photos (Optional)</label>
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image}
-                        alt={`Review image ${index + 1}`}
-                        className="w-full h-24 object-cover"
-                      />
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-1 -right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        aria-label={`Remove image ${index + 1}`}
-                      >
-                        <FaTrash />
-                      </motion.button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {images.length < 5 && (
-                <label className="inline-flex items-center px-4 py-2 cursor-pointer hover:bg-gray-100 transition-colors">
-                  <FaCamera className="mr-2 text-black" />
-                  <span className="text-sm text-black">Add Photos</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    aria-label="Upload review photos"
-                  />
-                </label>
-              )}
-              <p className="text-xs text-gray-800 mt-1">You can add up to 5 photos (JPG, PNG)</p>
-            </div>
-
             {/* Submit Error */}
             {errors.submit && (
               <div className="flex items-center">

@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  Users, Clock, CheckCircle, XCircle, 
+  Users, Clock, CheckCircle, 
   DollarSign, CreditCard, AlertTriangle, TrendingUp 
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
@@ -58,8 +58,6 @@ const getDefaultStats = (): BookingStats => ({
 
 const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading }) => {
   React.useEffect(() => {
-    console.log('BookingStatsCards received stats:', stats);
-    console.log('BookingStatsCards loading:', loading);
   }, [stats, loading]);
 
   const safeStats = stats || getDefaultStats();
@@ -84,8 +82,6 @@ const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading })
       },
     }).then((result) => {
       if (result.isConfirmed) {
-        // Placeholder for actual navigation or action
-        console.log(`Navigating to ${title} management`);
       }
     });
   };
@@ -137,38 +133,6 @@ const BookingStatsCards: React.FC<BookingStatsCardsProps> = ({ stats, loading })
       icon: <CheckCircle className="h-6 w-6" />,
       color: 'indigo',
       subtitle: 'Successfully completed',
-    },
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(safeStats.totalRevenue),
-      icon: <DollarSign className="h-6 w-6" />,
-      color: 'green',
-      subtitle: 'All bookings combined',
-    },
-    {
-      title: 'Collected',
-      value: formatCurrency(safeStats.paidRevenue),
-      icon: <CreditCard className="h-6 w-6" />,
-      color: 'blue',
-      subtitle: 'Successfully collected',
-    },
-    {
-      title: 'Outstanding',
-      value: formatCurrency(safeStats.pendingRevenue),
-      icon: <AlertTriangle className="h-6 w-6" />,
-      color: 'red',
-      subtitle: 'Pending payments',
-      action: safeStats.pendingRevenue > 0 ? {
-        label: 'Follow Up →',
-        onClick: () => handleActionClick('Outstanding'),
-      } : undefined,
-    },
-    {
-      title: 'Occupancy Rate',
-      value: `${safeStats.occupancyRate.toFixed(1)}%`,
-      icon: <TrendingUp className="h-6 w-6" />,
-      color: 'purple',
-      subtitle: 'Current occupancy',
     },
   ];
 

@@ -1,4 +1,3 @@
-// hooks/useBookings.ts
 import { useState, useCallback } from 'react';
 import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
 

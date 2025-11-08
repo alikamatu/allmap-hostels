@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaExclamationTriangle, FaSync, FaSpinner, FaCreditCard, FaLock } from 'react-icons/fa';
 import { FiAlertTriangle, FiCheck } from 'react-icons/fi';
-import { BookingType, RoomType, Room, BookingFormData, BookingFormErrors, ApiRoom, apiRoomToRoom } from '@/types/booking';
+import { BookingType, Room, BookingFormData, BookingFormErrors, ApiRoom, apiRoomToRoom } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
+import { RoomType } from '@/types/hostels';
 
 declare global {
   interface Window {

@@ -3,30 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, 
   Building, 
   Bed, 
   Calendar, 
-  Star, 
-  Settings,
-  ChevronLeft,
-  Timer,
   Users,
   TrendingUp,
   DollarSign,
   AlertCircle,
   CheckCircle,
-  Clock,
+  Plus,
   MapPin,
-  Phone,
-  Mail,
-  Eye,
-  Plus
+  Star,
+  Phone
 } from 'lucide-react';
-import { int } from 'zod';
 import { Booking } from '@/types/booking';
 
-// Mock API functions - replace with actual API calls
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 interface ApiCallOptions extends RequestInit {
@@ -465,7 +456,6 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
-        {/* Hostels Overview
         {dashboardData.hostels.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -525,7 +515,7 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.div>
-        )} */}
+        )}
       </motion.div>
     </div>
   );

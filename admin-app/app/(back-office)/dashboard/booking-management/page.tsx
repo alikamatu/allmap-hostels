@@ -124,12 +124,6 @@ const BookingManagementPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Stats from useBookings hook:', stats);
-    console.log('Bookings loading state:', bookingsLoading);
-    console.log('Bookings data:', bookings);
-  }, [stats, bookingsLoading, bookings]);
-
-  useEffect(() => {
     const loadStats = async () => {
       try {
         if (fetchStats) {

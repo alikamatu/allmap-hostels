@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { School, OnboardingData } from '@/types/onboarding';
 
 export const useOnboarding = () => {
