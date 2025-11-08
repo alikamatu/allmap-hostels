@@ -55,7 +55,7 @@ export interface RoomType {
   id: string;
   hostelId: string;
   name: string;
-  description?: string;
+  description: string;
   pricePerSemester: number;
   pricePerMonth: number;
   pricePerWeek?: number;
@@ -117,7 +117,7 @@ export function apiRoomToRoom(apiRoom: ApiRoom): Room {
       id: apiRoom.roomType.id,
       hostelId: apiRoom.roomType.hostelId || apiRoom.hostelId || '',
       name: apiRoom.roomType.name,
-      description: apiRoom.roomType.description,
+      description: apiRoom.roomType.description || '',
       pricePerSemester: apiRoom.roomType.pricePerSemester,
       pricePerMonth: apiRoom.roomType.pricePerMonth,
       pricePerWeek: apiRoom.roomType.pricePerWeek,

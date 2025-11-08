@@ -195,16 +195,18 @@ export default function RoomDetailPage() {
   return (
     <div className="bg-white min-h-screen">
       {/* Booking Modal */}
-      <BookingModal
-        isOpen={bookingModalOpen}
-        onClose={() => setBookingModalOpen(false)}
-        roomType={roomType}
-        hostel={{
-          id: hostel.id,
-          name: hostel.name,
-          address: hostel.address
-        }}
-      />
+        <BookingModal
+          isOpen={bookingModalOpen}
+          onClose={() => {
+            setBookingModalOpen(false);
+          }}
+          roomType={roomType}
+          hostel={{
+            id: hostel.id,
+            name: hostel.name,
+            address: hostel.address
+          }}
+        />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <button
