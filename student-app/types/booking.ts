@@ -1,4 +1,3 @@
-// types/booking.ts
 export enum BookingStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
@@ -251,6 +250,7 @@ export interface BookingFormErrors {
   bookingType?: string;
   specialRequests?: string;
   emergencyContacts?: string;
+  general?: string;
 }
 
 // Calendar Types
