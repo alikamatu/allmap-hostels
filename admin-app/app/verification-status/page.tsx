@@ -259,7 +259,7 @@ const PendingState = ({ lastUpdated }: { lastUpdated: string | null }) => (
     </div>
     
     <p className="text-sm text-gray-500 mb-6">
-      You'll be redirected automatically when approved
+      You will be redirected automatically when approved
     </p>
 
     <motion.button
@@ -347,7 +347,7 @@ const UnverifiedState = () => {
       </div>
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Required</h1>
       <p className="text-gray-600 mb-4">
-        We couldn't find your verification application. Please submit one to access the administrator dashboard.
+        We could not find your verification application. Please submit one to access the administrator dashboard.
       </p>
       <p className="text-sm text-gray-500 mb-6">
         Redirecting to verification page in 5 seconds...
