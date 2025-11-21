@@ -6,7 +6,7 @@ import {
   Building,
   Copy
 } from 'lucide-react';
-  import { AllowedGender, Room, RoomStatus, RoomType } from '@/types/room';
+import { AllowedGender, Room, RoomStatus, RoomType } from '@/types/room';
 import { Hostel } from '@/types/hostel';
 import RoomCard from '@/components/dashboard/components/rooms/RoomCard';
 import CreateRoomModal from '@/components/dashboard/components/rooms/CreateRoomModal';
@@ -18,7 +18,6 @@ import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-ty
 import { LoaderFive } from '@/components/ui/loader';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
-
 
 type CreateRoomFormData = {
   hostelId: string;
@@ -47,7 +46,6 @@ type UpdateRoomFormData = {
   notes?: string;
 };
 
-// Updated CreateRoomTypeFormData to include gender
 export type CreateRoomTypeFormData = {
   hostelId: string;
   name: string;
@@ -56,7 +54,7 @@ export type CreateRoomTypeFormData = {
   pricePerMonth: number;
   pricePerWeek?: number;
   capacity: number;
-    allowedGenders: AllowedGender[]; // Changed from gender to allowedGenders array
+  allowedGenders: AllowedGender[];
   total_rooms: number;
   available_rooms: number;
   images: string[];
@@ -84,7 +82,6 @@ const RoomManagementPage = () => {
   });
   const [showCreateRoomTypeModal, setShowCreateRoomTypeModal] = useState(false);
 
-  // Form state
   const [createFormData, setCreateFormData] = useState<CreateRoomFormData>({
     hostelId: '',
     roomTypeId: '',
@@ -112,7 +109,6 @@ const RoomManagementPage = () => {
     notes: ''
   });
 
-  // Fetch room types function
   const fetchRoomTypes = useCallback(async (hostelId: string) => {
     if (!hostelId) {
       setRoomTypes([]);
@@ -155,160 +151,148 @@ const RoomManagementPage = () => {
     }
   }, []);
 
-  // Fetch rooms function
-const fetchRooms = useCallback(async (page: number = 1) => {
-  // Don't fetch rooms if no hostel is selected
-  if (!selectedHostel || !selectedHostel.trim()) {
-    setRooms([]);
-    setLoading(prev => ({ ...prev, rooms: false }));
-    return;
-  }
-
-  setLoading(prev => ({ ...prev, rooms: true }));
-  try {
-    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    
-    if (!accessToken) {
-      throw new Error('No authentication token found. Please log in again.');
-    }
-
-    const params = new URLSearchParams();
-    params.append('limit', '20');
-    params.append('page', page.toString());
-    
-    // Always include hostelId since we've verified it exists
-    params.append('hostelId', selectedHostel);
-    
-    if (statusFilter && statusFilter !== 'all') {
-      params.append('status', statusFilter);
-    }
-    
-    if (floorFilter && floorFilter !== 'all') {
-      const floorNumber = parseInt(floorFilter);
-      if (!isNaN(floorNumber)) {
-        params.append('floor', floorNumber.toString());
-      }
-    }
-    
-    if (searchTerm && searchTerm.trim()) {
-      params.append('search', searchTerm.trim());
-    }
-
-    const url = `${API_BASE_URL}/rooms?${params.toString()}`;
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText };
-      }
-      
-      if (res.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      } else if (res.status === 400) {
-        throw new Error(`Bad Request: ${errorData.message || 'Invalid request parameters'}`);
-      }
-      
-      throw new Error(errorData.message || `HTTP ${res.status}: Failed to fetch rooms`);
-    }
-    
-    const data = await res.json();
-    
-    if (data.rooms && data.pagination) {
-      setRooms(data.rooms);
-    } else if (Array.isArray(data)) {
-      setRooms(data);
-    } else {
+  const fetchRooms = useCallback(async (page: number = 1) => {
+    if (!selectedHostel || !selectedHostel.trim()) {
       setRooms([]);
-    }
-    
-  } catch (error) {
-    console.error('Failed to fetch rooms:', error);
-    alert((error as Error).message || 'Failed to load rooms');
-    setRooms([]);
-  } finally {
-    setLoading(prev => ({ ...prev, rooms: false }));
-  }
-}, [selectedHostel, statusFilter, floorFilter, searchTerm]);
-
-  // Initial data fetch
-useEffect(() => {
-  const fetchInitialData = async () => {
-    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-
-    if (!accessToken) {
-      alert('You are not authenticated. Please log in.');
+      setLoading(prev => ({ ...prev, rooms: false }));
       return;
     }
 
+    setLoading(prev => ({ ...prev, rooms: true }));
     try {
-      setLoading({
-        rooms: false, // Don't show loading for rooms initially
-        hostels: true,
-        roomTypes: false,
-        action: false
-      });
+      const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      
+      if (!accessToken) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
 
-      // Only fetch hostels initially
-      const hostelsRes = await fetch(`${API_BASE_URL}/hostels/fetch`, {
+      const params = new URLSearchParams();
+      params.append('limit', '20');
+      params.append('page', page.toString());
+      params.append('hostelId', selectedHostel);
+      
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      
+      if (floorFilter && floorFilter !== 'all') {
+        const floorNumber = parseInt(floorFilter);
+        if (!isNaN(floorNumber)) {
+          params.append('floor', floorNumber.toString());
+        }
+      }
+      
+      if (searchTerm && searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+      }
+
+      const url = `${API_BASE_URL}/rooms?${params.toString()}`;
+      const res = await fetch(url, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       });
       
-      if (!hostelsRes.ok) {
-        if (hostelsRes.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
         }
-        throw new Error('Failed to fetch hostels');
+        
+        if (res.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (res.status === 400) {
+          throw new Error(`Bad Request: ${errorData.message || 'Invalid request parameters'}`);
+        }
+        
+        throw new Error(errorData.message || `HTTP ${res.status}: Failed to fetch rooms`);
       }
       
-      const hostelsData = await hostelsRes.json();
-      setHostels(hostelsData);
+      const data = await res.json();
       
-      // Don't fetch rooms initially - wait for hostel selection
+      if (data.rooms && data.pagination) {
+        setRooms(data.rooms);
+      } else if (Array.isArray(data)) {
+        setRooms(data);
+      } else {
+        setRooms([]);
+      }
       
     } catch (error) {
-      console.error('Failed to fetch initial data:', error);
-      alert((error as Error).message || 'Failed to load data');
+      console.error('Failed to fetch rooms:', error);
+      alert((error as Error).message || 'Failed to load rooms');
+      setRooms([]);
     } finally {
-      setLoading(prev => ({
-        ...prev,
-        hostels: false
-      }));
+      setLoading(prev => ({ ...prev, rooms: false }));
     }
-  };
-  
-  fetchInitialData();
-}, []);
+  }, [selectedHostel, statusFilter, floorFilter, searchTerm]);
 
-  // Handle hostel selection changes
-useEffect(() => {
-  if (selectedHostel) {
-    fetchRooms(1);
-  } else {
-    // Clear rooms when no hostel is selected
-    setRooms([]);
-    setSelectedRooms([]); // Clear selected rooms too
-  }
-}, [fetchRooms, selectedHostel]);
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-  // Handle filter changes
+      if (!accessToken) {
+        alert('You are not authenticated. Please log in.');
+        return;
+      }
+
+      try {
+        setLoading({
+          rooms: false,
+          hostels: true,
+          roomTypes: false,
+          action: false
+        });
+
+        const hostelsRes = await fetch(`${API_BASE_URL}/hostels/fetch`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!hostelsRes.ok) {
+          if (hostelsRes.status === 401) {
+            throw new Error('Authentication failed. Please log in again.');
+          }
+          throw new Error('Failed to fetch hostels');
+        }
+        
+        const hostelsData = await hostelsRes.json();
+        setHostels(hostelsData);
+        
+      } catch (error) {
+        console.error('Failed to fetch initial data:', error);
+        alert((error as Error).message || 'Failed to load data');
+      } finally {
+        setLoading(prev => ({
+          ...prev,
+          hostels: false
+        }));
+      }
+    };
+    
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedHostel) {
+      fetchRooms(1);
+    } else {
+      setRooms([]);
+      setSelectedRooms([]);
+    }
+  }, [fetchRooms, selectedHostel]);
+
   useEffect(() => {
     fetchRooms(1);
   }, [fetchRooms]);
 
-  // Reset create form when modal opens
   useEffect(() => {
     if (showCreateModal) {
       setCreateFormData({
@@ -395,87 +379,86 @@ useEffect(() => {
     }
   };
 
-const handleBulkCreate = async (formData: BulkCreateFormData) => {
-  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  const handleBulkCreate = async (formData: BulkCreateFormData) => {
+    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-  if (!accessToken) {
-    alert('You are not authenticated. Please log in again.');
-    return;
-  }
-
-  setLoading(prev => ({ ...prev, action: true }));
-  try {
-    // Parse and validate room numbers
-    const roomNumbers = formData.roomNumbers
-      .split(',')
-      .map((num: string) => num.trim())
-      .filter((num: string) => num !== '');
-
-    if (roomNumbers.length === 0) {
-      throw new Error('Please provide at least one room number');
+    if (!accessToken) {
+      alert('You are not authenticated. Please log in again.');
+      return;
     }
 
-    const bulkCreateData = {
-      hostelId: formData.hostelId,
-      roomTypeId: formData.roomTypeId,
-      roomNumbers: roomNumbers,
-      maxOccupancy: parseInt(formData.maxOccupancy),
-      ...(formData.floor && { floor: parseInt(formData.floor) }),
-      ...(formData.notes && formData.notes.trim() && { notes: formData.notes.trim() })
-    };
+    setLoading(prev => ({ ...prev, action: true }));
+    try {
+      const roomNumbers = formData.roomNumbers
+        .split(',')
+        .map((num: string) => num.trim())
+        .filter((num: string) => num !== '');
 
-    const res = await fetch(`${API_BASE_URL}/rooms/bulk`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(bulkCreateData)
-    });
-
-    if (!res.ok) {
-      const responseText = await res.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(responseText);
-      } catch {
-        errorData = { message: responseText };
+      if (roomNumbers.length === 0) {
+        throw new Error('Please provide at least one room number');
       }
 
-      if (res.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      } else if (res.status === 400) {
-        const message = errorData.message || responseText;
-        if (Array.isArray(errorData.message)) {
-          throw new Error(`Validation Error: ${errorData.message.join(', ')}`);
+      const bulkCreateData = {
+        hostelId: formData.hostelId,
+        roomTypeId: formData.roomTypeId,
+        roomNumbers: roomNumbers,
+        maxOccupancy: parseInt(formData.maxOccupancy),
+        ...(formData.floor && { floor: parseInt(formData.floor) }),
+        ...(formData.notes && formData.notes.trim() && { notes: formData.notes.trim() })
+      };
+
+      const res = await fetch(`${API_BASE_URL}/rooms/bulk`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bulkCreateData)
+      });
+
+      if (!res.ok) {
+        const responseText = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          errorData = { message: responseText };
         }
-        throw new Error(`Bad Request: ${message}`);
-      } else if (res.status === 409) {
-        throw new Error(`Conflict: ${errorData.message || 'Some room numbers already exist in this hostel'}`);
-      } else if (res.status === 404) {
-        throw new Error(`Not Found: ${errorData.message || 'Hostel or Room Type not found'}`);
+
+        if (res.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (res.status === 400) {
+          const message = errorData.message || responseText;
+          if (Array.isArray(errorData.message)) {
+            throw new Error(`Validation Error: ${errorData.message.join(', ')}`);
+          }
+          throw new Error(`Bad Request: ${message}`);
+        } else if (res.status === 409) {
+          throw new Error(`Conflict: ${errorData.message || 'Some room numbers already exist in this hostel'}`);
+        } else if (res.status === 404) {
+          throw new Error(`Not Found: ${errorData.message || 'Hostel or Room Type not found'}`);
+        }
+        
+        throw new Error(errorData.message || `HTTP ${res.status}: Failed to create rooms`);
       }
       
-      throw new Error(errorData.message || `HTTP ${res.status}: Failed to create rooms`);
+      await fetchRooms();
+      setShowBulkModal(false);
+      setBulkFormData({
+        hostelId: selectedHostel || '',
+        roomTypeId: '',
+        floor: '',
+        maxOccupancy: '',
+        roomNumbers: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error creating rooms:', error);
+      alert((error as Error).message || 'Failed to create rooms. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, action: false }));
     }
-    
-    await fetchRooms();
-    setShowBulkModal(false);
-    setBulkFormData({
-      hostelId: selectedHostel || '',
-      roomTypeId: '',
-      floor: '',
-      maxOccupancy: '',
-      roomNumbers: '',
-      notes: ''
-    });
-  } catch (error) {
-    console.error('Error creating rooms:', error);
-    alert((error as Error).message || 'Failed to create rooms. Please try again.');
-  } finally {
-    setLoading(prev => ({ ...prev, action: false }));
-  }
-};
+  };
 
   const handleUpdateRoom = async (roomId: string, formData: UpdateRoomFormData) => {
     const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -650,113 +633,82 @@ const handleBulkCreate = async (formData: BulkCreateFormData) => {
     );
   };
 
-// In your parent component (e.g., page.tsx)
+  const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
+    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-const handleCreateRoomType = async (formData: CreateRoomTypeFormData) => {
-  const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    try {
+      console.log('Parent component received data:', formData);
+      console.log('allowedGenders from parent:', formData.allowedGenders);
 
-  try {
-    console.log('Parent component received data:', formData);
-    console.log('allowedGenders from parent:', formData.allowedGenders);
+      const response = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          hostelId: formData.hostelId,
+          name: formData.name,
+          description: formData.description,
+          pricePerSemester: formData.pricePerSemester,
+          pricePerMonth: formData.pricePerMonth,
+          pricePerWeek: formData.pricePerWeek,
+          capacity: formData.capacity,
+          allowedGenders: formData.allowedGenders,
+          total_rooms: formData.total_rooms,
+          available_rooms: formData.available_rooms,
+          amenities: formData.amenities || [],
+          images: formData.images || [],
+        }),
+      });
 
-    // Make sure to include ALL fields in the API call
-    const response = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        hostelId: formData.hostelId,
-        name: formData.name,
-        description: formData.description,
-        pricePerSemester: formData.pricePerSemester,
-        pricePerMonth: formData.pricePerMonth,
-        pricePerWeek: formData.pricePerWeek,
-        capacity: formData.capacity,
-        allowedGenders: formData.allowedGenders, // Make sure this is included!
-        total_rooms: formData.total_rooms,
-        available_rooms: formData.available_rooms,
-        amenities: formData.amenities || [],
-        images: formData.images || [],
-      }),
-    });
+      if (!response.ok) {
+        throw new Error('Failed to create room type');
+      }
 
-    if (!response.ok) {
-      throw new Error('Failed to create room type');
+      const newRoomType = await response.json();
+      console.log('Created room type:', newRoomType);
+
+      setShowCreateRoomTypeModal(false);
+      
+    } catch (error) {
+      console.error('Error creating room type:', error);
     }
-
-    const newRoomType = await response.json();
-    console.log('Created room type:', newRoomType);
-
-    // Handle success (close modal, refresh data, etc.)
-    setShowCreateRoomTypeModal(false);
-    // Refresh your room types list here
-    
-  } catch (error) {
-    console.error('Error creating room type:', error);
-    // Handle error
-  }
-};
-
-// Alternative: Use spread operator to ensure all fields are included
-const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
-  try {
-    console.log('Creating room type with payload:', formData);
-
-    const response = await fetch(`${API_BASE_URL}/rooms/create-room-type`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...formData, // This ensures ALL fields are included
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to create room type');
-    }
-
-    // const newRoomType = await response.json();
-    
-    // Handle success
-    setShowCreateRoomTypeModal(false);
-    
-  } catch (error) {
-    console.error('Error creating room type:', error);
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-white p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Room Management</h1>
-          <p className="text-gray-600">Manage rooms across all your hostels</p>
+        <div className="mb-6">
+          <h1 className="text-lg font-semibold text-gray-900 mb-1">Room Management</h1>
+          <p className="text-xs text-gray-600">Manage rooms across all your hostels</p>
         </div>
 
         {/* Action Bar */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 mb-4 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+            ROOM MANAGEMENT
+          </h3>
+          
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-3 w-3 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search rooms..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                  className="pl-9 pr-3 py-2 w-full bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                 />
               </div>
               
               <select
                 value={selectedHostel}
                 onChange={(e) => setSelectedHostel(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                 disabled={loading.hostels}
               >
                 <option value="">
@@ -770,7 +722,7 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               >
                 <option value="all">All Status</option>
                 <option value={RoomStatus.AVAILABLE}>Available</option>
@@ -782,7 +734,7 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
               <select
                 value={floorFilter}
                 onChange={(e) => setFloorFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               >
                 <option value="all">All Floors</option>
                 {rooms && [...new Set(rooms.map(room => room.floor))]
@@ -795,45 +747,45 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {selectedRooms.length > 0 && (
                 <button
                   onClick={handleBulkDelete}
                   disabled={loading.action}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-3 py-2 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150 flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Delete Selected ({selectedRooms.length})
+                  <Trash2 className="h-3 w-3" />
+                  Delete ({selectedRooms.length})
                 </button>
               )}
 
               <button
                 onClick={() => setShowCreateRoomTypeModal(true)}
                 disabled={!selectedHostel}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!selectedHostel ? "Select a hostel first" : ""}
               >
-                <Plus size={16} />
+                <Plus size={12} />
                 Add Room Type
               </button>
 
               <button
                 onClick={() => setShowBulkModal(true)}
                 disabled={!selectedHostel}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 bg-gray-600 text-white text-xs font-medium hover:bg-gray-700 transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!selectedHostel ? "Select a hostel first" : ""}
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3 w-3" />
                 Bulk Create
               </button>
 
               <button
                 onClick={() => setShowCreateModal(true)}
                 disabled={!selectedHostel}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!selectedHostel ? "Select a hostel first" : ""}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
                 Add Room
               </button>
             </div>
@@ -842,23 +794,23 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
 
         {/* Rooms Grid */}
         {!selectedHostel ? (
-          <div className="text-center py-12">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a hostel to view rooms</h3>
-            <p className="text-gray-500">Choose a hostel from the dropdown above to manage its rooms.</p>
+          <div className="text-center py-12 bg-gray-50">
+            <Building className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">Select a hostel to view rooms</h3>
+            <p className="text-xs text-gray-500">Choose a hostel from the dropdown above to manage its rooms.</p>
           </div>
         ) : loading.rooms ? (
-      <div className="flex w-full h-72 items-center justify-center">
-        <LoaderFive text="Loading Rooms..." />
-      </div>
-    ) : !rooms || rooms.length === 0 ? (
-      <div className="text-center py-12">
-        <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms found</h3>
-        <p className="text-gray-500">Try adjusting your filters or create a new room for this hostel.</p>
+          <div className="flex w-full h-48 items-center justify-center bg-gray-50">
+            <LoaderFive text="Loading Rooms..." />
+          </div>
+        ) : !rooms || rooms.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50">
+            <Building className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No rooms found</h3>
+            <p className="text-xs text-gray-500">Try adjusting your filters or create a new room for this hostel.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {rooms.map((room) => (
               <RoomCard
                 key={room.id}
@@ -896,7 +848,7 @@ const handleCreateRoomTypeSpread = async (formData: CreateRoomTypeFormData) => {
         setFormData={setBulkFormData}
         onSubmit={handleBulkCreate}
         loading={loading.action}
-        onHostelSelect={fetchRoomTypes} // Add this prop
+        onHostelSelect={fetchRoomTypes}
       />
 
       {/* Create Room Type Modal */}

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Calendar, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, User, Calendar, CreditCard, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -422,334 +423,418 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     setRoomTypes(new Map());
   };
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    if (paymentStatus !== PaymentStatus.PROCESSING) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <User className="h-6 w-6 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Create New Booking</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            disabled={paymentStatus === PaymentStatus.PROCESSING}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && paymentStatus !== PaymentStatus.PROCESSING) onClose();
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-300"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {paymentStatus === PaymentStatus.SUCCESS && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-green-800">Payment Successful!</p>
-                <p className="text-xs text-green-600">Reference: {paymentReference}</p>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-              <h4 className="font-medium text-blue-900">Booking Fee Required</h4>
-            </div>
-            <p className="text-sm text-blue-700">
-              A non-refundable booking fee of <span className="font-bold">GHS {BOOKING_FEE}</span> is required.
-              Room charges of <span className="font-bold">GHS {calculatedAmount.toFixed(2)}</span> will be paid separately.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Name *
-              </label>
-              <input
-                type="text"
-                name="studentName"
-                value={formData.studentName}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.studentName ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter full name"
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-              {validationErrors.studentName && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.studentName}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Email *
-              </label>
-              <input
-                type="email"
-                name="studentEmail"
-                value={formData.studentEmail}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.studentEmail ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter email"
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-              {validationErrors.studentEmail && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.studentEmail}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Phone *
-              </label>
-              <input
-                type="tel"
-                name="studentPhone"
-                value={formData.studentPhone}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.studentPhone ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter phone"
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-              {validationErrors.studentPhone && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.studentPhone}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student ID (Auto-generated)
-              </label>
-              <input
-                type="text"
-                name="studentId"
-                value={formData.studentId}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                disabled={true}
-                readOnly
-              />
-              <p className="mt-1 text-xs text-gray-500">This ID is automatically generated for the booking</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Check-in Date *
-              </label>
-              <input
-                type="date"
-                name="checkInDate"
-                value={formData.checkInDate}
-                onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.checkInDate ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-              {validationErrors.checkInDate && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.checkInDate}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Check-out Date *
-              </label>
-              <input
-                type="date"
-                name="checkOutDate"
-                value={formData.checkOutDate}
-                onChange={handleChange}
-                min={formData.checkInDate || new Date().toISOString().split('T')[0]}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.checkOutDate ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-              {validationErrors.checkOutDate && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.checkOutDate}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hostel *
-              </label>
-              <select
-                name="hostelId"
-                value={formData.hostelId}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.hostelId ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={!formData.checkInDate || !formData.checkOutDate || paymentStatus !== PaymentStatus.IDLE}
-              >
-                <option value="">Select Hostel</option>
-                {hostels.map(hostel => (
-                  <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
-                ))}
-              </select>
-              {validationErrors.hostelId && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.hostelId}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Room *
-              </label>
-              <select
-                name="roomId"
-                value={formData.roomId}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                  validationErrors.roomId ? 'border-red-500' : 'border-gray-300'
-                }`}
-                disabled={!formData.hostelId || loadingRooms || paymentStatus !== PaymentStatus.IDLE}
-              >
-                <option value="">{loadingRooms ? 'Loading...' : 'Select Room'}</option>
-                {availableRooms.map(room => {
-                  const roomType = roomTypes.get(room.roomTypeId);
-                  const availableBeds = room.maxOccupancy - room.currentOccupancy;
-                  return (
-                    <option key={room.id} value={room.id}>
-                      Room {room.roomNumber} - {roomType?.name || 'Standard'} ({availableBeds} bed{availableBeds !== 1 ? 's' : ''})
-                    </option>
-                  );
-                })}
-              </select>
-              {validationErrors.roomId && (
-                <p className="mt-1 text-xs text-red-500">{validationErrors.roomId}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Booking Type *
-              </label>
-              <select
-                name="bookingType"
-                value={formData.bookingType}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              >
-                <option value={BookingType.SEMESTER}>Semester</option>
-                <option value={BookingType.MONTHLY}>Monthly</option>
-                <option value={BookingType.WEEKLY}>Weekly</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Special Requests
-              </label>
-              <textarea
-                name="specialRequests"
-                value={formData.specialRequests}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Any special requirements..."
-                disabled={paymentStatus !== PaymentStatus.IDLE}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Emergency Contact</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                  type="text"
-                  name="emergencyContactName"
-                  value={formData.emergencyContactName}
-                  onChange={handleChange}
-                  placeholder="Contact Name"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={paymentStatus !== PaymentStatus.IDLE}
-                />
-                <input
-                  type="tel"
-                  name="emergencyContactPhone"
-                  value={formData.emergencyContactPhone}
-                  onChange={handleChange}
-                  placeholder="Contact Phone"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={paymentStatus !== PaymentStatus.IDLE}
-                />
-                <input
-                  type="text"
-                  name="emergencyContactRelationship"
-                  value={formData.emergencyContactRelationship}
-                  onChange={handleChange}
-                  placeholder="Relationship"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={paymentStatus !== PaymentStatus.IDLE}
-                />
-              </div>
-            </div>
-          </div>
-
-          {calculatedAmount > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-3">Cost Summary</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Booking Fee (Due Now):</span>
-                  <span className="font-medium">GHS {BOOKING_FEE.toFixed(2)}</span>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50">
+                  <User className="h-4 w-4 text-orange-600" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Room Charges (Due Later):</span>
-                  <span className="font-medium">GHS {calculatedAmount.toFixed(2)}</span>
-                </div>
-                <div className="border-t pt-2 flex justify-between">
-                  <span className="font-medium text-gray-900">Total Cost:</span>
-                  <span className="font-bold text-lg text-gray-900">
-                    GHS {(BOOKING_FEE + calculatedAmount).toFixed(2)}
-                  </span>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Create New Booking</h3>
+                  <p className="text-xs text-gray-500">Complete booking with payment</p>
                 </div>
               </div>
+              <button
+                onClick={handleClose}
+                className="p-1 hover:bg-gray-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                disabled={paymentStatus === PaymentStatus.PROCESSING}
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
             </div>
-          )}
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              disabled={paymentStatus === PaymentStatus.PROCESSING}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={initializePayment}
-              disabled={paymentStatus !== PaymentStatus.IDLE}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <CreditCard className="h-4 w-4" />
-              {paymentStatus === PaymentStatus.PROCESSING ? 'Processing...' : 
-               paymentStatus === PaymentStatus.SUCCESS ? 'Complete!' : 
-               `Pay GHS ${BOOKING_FEE} & Create Booking`}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            <div className="p-4 space-y-4">
+              {/* Success Message */}
+              {paymentStatus === PaymentStatus.SUCCESS && (
+                <div className="bg-green-50 border border-green-200 p-3 flex items-center gap-3">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">Payment Successful!</p>
+                    <p className="text-xs text-green-600">Reference: {paymentReference}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 p-3 flex items-center gap-3">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
+              {/* Booking Fee Notice */}
+              <div className="bg-orange-50 border border-orange-200 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-orange-600" />
+                  <h4 className="font-medium text-orange-900 text-sm">Booking Fee Required</h4>
+                </div>
+                <p className="text-xs text-orange-700">
+                  A non-refundable booking fee of <span className="font-bold">GHS {BOOKING_FEE}</span> is required.
+                  Room charges of <span className="font-bold">GHS {calculatedAmount.toFixed(2)}</span> will be paid separately.
+                </p>
+              </div>
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Student Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="studentName"
+                    value={formData.studentName}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                      validationErrors.studentName ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter full name"
+                    disabled={paymentStatus !== PaymentStatus.IDLE}
+                  />
+                  {validationErrors.studentName && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.studentName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Student Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student Email *
+                  </label>
+                  <input
+                    type="email"
+                    name="studentEmail"
+                    value={formData.studentEmail}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                      validationErrors.studentEmail ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter email"
+                    disabled={paymentStatus !== PaymentStatus.IDLE}
+                  />
+                  {validationErrors.studentEmail && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.studentEmail}
+                    </p>
+                  )}
+                </div>
+
+                {/* Student Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    name="studentPhone"
+                    value={formData.studentPhone}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                      validationErrors.studentPhone ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter phone"
+                    disabled={paymentStatus !== PaymentStatus.IDLE}
+                  />
+                  {validationErrors.studentPhone && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.studentPhone}
+                    </p>
+                  )}
+                </div>
+
+                {/* Student ID */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student ID (Auto-generated)
+                  </label>
+                  <input
+                    type="text"
+                    name="studentId"
+                    value={formData.studentId}
+                    className="w-full px-3 py-2 border border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed"
+                    disabled={true}
+                    readOnly
+                  />
+                  <p className="mt-1 text-xs text-gray-500">This ID is automatically generated for the booking</p>
+                </div>
+
+                {/* Check-in Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Check-in Date *
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="date"
+                      name="checkInDate"
+                      value={formData.checkInDate}
+                      onChange={handleChange}
+                      min={new Date().toISOString().split('T')[0]}
+                      className={`pl-9 w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                        validationErrors.checkInDate ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      disabled={paymentStatus !== PaymentStatus.IDLE}
+                    />
+                  </div>
+                  {validationErrors.checkInDate && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.checkInDate}
+                    </p>
+                  )}
+                </div>
+
+                {/* Check-out Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Check-out Date *
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="date"
+                      name="checkOutDate"
+                      value={formData.checkOutDate}
+                      onChange={handleChange}
+                      min={formData.checkInDate || new Date().toISOString().split('T')[0]}
+                      className={`pl-9 w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                        validationErrors.checkOutDate ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      disabled={paymentStatus !== PaymentStatus.IDLE}
+                    />
+                  </div>
+                  {validationErrors.checkOutDate && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.checkOutDate}
+                    </p>
+                  )}
+                </div>
+
+                {/* Hostel Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hostel *
+                  </label>
+                  <select
+                    name="hostelId"
+                    value={formData.hostelId}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                      validationErrors.hostelId ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    disabled={!formData.checkInDate || !formData.checkOutDate || paymentStatus !== PaymentStatus.IDLE}
+                  >
+                    <option value="">Select Hostel</option>
+                    {hostels.map(hostel => (
+                      <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
+                    ))}
+                  </select>
+                  {validationErrors.hostelId && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.hostelId}
+                    </p>
+                  )}
+                </div>
+
+                {/* Room Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Room *
+                  </label>
+                  <select
+                    name="roomId"
+                    value={formData.roomId}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
+                      validationErrors.roomId ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    disabled={!formData.hostelId || loadingRooms || paymentStatus !== PaymentStatus.IDLE}
+                  >
+                    <option value="">{loadingRooms ? 'Loading...' : 'Select Room'}</option>
+                    {availableRooms.map(room => {
+                      const roomType = roomTypes.get(room.roomTypeId);
+                      const availableBeds = room.maxOccupancy - room.currentOccupancy;
+                      return (
+                        <option key={room.id} value={room.id}>
+                          Room {room.roomNumber} - {roomType?.name || 'Standard'} ({availableBeds} bed{availableBeds !== 1 ? 's' : ''})
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {validationErrors.roomId && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.roomId}
+                    </p>
+                  )}
+                </div>
+
+                {/* Booking Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Booking Type *
+                  </label>
+                  <select
+                    name="bookingType"
+                    value={formData.bookingType}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                    disabled={paymentStatus !== PaymentStatus.IDLE}
+                  >
+                    <option value={BookingType.SEMESTER}>Semester</option>
+                    <option value={BookingType.MONTHLY}>Monthly</option>
+                    <option value={BookingType.WEEKLY}>Weekly</option>
+                  </select>
+                </div>
+
+                {/* Special Requests */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Special Requests
+                  </label>
+                  <textarea
+                    name="specialRequests"
+                    value={formData.specialRequests}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                    placeholder="Any special requirements..."
+                    disabled={paymentStatus !== PaymentStatus.IDLE}
+                  />
+                </div>
+
+                {/* Emergency Contact */}
+                <div className="md:col-span-2">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Emergency Contact</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      name="emergencyContactName"
+                      value={formData.emergencyContactName}
+                      onChange={handleChange}
+                      placeholder="Contact Name"
+                      className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                      disabled={paymentStatus !== PaymentStatus.IDLE}
+                    />
+                    <input
+                      type="tel"
+                      name="emergencyContactPhone"
+                      value={formData.emergencyContactPhone}
+                      onChange={handleChange}
+                      placeholder="Contact Phone"
+                      className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                      disabled={paymentStatus !== PaymentStatus.IDLE}
+                    />
+                    <input
+                      type="text"
+                      name="emergencyContactRelationship"
+                      value={formData.emergencyContactRelationship}
+                      onChange={handleChange}
+                      placeholder="Relationship"
+                      className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                      disabled={paymentStatus !== PaymentStatus.IDLE}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cost Summary */}
+              {calculatedAmount > 0 && (
+                <div className="bg-gray-50 border border-gray-200 p-3">
+                  <h4 className="font-medium text-gray-900 mb-3 text-sm">Cost Summary</h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Booking Fee (Due Now):</span>
+                      <span className="font-medium">GHS {BOOKING_FEE.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Room Charges (Due Later):</span>
+                      <span className="font-medium">GHS {calculatedAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-gray-200 pt-2 flex justify-between">
+                      <span className="font-medium text-gray-900">Total Cost:</span>
+                      <span className="font-bold text-gray-900">
+                        GHS {(BOOKING_FEE + calculatedAmount).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleClose}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                  disabled={paymentStatus === PaymentStatus.PROCESSING}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={initializePayment}
+                  disabled={paymentStatus !== PaymentStatus.IDLE}
+                  className="px-3 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent hover:bg-orange-700 focus:outline-none disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-150"
+                >
+                  {paymentStatus === PaymentStatus.PROCESSING ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : paymentStatus === PaymentStatus.SUCCESS ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Complete!
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4" />
+                      Pay GHS {BOOKING_FEE} & Create Booking
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

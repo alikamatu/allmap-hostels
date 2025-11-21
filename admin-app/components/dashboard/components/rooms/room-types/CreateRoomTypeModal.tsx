@@ -76,14 +76,13 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       title,
       text,
       icon,
-      confirmButtonColor: '#1a73e8', // Google blue
+      confirmButtonColor: '#FF6A00',
       confirmButtonText: 'OK',
       background: '#fff',
       customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
+        title: 'text-sm font-medium text-gray-900',
+        htmlContainer: 'text-xs text-gray-600',
+        confirmButton: 'px-3 py-1.5 text-xs font-medium',
       },
     });
   };
@@ -219,254 +218,277 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">Create New Room Type</h3>
-              <button
-                onClick={onClose}
-                disabled={loading}
-                className="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X size={24} />
-              </button>
+            {/* Header */}
+            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">CREATE ROOM TYPE</h3>
+                  <p className="text-xs text-gray-600 mt-1">Add a new room type to your hostel</p>
+                </div>
+                <button
+                  onClick={onClose}
+                  disabled={loading}
+                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Hostel *</label>
-                <select
-                  name="hostelId"
-                  value={formData.hostelId}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                >
-                  <option value="">Select a hostel</option>
-                  {hostels.map((hostel) => (
-                    <option key={hostel.id} value={hostel.id}>
-                      {hostel.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  {/* Hostel Selection */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">HOSTEL *</label>
+                    <select
+                      name="hostelId"
+                      value={formData.hostelId}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                      className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                    >
+                      <option value="">Select a hostel</option>
+                      {hostels.map((hostel) => (
+                        <option key={hostel.id} value={hostel.id}>
+                          {hostel.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Room Type Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                  placeholder="e.g., Deluxe Single"
-                />
-              </div>
+                  {/* Room Type Name */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">ROOM TYPE NAME *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                      className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                      placeholder="e.g., Deluxe Single"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                  placeholder="Describe the room type..."
-                />
-              </div>
+                  {/* Description */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">DESCRIPTION</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows={3}
+                      disabled={loading}
+                      className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                      placeholder="Describe the room type..."
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Allowed Genders *
-                </label>
-                <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  {Object.values(AllowedGender).map((gender) => (
-                    <label key={gender} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.allowedGenders.includes(gender)}
-                        onChange={() => handleGenderToggle(gender)}
-                        disabled={loading}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                      <span className="text-sm text-gray-700">
-                        {getGenderDisplayName(gender)}
-                      </span>
+                  {/* Allowed Genders */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      ALLOWED GENDERS *
                     </label>
-                  ))}
+                    <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50">
+                      {Object.values(AllowedGender).map((gender) => (
+                        <label key={gender} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.allowedGenders.includes(gender)}
+                            onChange={() => handleGenderToggle(gender)}
+                            disabled={loading}
+                            className="w-3 h-3 text-[#FF6A00] border-gray-300 focus:ring-[#FF6A00] focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <span className="text-xs text-gray-700">
+                            {getGenderDisplayName(gender)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Selected: {getSelectedGendersDisplay()}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Select who can be assigned to this room type. Multiple selections allowed.
-                </p>
-                <div className="mt-1.5 text-sm text-blue-600 font-medium">
-                  Selected: {getSelectedGendersDisplay()}
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Semester *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                {/* Right Column */}
+                <div className="space-y-4">
+                  {/* Pricing */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">PRICING (GHS) *</label>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-600 min-w-[100px]">Per Semester:</label>
+                        <div className="flex-1 relative">
+                          <span className="absolute left-2 top-1.5 text-xs text-gray-500">GHS</span>
+                          <input
+                            type="number"
+                            name="pricePerSemester"
+                            value={formData.pricePerSemester}
+                            onChange={handleChange}
+                            required
+                            min="0"
+                            step="0.01"
+                            disabled={loading}
+                            className="w-full pl-10 pr-3 py-1.5 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-600 min-w-[100px]">Per Month:</label>
+                        <div className="flex-1 relative">
+                          <span className="absolute left-2 top-1.5 text-xs text-gray-500">GHS</span>
+                          <input
+                            type="number"
+                            name="pricePerMonth"
+                            value={formData.pricePerMonth}
+                            onChange={handleChange}
+                            required
+                            min="0"
+                            step="0.01"
+                            disabled={loading}
+                            className="w-full pl-10 pr-3 py-1.5 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-600 min-w-[100px]">Per Week:</label>
+                        <div className="flex-1 relative">
+                          <span className="absolute left-2 top-1.5 text-xs text-gray-500">GHS</span>
+                          <input
+                            type="number"
+                            name="pricePerWeek"
+                            value={formData.pricePerWeek}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.01"
+                            disabled={loading}
+                            className="w-full pl-10 pr-3 py-1.5 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Capacity and Rooms */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">CAPACITY *</label>
+                      <input
+                        type="number"
+                        name="capacity"
+                        value={formData.capacity}
+                        onChange={handleChange}
+                        required
+                        min="1"
+                        max="2000"
+                        disabled={loading}
+                        className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">TOTAL ROOMS *</label>
+                      <input
+                        type="number"
+                        name="total_rooms"
+                        value={formData.total_rooms}
+                        onChange={handleChange}
+                        required
+                        min="1"
+                        max="1000"
+                        disabled={loading}
+                        className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Available Rooms */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">AVAILABLE ROOMS *</label>
                     <input
                       type="number"
-                      name="pricePerSemester"
-                      value={formData.pricePerSemester}
+                      name="available_rooms"
+                      value={formData.available_rooms}
                       onChange={handleChange}
                       required
                       min="0"
-                      step="0.01"
+                      max="1000"
                       disabled={loading}
-                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                      className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Month *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      name="pricePerMonth"
-                      value={formData.pricePerMonth}
-                      onChange={handleChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      disabled={loading}
-                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price/Week</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
-                    <input
-                      type="number"
-                      name="pricePerWeek"
-                      value={formData.pricePerWeek}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      disabled={loading}
-                      className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Capacity *</label>
-                  <input
-                    type="number"
-                    name="capacity"
-                    value={formData.capacity}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    max="2000"
-                    disabled={loading}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Rooms *</label>
-                  <input
-                    type="number"
-                    name="total_rooms"
-                    value={formData.total_rooms}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    max="1000"
-                    disabled={loading}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Available Rooms *</label>
-                <input
-                  type="number"
-                  name="available_rooms"
-                  value={formData.available_rooms}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  max="1000"
-                  disabled={loading}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newAmenity}
-                    onChange={(e) => setNewAmenity(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
-                    disabled={loading}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
-                    placeholder="Add an amenity (e.g., Wi-Fi, AC)..."
-                  />
-                  <button
-                    type="button"
-                    onClick={addAmenity}
-                    disabled={loading || !newAmenity.trim()}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
-                {formData.amenities.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {formData.amenities.map((amenity) => (
-                      <span
-                        key={amenity}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
+                  {/* Amenities */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">AMENITIES</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newAmenity}
+                        onChange={(e) => setNewAmenity(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
+                        disabled={loading}
+                        className="flex-1 px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                        placeholder="Add an amenity..."
+                      />
+                      <button
+                        type="button"
+                        onClick={addAmenity}
+                        disabled={loading || !newAmenity.trim()}
+                        className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
-                        {amenity}
-                        <button
-                          type="button"
-                          onClick={() => removeAmenity(amenity)}
-                          disabled={loading}
-                          className="text-blue-500 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <X size={14} />
-                        </button>
-                      </span>
-                    ))}
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {formData.amenities.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {formData.amenities.map((amenity) => (
+                          <span
+                            key={amenity}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs"
+                          >
+                            {amenity}
+                            <button
+                              type="button"
+                              onClick={() => removeAmenity(amenity)}
+                              disabled={loading}
+                              className="text-gray-500 hover:text-red-500 text-xs"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                  className="flex-1 px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors flex items-center justify-center"
+                  className="flex-1 px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
                     <>
-                      <Loader2 size={18} className="animate-spin mr-2" />
+                      <Loader2 size={14} className="animate-spin mr-1" />
                       Creating...
                     </>
                   ) : (

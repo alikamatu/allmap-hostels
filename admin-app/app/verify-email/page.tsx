@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'react-icons/fi';
+import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus, FiHome } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {
@@ -124,7 +124,7 @@ function VerifyEmailContent() {
   };
 
   const StatusIcon = () => {
-    const iconSize = 80;
+    const iconSize = 64;
     const iconColor = getStatusColor();
 
     switch (verification.status) {
@@ -134,6 +134,7 @@ function VerifyEmailContent() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="p-4 bg-green-50"
           >
             <FiCheckCircle size={iconSize} color={iconColor} />
           </motion.div>
@@ -145,6 +146,7 @@ function VerifyEmailContent() {
             initial={{ rotate: 20, opacity: 0 }}
             animate={{ rotate: 0, opacity: 1 }}
             transition={{ type: 'spring' }}
+            className="p-4 bg-red-50"
           >
             <FiXCircle size={iconSize} color={iconColor} />
           </motion.div>
@@ -154,6 +156,7 @@ function VerifyEmailContent() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+            className="p-4 bg-blue-50"
           >
             <FaSpinner size={iconSize} color={iconColor} />
           </motion.div>
@@ -164,7 +167,7 @@ function VerifyEmailContent() {
   const getStatusColor = () => {
     switch (verification.status) {
       case 'success':
-        return '#10B981'; // emerald-500
+        return '#10B981'; // green-500
       case 'error':
       case 'expired':
         return '#EF4444'; // red-500
@@ -173,97 +176,192 @@ function VerifyEmailContent() {
     }
   };
 
+  const getStatusBackground = () => {
+    switch (verification.status) {
+      case 'success':
+        return 'bg-green-50';
+      case 'error':
+      case 'expired':
+        return 'bg-red-50';
+      default:
+        return 'bg-blue-50';
+    }
+  };
+
+  const getStatusTextColor = () => {
+    switch (verification.status) {
+      case 'success':
+        return 'text-green-700';
+      case 'error':
+      case 'expired':
+        return 'text-red-700';
+      default:
+        return 'text-blue-700';
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden"
-      >
-        <div className="p-8 text-center">
-          <div className="flex justify-center mb-6">
-            <StatusIcon />
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <div className="w-full max-w-4xl flex flex-col md:flex-row bg-white border border-gray-200 overflow-hidden">
+        {/* Left Hero Section */}
+        <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
+          <div className="flex items-center mb-8">
+            <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
+            <span className="text-white font-bold text-xl">HostelHub</span>
           </div>
           
-          <motion.h2 
-            className="text-2xl font-bold text-gray-800 mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            Email Verification
-          </motion.h2>
+          <div className="flex-1 flex flex-col justify-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Email Verification
+            </h1>
+            <p className="text-lg text-gray-300 mb-8 max-w-md">
+              {verification.status === 'loading' && 'We\'re confirming your email address...'}
+              {verification.status === 'success' && 'Welcome to the HostelHub community!'}
+              {verification.status !== 'success' && verification.status !== 'loading' && 'Let\'s get you verified and ready to explore.'}
+            </p>
+            
+            <div className="space-y-4">
+              {[
+                "Access hostels worldwide",
+                "Secure booking system", 
+                "Exclusive member benefits",
+                "24/7 customer support"
+              ].map((text, i) => (
+                <div key={i} className="flex items-center">
+                  <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span className="text-gray-300">{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           
-          <motion.p
-            className={`text-lg mb-6 ${verification.status === 'success' ? 'text-emerald-600' : verification.status === 'error' ? 'text-red-600' : 'text-blue-600'}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+          <div className="text-gray-500 text-sm">
+            © 2025 HostelHub. All rights reserved.
+          </div>
+        </div>
+
+        {/* Verification Content */}
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-center"
           >
-            {verification.message}
-          </motion.p>
+            <div className="flex justify-center mb-6">
+              <StatusIcon />
+            </div>
+            
+            <motion.h2 
+              className="text-2xl font-bold text-gray-800 mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              {verification.status === 'loading' && 'Verifying Your Email'}
+              {verification.status === 'success' && 'Verification Complete!'}
+              {verification.status === 'error' && 'Verification Failed'}
+              {verification.status === 'expired' && 'Link Expired'}
+            </motion.h2>
+            
+            <motion.p
+              className={`text-base mb-6 p-4 ${getStatusBackground()} ${getStatusTextColor()}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {verification.message}
+            </motion.p>
 
-          <AnimatePresence>
-            {showResendSuccess && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="bg-emerald-100 text-emerald-700 p-3 rounded-lg mb-4"
-              >
-                Verification email sent successfully!
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <AnimatePresence>
+              {showResendSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-green-50 text-green-700 p-3 mb-4 border border-green-200"
+                >
+                  Verification email sent successfully!
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <div className="flex flex-col gap-3">
-            {verification.status === 'success' && (
+            <div className="flex flex-col gap-3">
+              {verification.status === 'success' && (
+                <motion.button
+                  onClick={() => router.push('/')}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-2 bg-[#FF6A00] hover:bg-[#E55E00] text-white py-3 px-6 font-medium transition-colors"
+                >
+                  Go to Login <FiArrowRight />
+                </motion.button>
+              )}
+
+              {(verification.status === 'error' || verification.status === 'expired') && (
+                <>
+                  <motion.button
+                    onClick={handleResendEmail}
+                    disabled={isResending}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex items-center justify-center gap-2 ${
+                      isResending ? 'bg-gray-400' : 'bg-[#FF6A00] hover:bg-[#E55E00]'
+                    } text-white py-3 px-6 font-medium transition-colors`}
+                  >
+                    {isResending ? (
+                      <>
+                        <FaSpinner className="animate-spin" /> Sending...
+                      </>
+                    ) : (
+                      <>
+                        <FiMail /> Resend Verification
+                      </>
+                    )}
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => router.push('/sign-up')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-6 font-medium transition-colors"
+                  >
+                    <FiUserPlus /> Back to Registration
+                  </motion.button>
+                </>
+              )}
+
+              {/* Always show home button */}
               <motion.button
                 onClick={() => router.push('/')}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
+                className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors"
               >
-                Go to Login <FiArrowRight />
+                <FiHome /> Back to Home
               </motion.button>
-            )}
+            </div>
 
+            {/* Additional help text for error states */}
             {(verification.status === 'error' || verification.status === 'expired') && (
-              <>
-                <motion.button
-                  onClick={handleResendEmail}
-                  disabled={isResending}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center justify-center gap-2 ${
-                    isResending ? 'bg-amber-400' : 'bg-amber-500 hover:bg-amber-600'
-                  } text-white py-3 px-6 rounded-lg font-medium transition-colors`}
-                >
-                  {isResending ? (
-                    <>
-                      <FaSpinner className="animate-spin" /> Sending...
-                    </>
-                  ) : (
-                    <>
-                      <FiMail /> Resend Verification
-                    </>
-                  )}
-                </motion.button>
-
-                <motion.button
-                  onClick={() => router.push('/sign-up')}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
-                >
-                  <FiUserPlus /> Back to Registration
-                </motion.button>
-              </>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mt-6 p-4 bg-gray-50 border border-gray-200"
+              >
+                <p className="text-sm text-gray-600">
+                  <strong>Need help?</strong> Check your spam folder or contact support if you continue to experience issues.
+                </p>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -271,10 +369,43 @@ function VerifyEmailContent() {
 export default function VerifyEmail() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-8">
-          <FaSpinner className="animate-spin text-blue-500 text-4xl mx-auto mb-4" />
-          <p className="text-gray-600">Loading verification...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-full max-w-4xl flex flex-col md:flex-row bg-white border border-gray-200 overflow-hidden">
+          {/* Left Hero Section */}
+          <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
+            <div className="flex items-center mb-8">
+              <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
+              <span className="text-white font-bold text-xl">HostelHub</span>
+            </div>
+            
+            <div className="flex-1 flex flex-col justify-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                Email Verification
+              </h1>
+              <p className="text-lg text-gray-300 mb-8 max-w-md">
+                We're confirming your email address...
+              </p>
+            </div>
+            
+            <div className="text-gray-500 text-sm">
+              © 2025 HostelHub. All rights reserved.
+            </div>
+          </div>
+
+          {/* Loading State */}
+          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center items-center">
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="p-4 bg-blue-50">
+                  <FaSpinner className="animate-spin text-blue-500 text-4xl" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Verifying Your Email</h2>
+              <p className="text-base mb-6 p-4 bg-blue-50 text-blue-700">
+                Loading verification...
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     }>

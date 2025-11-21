@@ -9,7 +9,6 @@ import StatsCards from "@/components/dashboard/components/review/StatsCards";
 import ReviewResponseModal from "@/components/dashboard/components/review/ReviewResponseModal";
 import {
   Review,
-  Hostel,
   ReviewStats,
   PaginationInfo,
   ReviewFilterDto,
@@ -257,141 +256,156 @@ export default function ReviewsPage(): JSX.Element {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Reviews Management</h1>
-        <p className="text-gray-500 text-sm max-w-2xl">
-          Monitor and respond to guest reviews to maintain excellent service and reputation across your hostels.
-        </p>
-      </div>
+    <div className="min-h-screen bg-white p-4">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="mb-4">
+          <h1 className="text-lg font-semibold text-gray-900 mb-1">Reviews Management</h1>
+          <p className="text-xs text-gray-600">
+            Monitor and respond to guest reviews to maintain excellent service and reputation across your hostels.
+          </p>
+        </div>
 
-      <StatsCards stats={state.stats} loading={state.loading && state.hostels.length === 0} />
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        <div className="lg:col-span-2">
-          <ReviewFilters
-            filters={state.filters}
-            onFiltersChange={handleFiltersChange}
-            hostels={state.hostels}
-          />
-        </div>
-        <div>
-          <RatingDistribution 
-            distribution={state.stats.ratingDistribution} 
-            loading={state.loading && state.hostels.length === 0} 
-          />
-        </div>
-      </div>
+        {/* Stats Cards */}
+        <StatsCards stats={state.stats} loading={state.loading && state.hostels.length === 0} />
+        
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Filters and Reviews */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Filters */}
+            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+              <ReviewFilters
+                filters={state.filters}
+                onFiltersChange={handleFiltersChange}
+                hostels={state.hostels}
+              />
+            </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Reviews ({state.pagination.total || 0})
-            </h2>
-            <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-              {state.filters.hostelId ? 
-                state.hostels.find(h => h.id === state.filters.hostelId)?.name || 'Selected Hostel' :
-                'All Hostels'
-              }
-            </div>
-          </div>
-        </div>
-        
-        <div className="divide-y divide-gray-100">
-          {state.loading ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-3 text-gray-500 font-medium">Loading reviews...</p>
-            </div>
-          ) : state.reviews.length === 0 ? (
-            <div className="p-12 text-center">
-              <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">No reviews found</p>
-              <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto">
-                Guest reviews will appear here once they start submitting feedback for your hostels.
-              </p>
-            </div>
-          ) : (
-            <div className="p-6 space-y-6">
-              {state.reviews.map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  onRespond={handleRespond}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {state.pagination.totalPages > 1 && (
-          <div className="p-6 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {((state.pagination.page - 1) * state.pagination.limit) + 1} to{' '}
-                {Math.min(state.pagination.page * state.pagination.limit, state.pagination.total)} of{' '}
-                {state.pagination.total} reviews
+            {/* Reviews List */}
+            <div className="bg-white border-t-4 border-t-[#FF6A00]">
+              {/* Reviews Header */}
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-sm font-semibold text-gray-900">
+                    REVIEWS ({state.pagination.total || 0})
+                  </h2>
+                  <div className="text-xs font-medium text-gray-600 bg-gray-50 px-2 py-1">
+                    {state.filters.hostelId ? 
+                      state.hostels.find(h => h.id === state.filters.hostelId)?.name || 'Selected Hostel' :
+                      'All Hostels'
+                    }
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handlePageChange(state.pagination.page - 1)}
-                  disabled={state.pagination.page <= 1}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-200"
-                >
-                  Previous
-                </button>
-                
-                {[...Array(Math.min(5, state.pagination.totalPages))].map((_, index) => {
-                  const page = state.pagination.page <= 3 
-                    ? index + 1 
-                    : state.pagination.page + index - 2;
-                  if (page <= state.pagination.totalPages) {
-                    return (
+              
+              {/* Reviews Content */}
+              <div className="divide-y divide-gray-100">
+                {state.loading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#FF6A00] mx-auto"></div>
+                    <p className="mt-2 text-xs text-gray-500 font-medium">Loading reviews...</p>
+                  </div>
+                ) : state.reviews.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-xs text-gray-600 font-medium">No reviews found</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
+                      Guest reviews will appear here once they start submitting feedback for your hostels.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-4">
+                    {state.reviews.map((review) => (
+                      <ReviewCard
+                        key={review.id}
+                        review={review}
+                        onRespond={handleRespond}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Pagination */}
+              {state.pagination.totalPages > 1 && (
+                <div className="p-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-600">
+                      Showing {((state.pagination.page - 1) * state.pagination.limit) + 1} to{' '}
+                      {Math.min(state.pagination.page * state.pagination.limit, state.pagination.total)} of{' '}
+                      {state.pagination.total} reviews
+                    </div>
+                    <div className="flex items-center space-x-1">
                       <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-4 py-2 text-sm font-medium border ${
-                          page === state.pagination.page
-                            ? 'bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                        } rounded-lg transition-colors duration-200`}
+                        onClick={() => handlePageChange(state.pagination.page - 1)}
+                        disabled={state.pagination.page <= 1}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-150"
                       >
-                        {page}
+                        Previous
                       </button>
-                    );
-                  }
-                  return null;
-                })}
-                
-                {state.pagination.totalPages > 5 && state.pagination.page < state.pagination.totalPages - 2 && (
-                  <span className="px-3 py-2 text-sm text-gray-400">...</span>
-                )}
-                
-                {state.pagination.totalPages > 5 && (
-                  <button
-                    onClick={() => handlePageChange(state.pagination.totalPages)}
-                    className={`px-4 py-2 text-sm font-medium border ${
-                      state.pagination.page === state.pagination.totalPages
-                        ? 'bg-blue-50 border-blue-500 text-blue-600'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                    } rounded-lg transition-colors duration-200`}
-                  >
-                    {state.pagination.totalPages}
-                  </button>
-                )}
-                
-                <button
-                  onClick={() => handlePageChange(state.pagination.page + 1)}
-                  disabled={state.pagination.page >= state.pagination.totalPages}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-200"
-                >
-                  Next
-                </button>
-              </div>
+                      
+                      {[...Array(Math.min(5, state.pagination.totalPages))].map((_, index) => {
+                        const page = state.pagination.page <= 3 
+                          ? index + 1 
+                          : state.pagination.page + index - 2;
+                        if (page <= state.pagination.totalPages) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`px-3 py-1.5 text-xs font-medium border ${
+                                page === state.pagination.page
+                                  ? 'bg-[#FF6A00] border-[#FF6A00] text-white'
+                                  : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                              } transition-colors duration-150`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      {state.pagination.totalPages > 5 && state.pagination.page < state.pagination.totalPages - 2 && (
+                        <span className="px-2 py-1.5 text-xs text-gray-400">...</span>
+                      )}
+                      
+                      {state.pagination.totalPages > 5 && (
+                        <button
+                          onClick={() => handlePageChange(state.pagination.totalPages)}
+                          className={`px-3 py-1.5 text-xs font-medium border ${
+                            state.pagination.page === state.pagination.totalPages
+                              ? 'bg-[#FF6A00] border-[#FF6A00] text-white'
+                              : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                          } transition-colors duration-150`}
+                        >
+                          {state.pagination.totalPages}
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => handlePageChange(state.pagination.page + 1)}
+                        disabled={state.pagination.page >= state.pagination.totalPages}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-150"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
+
+          {/* Rating Distribution */}
+          <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+            <RatingDistribution 
+              distribution={state.stats.ratingDistribution} 
+              loading={state.loading && state.hostels.length === 0} 
+            />
+          </div>
+        </div>
       </div>
 
       <ReviewResponseModal

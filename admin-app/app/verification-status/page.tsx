@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { ClockIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { FiClock, FiXCircle, FiCheckCircle, FiAlertCircle, FiArrowRight, FiHome } from 'react-icons/fi';
+import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {
   status: 'pending' | 'approved' | 'rejected' | 'unverified';
@@ -66,20 +67,55 @@ export default function VerificationStatusPage() {
 
   if (status === 'approved' || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-sm mx-auto">
-          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-purple-900"
-              animate={{ 
-                x: ['-100%', '100%'],
-                transition: {
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: "easeInOut"
-                }
-              }}
-            />
+      <div className="min-h-screen flex flex-col md:flex-row bg-white">
+        {/* Left Hero Section */}
+        <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
+          <div className="flex items-center mb-8">
+            <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
+            <span className="text-white font-bold text-xl">HostelHub</span>
+          </div>
+          
+          <div className="flex-1 flex flex-col justify-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Welcome to HostelHub
+            </h1>
+            <p className="text-lg text-gray-300 mb-8 max-w-md">
+              Setting up your administrator dashboard...
+            </p>
+          </div>
+          
+          <div className="text-gray-500 text-sm">
+            © 2025 HostelHub. All rights reserved.
+          </div>
+        </div>
+
+        {/* Loading Section */}
+        <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center items-center">
+          <div className="w-full max-w-md text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-[#FF6A00] flex items-center justify-center">
+                <FaSpinner className="h-8 w-8 text-white animate-spin" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Finalizing Setup</h2>
+            <p className="text-gray-600 mb-6">
+              Preparing your administrator dashboard
+            </p>
+            
+            {/* Loading Bar */}
+            <div className="w-full h-1 bg-gray-200 mb-4">
+              <motion.div
+                className="h-full bg-[#FF6A00]"
+                animate={{ 
+                  x: ['-100%', '100%'],
+                  transition: {
+                    repeat: Infinity,
+                    duration: 1.5,
+                    ease: "easeInOut"
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -87,25 +123,70 @@ export default function VerificationStatusPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6"
-      >
-        <div className="text-center">
-          {status === 'loading' ? (
-            <LoadingState />
-          ) : status === 'pending' ? (
-            <PendingState lastUpdated={lastUpdated} />
-          ) : status === 'rejected' ? (
-            <RejectedState />
-          ) : (
-            <UnverifiedState />
-          )}
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
+      {/* Left Hero Section */}
+      <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
+        <div className="flex items-center mb-8">
+          <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
+          <span className="text-white font-bold text-xl">HostelHub</span>
         </div>
-      </motion.div>
+        
+        <div className="flex-1 flex flex-col justify-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            Verification Status
+          </h1>
+          <p className="text-lg text-gray-300 mb-8 max-w-md">
+            {status === 'loading' && 'Checking your administrator status...'}
+            {status === 'pending' && 'Your application is under review'}
+            {status === 'rejected' && 'Application review completed'}
+            {status === 'unverified' && 'Start your verification process'}
+          </p>
+          
+          <div className="space-y-4">
+            {[
+              "Secure admin dashboard access",
+              "Manage hostel listings worldwide",
+              "Real-time booking management",
+              "Advanced reporting tools"
+            ].map((text, i) => (
+              <div key={i} className="flex items-center">
+                <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+                <span className="text-gray-300">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="text-gray-500 text-sm">
+          © 2025 HostelHub. All rights reserved.
+        </div>
+      </div>
+
+      {/* Status Content Section */}
+      <div className="w-full md:w-1/2 bg-white p-6 md:p-12 flex flex-col justify-center items-center">
+        <div className="w-full max-w-md">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-center"
+          >
+            {status === 'loading' ? (
+              <LoadingState />
+            ) : status === 'pending' ? (
+              <PendingState lastUpdated={lastUpdated} />
+            ) : status === 'rejected' ? (
+              <RejectedState />
+            ) : (
+              <UnverifiedState />
+            )}
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -116,13 +197,18 @@ const LoadingState = () => (
     animate={{ opacity: 1 }}
     transition={{ duration: 0.3 }}
   >
-    <h1 className="text-lg font-semibold text-gray-900 mb-2">Checking Status</h1>
-    <p className="text-sm text-gray-600 mb-4">Please wait while we verify your administrator status</p>
+    <div className="flex justify-center mb-6">
+      <div className="w-16 h-16 bg-blue-50 flex items-center justify-center">
+        <FaSpinner className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    </div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-4">Checking Status</h1>
+    <p className="text-gray-600 mb-6">Please wait while we verify your administrator status</p>
     
-    {/* Purple-900 thin horizontal loading line */}
-    <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+    {/* Loading Bar */}
+    <div className="w-full h-1 bg-gray-200 mb-4">
       <motion.div
-        className="h-full bg-purple-900"
+        className="h-full bg-[#FF6A00]"
         animate={{ 
           x: ['-100%', '100%'],
           transition: {
@@ -142,21 +228,25 @@ const PendingState = ({ lastUpdated }: { lastUpdated: string | null }) => (
     animate={{ opacity: 1 }}
     transition={{ duration: 0.3 }}
   >
-    <ClockIcon className="h-8 w-8 text-yellow-500 mx-auto mb-4" />
-    <h1 className="text-lg font-semibold text-gray-900 mb-2">Application Under Review</h1>
-    <p className="text-sm text-gray-600 mb-4">
-      Your application is being reviewed. This typically takes 1-2 business days.
+    <div className="flex justify-center mb-6">
+      <div className="w-16 h-16 bg-yellow-50 flex items-center justify-center">
+        <FiClock className="h-8 w-8 text-yellow-500" />
+      </div>
+    </div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Under Review</h1>
+    <p className="text-gray-600 mb-4">
+      Your administrator application is being reviewed. This typically takes 1-2 business days.
     </p>
     {lastUpdated && (
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-6">
         Submitted on: {new Date(lastUpdated).toLocaleDateString()}
       </p>
     )}
     
-    {/* Purple-900 thin horizontal loading line */}
-    <div className="w-32 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+    {/* Loading Bar */}
+    <div className="w-32 h-1 bg-gray-200 mx-auto mb-4">
       <motion.div
-        className="h-full bg-purple-900"
+        className="h-full bg-[#FF6A00]"
         animate={{ 
           x: ['-100%', '100%'],
           transition: {
@@ -168,9 +258,19 @@ const PendingState = ({ lastUpdated }: { lastUpdated: string | null }) => (
       />
     </div>
     
-    <p className="text-xs text-gray-500 mt-4">
-      You&apos;ll be redirected when approved
+    <p className="text-sm text-gray-500 mb-6">
+      You'll be redirected automatically when approved
     </p>
+
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => window.location.reload()}
+      className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors w-full mb-3"
+    >
+      <FaSpinner className="animate-spin" />
+      Refresh Status
+    </motion.button>
   </motion.div>
 );
 
@@ -183,33 +283,50 @@ const RejectedState = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <XCircleIcon className="h-8 w-8 text-red-500 mx-auto mb-4" />
-      <h1 className="text-lg font-semibold text-gray-900 mb-2">Application Not Approved</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        Your application was not approved. Please resubmit with additional documentation.
+      <div className="flex justify-center mb-6">
+        <div className="w-16 h-16 bg-red-50 flex items-center justify-center">
+          <FiXCircle className="h-8 w-8 text-red-500" />
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Not Approved</h1>
+      <p className="text-gray-600 mb-4">
+        Your application was not approved. Please resubmit with additional documentation or contact support for more information.
       </p>
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-6">
         Redirecting to verification page in 5 seconds...
       </p>
       
-      {/* Purple-900 thin horizontal loading line */}
-      <div className="w-32 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+      {/* Progress Bar */}
+      <div className="w-full h-1 bg-gray-200 mb-6">
         <motion.div
-          className="h-full bg-purple-900"
+          className="h-full bg-[#FF6A00]"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 5, ease: 'linear' }}
         />
       </div>
       
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => router.push('/verification')}
-        className="mt-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-      >
-        Resubmit Application
-      </motion.button>
+      <div className="flex flex-col gap-3">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/verification')}
+          className="flex items-center justify-center gap-2 bg-[#FF6A00] hover:bg-[#E55E00] text-white py-3 px-6 font-medium transition-colors"
+        >
+          Resubmit Application
+          <FiArrowRight />
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/')}
+          className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors"
+        >
+          <FiHome />
+          Back to Home
+        </motion.button>
+      </div>
     </motion.div>
   );
 };
@@ -223,33 +340,50 @@ const UnverifiedState = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <XCircleIcon className="h-8 w-8 text-gray-400 mx-auto mb-4" />
-      <h1 className="text-lg font-semibold text-gray-900 mb-2">Application Not Found</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        We couldn&apos;t find your verification application. Please submit one.
+      <div className="flex justify-center mb-6">
+        <div className="w-16 h-16 bg-gray-100 flex items-center justify-center">
+          <FiAlertCircle className="h-8 w-8 text-gray-500" />
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Required</h1>
+      <p className="text-gray-600 mb-4">
+        We couldn't find your verification application. Please submit one to access the administrator dashboard.
       </p>
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-6">
         Redirecting to verification page in 5 seconds...
       </p>
       
-      {/* Purple-900 thin horizontal loading line */}
-      <div className="w-32 h-1 bg-gray-200 rounded-full mx-auto overflow-hidden">
+      {/* Progress Bar */}
+      <div className="w-full h-1 bg-gray-200 mb-6">
         <motion.div
-          className="h-full bg-purple-900"
+          className="h-full bg-[#FF6A00]"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: 5, ease: 'linear' }}
         />
       </div>
       
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => router.push('/verification')}
-        className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-      >
-        Submit Application
-      </motion.button>
+      <div className="flex flex-col gap-3">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/verification')}
+          className="flex items-center justify-center gap-2 bg-[#FF6A00] hover:bg-[#E55E00] text-white py-3 px-6 font-medium transition-colors"
+        >
+          Start Verification
+          <FiArrowRight />
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/')}
+          className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors"
+        >
+          <FiHome />
+          Back to Home
+        </motion.button>
+      </div>
     </motion.div>
   );
 };
