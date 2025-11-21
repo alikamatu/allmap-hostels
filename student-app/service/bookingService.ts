@@ -17,6 +17,7 @@ export interface CreateBookingRequest {
     phone: string;
     email?: string;
   }>;
+  depositAmount: number;
 }
 
 export interface BookingResponse {

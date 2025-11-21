@@ -399,6 +399,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         ),
         paymentReference: paymentReference,
         bookingFeeAmount: BOOKING_FEE,
+        depositAmount: 0,
       };
       
       const booking = await bookingService.createBooking(bookingData);
