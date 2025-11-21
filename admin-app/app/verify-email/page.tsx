@@ -383,7 +383,7 @@ export default function VerifyEmail() {
                 Email Verification
               </h1>
               <p className="text-lg text-gray-300 mb-8 max-w-md">
-                We're confirming your email address...
+                We are confirming your email address...
               </p>
             </div>
             

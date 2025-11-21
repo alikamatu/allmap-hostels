@@ -70,7 +70,7 @@ export default function NotFound() {
             Page Not Found
           </h2>
           <p className="text-gray-600 text-sm leading-relaxed">
-            Oops! The page you're looking for seems to have wandered off. 
+            Oops! The page you are looking for seems to have wandered off. 
             It might have been moved, deleted, or perhaps it never existed.
           </p>
         </motion.div>
@@ -143,7 +143,7 @@ export default function NotFound() {
           className="mt-6 p-3 bg-gray-50"
         >
           <p className="text-xs text-gray-600 mb-2">
-            Can't find what you're looking for?
+            Can not find what you are looking for?
           </p>
           <div className="flex items-center justify-center gap-2">
             <Search className="h-3 w-3 text-gray-400" />

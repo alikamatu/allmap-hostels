@@ -441,7 +441,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900 mb-1">Dashboard Overview</h1>
-              <p className="text-sm text-gray-600">Welcome back! Here's what's happening with your hostels today.</p>
+              <p className="text-sm text-gray-600">Welcome back! Here is what is happening with your hostels today.</p>
             </div>
             </div>
         </div>
