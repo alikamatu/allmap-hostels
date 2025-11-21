@@ -13,7 +13,6 @@ import { formatDate, formatDateTime } from '@/utils/date';
 import { formatCurrency } from '@/utils/currency';
 import { usePayments } from '@/hooks/usePayments';
 import { PaymentStatus } from '@/types/payment';
-import Swal from 'sweetalert2';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
@@ -43,22 +42,16 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
     }
   }, [isOpen, activeTab, booking.id, fetchBookingPayments]);
 
-  useEffect(() => {
-    if (isOpen && activeTab === 'payments' && booking.amountPaid > 0) {
-      fetchBookingPayments(booking.id);
-    }
-  }, [activeTab, isOpen, booking.amountPaid, booking.id, fetchBookingPayments]);
-
   const getStatusColor = (status: BookingStatus) => {
     const colors = {
-      [BookingStatus.PENDING]: 'bg-yellow-50 text-yellow-700 border-yellow-100',
-      [BookingStatus.CONFIRMED]: 'bg-blue-50 text-blue-700 border-blue-100',
-      [BookingStatus.CHECKED_IN]: 'bg-green-50 text-green-700 border-green-100',
-      [BookingStatus.CHECKED_OUT]: 'bg-gray-50 text-gray-700 border-gray-100',
-      [BookingStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-100',
-      [BookingStatus.NO_SHOW]: 'bg-orange-50 text-orange-700 border-orange-100',
+      [BookingStatus.PENDING]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      [BookingStatus.CONFIRMED]: 'bg-blue-50 text-blue-700 border-blue-200',
+      [BookingStatus.CHECKED_IN]: 'bg-green-50 text-green-700 border-green-200',
+      [BookingStatus.CHECKED_OUT]: 'bg-gray-50 text-gray-700 border-gray-200',
+      [BookingStatus.CANCELLED]: 'bg-red-50 text-red-700 border-red-200',
+      [BookingStatus.NO_SHOW]: 'bg-orange-50 text-orange-700 border-orange-200',
     };
-    return colors[status] || 'bg-gray-50 text-gray-700 border-gray-100';
+    return colors[status] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   const getPaymentStatusColor = (status: PaymentStatus) => {
@@ -77,7 +70,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
       date: booking.createdAt,
       title: 'Booking Created',
       description: 'Initial booking request submitted',
-      icon: <FileText className="h-4 w-4" />,
+      icon: <FileText className="h-3 w-3" />,
       status: 'completed',
     },
     ...(booking.confirmedAt
@@ -86,7 +79,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             date: booking.confirmedAt,
             title: 'Booking Confirmed',
             description: 'Booking confirmed by admin',
-            icon: <CheckCircle className="h-4 w-4" />,
+            icon: <CheckCircle className="h-3 w-3" />,
             status: 'completed',
           },
         ]
@@ -97,7 +90,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             date: booking.checkedInAt,
             title: 'Checked In',
             description: 'Student checked into the room',
-            icon: <CheckCircle className="h-4 w-4" />,
+            icon: <CheckCircle className="h-3 w-3" />,
             status: 'completed',
           },
         ]
@@ -108,7 +101,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             date: booking.checkedOutAt,
             title: 'Checked Out',
             description: 'Student checked out successfully',
-            icon: <CheckCircle className="h-4 w-4" />,
+            icon: <CheckCircle className="h-3 w-3" />,
             status: 'completed',
           },
         ]
@@ -119,7 +112,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             date: booking.cancelledAt,
             title: 'Booking Cancelled',
             description: booking.cancellationReason || 'Booking was cancelled',
-            icon: <X className="h-4 w-4" />,
+            icon: <X className="h-3 w-3" />,
             status: 'cancelled',
           },
         ]
@@ -127,45 +120,6 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const paymentProgress = booking.totalAmount > 0 ? (booking.amountPaid / booking.totalAmount) * 100 : 0;
-
-  const showActionConfirm = (action: 'check-in' | 'check-out', callback: () => void) => {
-    Swal.fire({
-      title: `Confirm ${action === 'check-in' ? 'Check-In' : 'Check-Out'}`,
-      text: `Are you sure you want to ${action === 'check-in' ? 'check in' : 'check out'} ${booking.studentName} for room ${booking.room?.roomNumber}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1a73e8', // Google blue
-      cancelButtonColor: '#d32f2f',
-      confirmButtonText: `Yes, ${action === 'check-in' ? 'Check In' : 'Check Out'}`,
-      cancelButtonText: 'Cancel',
-      background: '#fff',
-      customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
-        cancelButton: 'px-4 py-2 font-medium',
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        callback();
-        Swal.fire({
-          title: `${action === 'check-in' ? 'Checked In' : 'Checked Out'}!`,
-          text: `${booking.studentName} has been successfully ${action === 'check-in' ? 'checked in' : 'checked out'}.`,
-          icon: 'success',
-          confirmButtonColor: '#1a73e8',
-          confirmButtonText: 'OK',
-          background: '#fff',
-          customClass: {
-            popup: 'rounded-xl shadow-lg',
-            title: 'text-lg font-medium text-gray-900',
-            htmlContainer: 'text-sm text-gray-600',
-            confirmButton: 'px-4 py-2 font-medium',
-          },
-        });
-      }
-    });
-  };
 
   return (
     <AnimatePresence>
@@ -185,55 +139,55 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <User className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">{booking.studentName}</h2>
-                    <p className="text-sm text-gray-500">Booking ID: {booking.id.substring(0, 8)}</p>
-                  </div>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-50">
+                  <User className="h-4 w-4 text-orange-600" />
                 </div>
-                <div className="flex gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{booking.studentName}</h2>
+                  <p className="text-xs text-gray-500">Booking ID: {booking.id.substring(0, 8)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                    className={`inline-flex items-center px-2 py-1 text-xs font-medium border ${getStatusColor(
                       booking.status
                     )}`}
                   >
-                    {booking.status.replace('_', ' ').toUpperCase()}
+                    {booking.status.replace('_', ' ')}
                   </span>
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(
+                    className={`inline-flex items-center px-2 py-1 text-xs font-medium ${getPaymentStatusColor(
                       booking.paymentStatus
                     )}`}
                   >
-                    {booking.paymentStatus.toUpperCase()}
+                    {booking.paymentStatus}
                   </span>
                 </div>
+                <button
+                  onClick={onClose}
+                  disabled={paymentsLoading}
+                  className="p-1 hover:bg-gray-100 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                disabled={paymentsLoading}
-                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
             </div>
 
             {/* Payment Status Banner */}
             {booking.amountPaid > 0 && (
-              <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+              <div className="bg-green-50 border-b border-green-200 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-4 w-4 text-green-600" />
                     <div>
-                      <p className="text-sm font-medium text-green-800">
+                      <p className="text-xs font-medium text-green-800">
                         Payment Progress: {paymentProgress.toFixed(1)}% Complete
                       </p>
                       <p className="text-xs text-green-600">
@@ -241,9 +195,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                       </p>
                     </div>
                   </div>
-                  <div className="w-32 bg-green-100 rounded-full h-2.5">
+                  <div className="w-24 bg-green-100 h-1.5">
                     <div
-                      className="bg-green-600 h-2.5 rounded-full transition-all duration-500"
+                      className="bg-green-600 h-1.5 transition-all duration-500"
                       style={{ width: `${paymentProgress}%` }}
                     ></div>
                   </div>
@@ -255,21 +209,21 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div className="border-b border-gray-200">
               <nav className="flex">
                 {[
-                  { id: 'details', label: 'Details', icon: <User className="h-4 w-4" /> },
+                  { id: 'details', label: 'Details', icon: <User className="h-3 w-3" /> },
                   {
                     id: 'payments',
                     label: `Payments${booking.amountPaid > 0 ? ` (${formatCurrency(booking.amountPaid)})` : ''}`,
-                    icon: <CreditCard className="h-4 w-4" />,
+                    icon: <CreditCard className="h-3 w-3" />,
                   },
-                  { id: 'timeline', label: 'Timeline', icon: <Clock className="h-4 w-4" /> },
+                  { id: 'timeline', label: 'Timeline', icon: <Clock className="h-3 w-3" /> },
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
                     disabled={paymentsLoading}
-                    className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
+                        ? 'border-orange-500 text-orange-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -281,17 +235,17 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-4">
               {activeTab === 'details' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Student Information */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <User className="h-5 w-5" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 border border-gray-200 p-3">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <User className="h-3 w-3" />
                         Student Information
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Name:</span>
                           <span className="font-medium">{booking.studentName}</span>
@@ -312,12 +266,12 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                     </div>
 
                     {/* Accommodation Details */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
+                    <div className="bg-gray-50 border border-gray-200 p-3">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <MapPin className="h-3 w-3" />
                         Accommodation
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Hostel:</span>
                           <span className="font-medium">{booking.hostel?.name || 'N/A'}</span>
@@ -332,17 +286,17 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Booking Type:</span>
-                          <span className="font-medium">{booking.bookingType.toUpperCase()}</span>
+                          <span className="font-medium">{booking.bookingType}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
+                    <div className="bg-gray-50 border border-gray-200 p-3">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <Calendar className="h-3 w-3" />
                         Important Dates
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Check-in:</span>
                           <span className="font-medium">{formatDate(booking.checkInDate)}</span>
@@ -377,12 +331,12 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <CreditCard className="h-5 w-5" />
+                    <div className="bg-gray-50 border border-gray-200 p-3">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <CreditCard className="h-3 w-3" />
                         Financial Summary
                       </h3>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-xs">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Amount:</span>
                           <span className="font-medium">{formatCurrency(booking.totalAmount)}</span>
@@ -399,14 +353,14 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                             {formatCurrency(booking.amountDue)}
                           </span>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="mt-2 pt-2 border-t border-gray-200">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Payment Progress:</span>
                             <span className="font-medium">{paymentProgress.toFixed(1)}%</span>
                           </div>
-                          <div className="mt-2 w-full bg-gray-100 rounded-full h-2.5">
+                          <div className="mt-1 w-full bg-gray-100 h-1.5">
                             <div
-                              className="bg-green-600 h-2.5 rounded-full transition-all duration-300"
+                              className="bg-green-600 h-1.5 transition-all duration-300"
                               style={{ width: `${paymentProgress}%` }}
                             ></div>
                           </div>
@@ -417,23 +371,23 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
                   {/* Emergency Contacts */}
                   {booking.emergencyContacts && booking.emergencyContacts.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                      <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                        <User className="h-5 w-5" />
+                    <div className="bg-orange-50 border border-orange-200 p-3">
+                      <h3 className="font-semibold text-orange-900 mb-2 flex items-center gap-2 text-xs">
+                        <User className="h-3 w-3" />
                         Emergency Contacts
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {booking.emergencyContacts.map((contact, index) => (
-                          <div key={index} className="bg-white rounded-lg p-3 shadow-sm">
-                            <div className="font-medium text-gray-900">{contact.name}</div>
-                            <div className="text-sm text-gray-600">{contact.relationship}</div>
-                            <div className="text-sm text-blue-600 flex items-center gap-1 mt-1">
-                              <Phone className="h-4 w-4" />
+                          <div key={index} className="bg-white border border-gray-200 p-2">
+                            <div className="font-medium text-gray-900 text-xs">{contact.name}</div>
+                            <div className="text-xs text-gray-600">{contact.relationship}</div>
+                            <div className="text-xs text-orange-600 flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3" />
                               {contact.phone}
                             </div>
                             {contact.email && (
-                              <div className="text-sm text-blue-600 flex items-center gap-1 mt-1">
-                                <Mail className="h-4 w-4" />
+                              <div className="text-xs text-orange-600 flex items-center gap-1 mt-1">
+                                <Mail className="h-3 w-3" />
                                 {contact.email}
                               </div>
                             )}
@@ -445,57 +399,57 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
                   {/* Special Requests */}
                   {booking.specialRequests && (
-                    <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
-                      <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5" />
+                    <div className="bg-purple-50 border border-purple-200 p-3">
+                      <h3 className="font-semibold text-purple-900 mb-2 flex items-center gap-2 text-xs">
+                        <AlertCircle className="h-3 w-3" />
                         Special Requests
                       </h3>
-                      <p className="text-sm text-purple-700 whitespace-pre-wrap">{booking.specialRequests}</p>
+                      <p className="text-xs text-purple-700 whitespace-pre-wrap">{booking.specialRequests}</p>
                     </div>
                   )}
 
                   {/* Notes */}
                   {booking.notes && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
+                    <div className="bg-gray-50 border border-gray-200 p-3">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <FileText className="h-3 w-3" />
                         Notes
                       </h3>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{booking.notes}</p>
+                      <p className="text-xs text-gray-700 whitespace-pre-wrap">{booking.notes}</p>
                     </div>
                   )}
 
                   {/* Quick Actions */}
                   {!isHistorical && (
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                       {booking.status === BookingStatus.CONFIRMED &&
                         booking.paymentStatus === PaymentStatus.PAID && (
                           <button
-                            onClick={() => showActionConfirm('check-in', onCheckIn)}
+                            onClick={onCheckIn}
                             disabled={paymentsLoading}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                           >
-                            <CheckCircle className="h-4 w-4" />
+                            <CheckCircle className="h-3 w-3" />
                             Check In
                           </button>
                         )}
                       {booking.status === BookingStatus.CHECKED_IN && (
                         <button
-                          onClick={() => showActionConfirm('check-out', onCheckOut)}
-                          disabled={paymentsLoading}
-                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Check Out
-                        </button>
+                            onClick={onCheckOut}
+                            disabled={paymentsLoading}
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            Check Out
+                          </button>
                       )}
                       {[PaymentStatus.PENDING, PaymentStatus.PARTIAL].includes(booking.paymentStatus) && (
                         <button
                           onClick={onPayment}
                           disabled={paymentsLoading}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                         >
-                          <CreditCard className="h-4 w-4" />
+                          <CreditCard className="h-3 w-3" />
                           Record Payment
                         </button>
                       )}
@@ -505,50 +459,50 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               )}
 
               {activeTab === 'payments' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {paymentsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
                     </div>
                   ) : payments.length === 0 ? (
-                    <div className="text-center py-12">
-                      <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No payments recorded</h3>
-                      <p className="text-sm text-gray-500 mb-4">No payments have been made for this booking yet.</p>
+                    <div className="text-center py-8">
+                      <CreditCard className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-sm font-medium text-gray-900 mb-1">No payments recorded</h3>
+                      <p className="text-xs text-gray-500 mb-3">No payments have been made for this booking yet.</p>
                       {!isHistorical && (
                         <button
                           onClick={onPayment}
                           disabled={paymentsLoading}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mx-auto"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 mx-auto"
                         >
-                          <CreditCard className="h-4 w-4" />
+                          <CreditCard className="h-3 w-3" />
                           Record Payment
                         </button>
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Payment Summary */}
-                      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                        <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                          <CreditCard className="h-5 w-5" />
+                      <div className="bg-orange-50 border border-orange-200 p-3">
+                        <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2 text-xs">
+                          <CreditCard className="h-3 w-3" />
                           Payment Summary
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">
+                            <div className="text-lg font-bold text-orange-600">
                               {formatCurrency(booking.amountPaid)}
                             </div>
-                            <div className="text-blue-700">Total Paid</div>
+                            <div className="text-orange-700">Total Paid</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-red-600">
+                            <div className="text-lg font-bold text-red-600">
                               {formatCurrency(booking.amountDue)}
                             </div>
                             <div className="text-red-700">Amount Due</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{paymentProgress.toFixed(1)}%</div>
+                            <div className="text-lg font-bold text-green-600">{paymentProgress.toFixed(1)}%</div>
                             <div className="text-green-700">Complete</div>
                           </div>
                         </div>
@@ -556,32 +510,32 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
 
                       {/* Payment History */}
                       {payments.map((payment, index) => (
-                        <div key={payment.id} className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-2">
+                        <div key={payment.id} className="bg-gray-50 border border-gray-200 p-3">
+                          <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <CreditCard className="h-4 w-4 text-gray-500" />
-                              <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                              <span className="text-sm text-gray-500">
+                              <CreditCard className="h-3 w-3 text-gray-500" />
+                              <span className="font-medium text-xs">{formatCurrency(payment.amount)}</span>
+                              <span className="text-xs text-gray-500">
                                 via {payment.paymentMethod.replace('_', ' ')}
                               </span>
                               {index === 0 && (
-                                <span className="bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                                <span className="bg-green-50 text-green-700 px-1 py-0.5 text-xs font-medium">
                                   Latest
                                 </span>
                               )}
                             </div>
-                            <span className="text-sm text-gray-500">{formatDateTime(payment.paymentDate)}</span>
+                            <span className="text-xs text-gray-500">{formatDateTime(payment.paymentDate)}</span>
                           </div>
                           {payment.transactionRef && (
-                            <div className="text-sm text-gray-600 mb-1">
+                            <div className="text-xs text-gray-600 mb-1">
                               Transaction: {payment.transactionRef}
                             </div>
                           )}
                           {payment.notes && (
-                            <div className="text-sm text-gray-600">Notes: {payment.notes}</div>
+                            <div className="text-xs text-gray-600">Notes: {payment.notes}</div>
                           )}
                           {payment.receivedBy && (
-                            <div className="text-xs text-gray-500 mt-2">
+                            <div className="text-xs text-gray-500 mt-1">
                               Received by: {payment.receivedBy}
                             </div>
                           )}
@@ -592,9 +546,9 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                         <button
                           onClick={onPayment}
                           disabled={paymentsLoading}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-400 hover:text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-300 hover:border-orange-400 hover:text-orange-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                         >
-                          <CreditCard className="h-4 w-4" />
+                          <CreditCard className="h-3 w-3" />
                           Record Another Payment
                         </button>
                       )}
@@ -604,21 +558,21 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
               )}
 
               {activeTab === 'timeline' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flow-root">
-                    <ul className="-mb-8">
+                    <ul className="-mb-6">
                       {timelineEvents.map((event, eventIdx) => (
                         <li key={eventIdx}>
-                          <div className="relative pb-8">
+                          <div className="relative pb-6">
                             {eventIdx !== timelineEvents.length - 1 && (
                               <span
-                                className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                                className="absolute top-3 left-3 -ml-px h-full w-0.5 bg-gray-200"
                                 aria-hidden="true"
                               />
                             )}
                             <div className="relative flex space-x-3">
                               <div
-                                className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                                className={`h-6 w-6 flex items-center justify-center ${
                                   event.status === 'completed'
                                     ? 'bg-green-500'
                                     : event.status === 'cancelled'
@@ -628,12 +582,12 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                               >
                                 <div className="text-white">{event.icon}</div>
                               </div>
-                              <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                              <div className="flex min-w-0 flex-1 justify-between space-x-3 pt-0.5">
                                 <div>
-                                  <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                                  <p className="mt-0.5 text-sm text-gray-500">{event.description}</p>
+                                  <p className="text-xs font-medium text-gray-900">{event.title}</p>
+                                  <p className="mt-0.5 text-xs text-gray-500">{event.description}</p>
                                 </div>
-                                <div className="whitespace-nowrap text-right text-sm text-gray-500">
+                                <div className="whitespace-nowrap text-right text-xs text-gray-500">
                                   <time dateTime={event.date}>{formatDateTime(event.date)}</time>
                                 </div>
                               </div>

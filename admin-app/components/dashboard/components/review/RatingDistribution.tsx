@@ -4,14 +4,14 @@ import React from "react";
 function RatingDistribution({ distribution, loading }: { distribution: Record<number, number>; loading: boolean }) {
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Rating Distribution</h3>
-        <div className="space-y-3 animate-pulse">
+      <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">RATING DISTRIBUTION</h3>
+        <div className="space-y-2 animate-pulse">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center">
-              <div className="w-20 h-4 bg-gray-200 rounded mr-4"></div>
-              <div className="flex-1 h-3 bg-gray-200 rounded mr-4"></div>
-              <div className="w-12 h-4 bg-gray-200 rounded"></div>
+              <div className="w-16 h-3 bg-gray-200 mr-3"></div>
+              <div className="flex-1 h-2 bg-gray-200 mr-3"></div>
+              <div className="w-8 h-3 bg-gray-200"></div>
             </div>
           ))}
         </div>
@@ -22,32 +22,32 @@ function RatingDistribution({ distribution, loading }: { distribution: Record<nu
   const total = Object.values(distribution || {}).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Rating Distribution</h3>
-      <div className="space-y-3">
+    <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">RATING DISTRIBUTION</h3>
+      <div className="space-y-2">
         {[5, 4, 3, 2, 1].map((rating) => {
           const count = distribution?.[rating] || 0;
           const percentage = total > 0 ? (count / total) * 100 : 0;
           
           return (
-            <div key={rating} className="flex items-center group hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors duration-200">
-              <div className="flex items-center w-20">
+            <div key={rating} className="flex items-center">
+              <div className="flex items-center w-16">
                 <div className="flex">
                   {[...Array(rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                    <Star key={i} className="h-3 w-3 text-yellow-400 fill-current" />
                   ))}
                 </div>
               </div>
-              <div className="flex-1 mx-4">
-                <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
+              <div className="flex-1 mx-3">
+                <div className="bg-gray-100 h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-500 ease-out transform group-hover:scale-105 origin-left"
+                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 transition-all duration-500 ease-out"
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>
               </div>
-              <span className="text-sm font-medium text-gray-600 w-12 text-right">{count}</span>
-              <span className="text-sm text-gray-500 ml-2">({Math.round(percentage)}%)</span>
+              <span className="text-xs font-medium text-gray-600 w-8 text-right">{count}</span>
+              <span className="text-xs text-gray-500 ml-1">({Math.round(percentage)}%)</span>
             </div>
           );
         })}

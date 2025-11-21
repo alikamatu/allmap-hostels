@@ -8,14 +8,16 @@ import {
   Calendar, 
   Users,
   TrendingUp,
-  DollarSign,
   AlertCircle,
   CheckCircle,
   Plus,
   MapPin,
   Star,
-  Phone
+  ArrowRight,
+  Settings,
+  History
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Booking } from '@/types/booking';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -49,31 +51,34 @@ interface StatCardProps {
   change?: string | number;
   changeType?: 'positive' | 'negative';
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  color: string;
+  onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, changeType, icon: Icon, color }) => (
+const StatCard: React.FC<StatCardProps> = ({ title, value, change, changeType, icon: Icon, onClick }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -2, boxShadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-    className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200"
+    whileHover={{ y: -2 }}
+    onClick={onClick}
+    className={`bg-white p-4 border border-gray-200 hover:border-[#FF6A00] transition-all duration-150 ${
+      onClick ? 'cursor-pointer' : ''
+    }`}
   >
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-xs font-medium text-gray-600 mb-1 uppercase tracking-wide">{title}</p>
+        <p className="text-xl font-semibold text-gray-900">{value}</p>
         {change && (
-          <div className="flex items-center mt-2">
-            <TrendingUp className={`w-4 h-4 mr-1 ${changeType === 'positive' ? 'text-green-500' : 'text-red-500'}`} />
-            <span className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="flex items-center mt-1">
+            <TrendingUp className={`w-3 h-3 mr-1 ${changeType === 'positive' ? 'text-green-500' : 'text-red-500'}`} />
+            <span className={`text-xs font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
               {change}
             </span>
           </div>
         )}
       </div>
-      <div className={`p-3 rounded-xl bg-${color}-50`}>
-        <Icon className={`w-6 h-6 text-${color}-600`} />
+      <div className="p-2 bg-gray-50">
+        <Icon className="w-4 h-4 text-gray-600" />
       </div>
     </div>
   </motion.div>
@@ -84,60 +89,108 @@ interface QuickActionCardProps {
   description: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   onClick: () => void;
-  color: string;
 }
 
-const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, onClick, color }) => (
+const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, onClick }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.02, boxShadow: '0 8px 25px rgba(0,0,0,0.1)' }}
-    whileTap={{ scale: 0.98 }}
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.99 }}
     onClick={onClick}
-    className="bg-white rounded-2xl p-6 border border-gray-100 hover:border-gray-200 transition-all duration-200 cursor-pointer group"
+    className="bg-white p-4 border border-gray-200 hover:border-[#FF6A00] transition-all duration-150 cursor-pointer group"
   >
-    <div className="flex items-start space-x-4">
-      <div className={`p-3 rounded-xl bg-${color}-50 group-hover:bg-${color}-100 transition-colors`}>
-        <Icon className={`w-6 h-6 text-${color}-600`} />
+    <div className="flex items-start space-x-3">
+      <div className="p-2 bg-gray-50 group-hover:bg-[#FF6A00] group-hover:text-white transition-colors">
+        <Icon className="w-4 h-4" />
       </div>
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
+      <div className="flex-1">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
+        <p className="text-xs text-gray-600">{description}</p>
       </div>
+      <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF6A00] transition-colors" />
     </div>
   </motion.div>
 );
 
-const RecentBookingRow = ({ booking }: { booking: Booking }) => (
-  <motion.div
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    className="flex items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-lg transition-colors"
-  >
-    <div className="flex items-center space-x-3">
-      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-        <Users className="w-5 h-5 text-blue-600" />
+interface NavigationCardProps {
+  title: string;
+  description: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  href: string;
+  isActive?: boolean;
+}
+
+const NavigationCard: React.FC<NavigationCardProps> = ({ title, description, icon: Icon, href, isActive }) => {
+  const router = useRouter();
+  
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => router.push(href)}
+      className={`p-4 border transition-all duration-150 cursor-pointer ${
+        isActive 
+          ? 'border-[#FF6A00] bg-[#FF6A00] text-white' 
+          : 'border-gray-200 bg-white hover:border-[#FF6A00]'
+      }`}
+    >
+      <div className="flex items-center space-x-3">
+        <div className={`p-2 ${
+          isActive ? 'bg-white text-[#FF6A00]' : 'bg-gray-50 text-gray-600'
+        }`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <h3 className={`text-sm font-semibold ${isActive ? 'text-white' : 'text-gray-900'}`}>
+            {title}
+          </h3>
+          <p className={`text-xs ${isActive ? 'text-white' : 'text-gray-600'}`}>
+            {description}
+          </p>
+        </div>
       </div>
-      <div>
-        <p className="font-medium text-gray-900">{booking.studentName}</p>
-        <p className="text-sm text-gray-500">Room {booking.room?.roomNumber}</p>
+    </motion.div>
+  );
+};
+
+const RecentBookingRow = ({ booking }: { booking: Booking }) => {
+  const router = useRouter();
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      onClick={() => router.push(`/dashboard/booking-management`)}
+      className="flex items-center justify-between py-3 px-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 cursor-pointer group"
+    >
+      <div className="flex items-center space-x-3">
+        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center group-hover:bg-[#FF6A00] group-hover:text-white transition-colors">
+          <Users className="w-3 h-3" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-900 group-hover:text-[#FF6A00] transition-colors">
+            {booking.studentName}
+          </p>
+          <p className="text-xs text-gray-500">Room {booking.room?.roomNumber}</p>
+        </div>
       </div>
-    </div>
-    <div className="text-right">
-      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-        booking.status === 'checked_in' ? 'bg-blue-100 text-blue-800' :
-        'bg-gray-100 text-gray-800'
-      }`}>
-        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('_', ' ')}
+      <div className="text-right">
+        <div className={`inline-flex items-center px-2 py-1 text-xs font-medium ${
+          booking.status === 'confirmed' ? 'bg-green-50 text-green-700' :
+          booking.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+          booking.status === 'checked_in' ? 'bg-blue-50 text-blue-700' :
+          'bg-gray-50 text-gray-700'
+        }`}>
+          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('_', ' ')}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          GHS {booking.totalAmount}
+        </p>
       </div>
-      <p className="text-sm text-gray-500 mt-1">
-        GHS {booking.totalAmount}
-      </p>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 interface Hostel {
   id: string;
@@ -168,6 +221,7 @@ interface DashboardData {
 }
 
 const Dashboard = () => {
+  const router = useRouter();
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     stats: {
       totalBookings: 0,
@@ -183,12 +237,66 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<null | string>(null);
 
+  const navigationItems = [
+    { 
+      title: 'Bookings', 
+      description: 'Manage all bookings', 
+      icon: Calendar, 
+      href: '/dashboard/booking-management',
+      isActive: true
+    },
+    { 
+      title: 'Hostels', 
+      description: 'Manage your properties', 
+      icon: Building, 
+      href: '/dashboard/manage-hostels' 
+    },
+    { 
+      title: 'Rooms', 
+      description: 'Room configuration', 
+      icon: Bed, 
+      href: '/dashboard/manage-room' 
+    },
+    { 
+      title: 'History', 
+      description: 'Booking history', 
+      icon: History, 
+      href: '/dashboard/booking-history' 
+    },
+    { 
+      title: 'Settings', 
+      description: 'Account settings', 
+      icon: Settings, 
+      href: '/dashboard/settings' 
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: "Add New Hostel",
+      description: "Register a new hostel property",
+      icon: Building,
+      onClick: () => router.push('/dashboard/manage-hostels?action=create')
+    },
+    {
+      title: "Create Booking",
+      description: "Make a new booking for a student",
+      icon: Plus,
+      onClick: () => router.push('/dashboard/booking-management?action=create')
+    },
+    {
+      title: "Manage Rooms",
+      description: "Update room availability and status",
+      icon: Bed,
+      onClick: () => router.push('/dashboard/manage-room')
+    }
+  ];
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         
-        // Fetch hostels first to get hostel IDs
         const hostelsResponse = await apiCall('/hostels/fetch');
         const hostels = hostelsResponse || [];
         
@@ -209,7 +317,6 @@ const Dashboard = () => {
           return;
         }
 
-        // Fetch booking statistics
         let totalBookings = 0;
         let activeBookings = 0;
         let totalRevenue = 0;
@@ -229,11 +336,6 @@ const Dashboard = () => {
               0
             );
             
-            // Get recent bookings (limit to 5 most recent)
-            interface RecentBooking extends Booking {
-              createdAt: string;
-            }
-
             const recent: RecentBooking[] = (hostelBookings as RecentBooking[])
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
               .slice(0, 5);
@@ -243,12 +345,10 @@ const Dashboard = () => {
           }
         }
 
-        // Sort all recent bookings and take top 10
         recentBookings = recentBookings
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 10);
 
-        // Calculate room statistics
         let totalRooms = 0;
         let availableRooms = 0;
 
@@ -292,17 +392,19 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded-2xl"></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-80 bg-gray-200 rounded-2xl"></div>
-            <div className="h-80 bg-gray-200 rounded-2xl"></div>
+      <div className="min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 w-64 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-24 bg-gray-200"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 h-80 bg-gray-200"></div>
+              <div className="h-80 bg-gray-200"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -311,14 +413,14 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="min-h-screen p-6 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Dashboard</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-4" />
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Error Loading Dashboard</h3>
+          <p className="text-xs text-gray-600 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-3 py-1 bg-[#FF6A00] text-white text-sm hover:bg-[#E55E00] transition-colors"
           >
             Retry
           </button>
@@ -328,221 +430,205 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gray-50 overflow-auto">
+    <div className="min-h-screen p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto"
       >
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening with your hostels today.</p>
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 mb-1">Dashboard Overview</h1>
+              <p className="text-sm text-gray-600">Welcome back! Here's what's happening with your hostels today.</p>
+            </div>
+            </div>
+        </div>
+
+        {/* Navigation Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+          {navigationItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <NavigationCard
+                key={item.title}
+                title={item.title}
+                description={item.description}
+                icon={Icon}
+                href={item.href}
+                isActive={item.isActive}
+              />
+            );
+          })}
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             title="Total Bookings"
             value={dashboardData.stats.totalBookings}
             icon={Calendar}
-            color="blue"
+            onClick={() => router.push('/dashboard/booking-management')}
           />
           <StatCard
             title="Active Bookings"
             value={dashboardData.stats.activeBookings}
             icon={CheckCircle}
-            color="green"
-          />
-          <StatCard
-            title="Total Revenue"
-            value={`GHS ${dashboardData.stats.totalRevenue.toLocaleString()}`}
-            icon={DollarSign}
-            color="purple"
+            onClick={() => router.push('/dashboard/booking-management?filter=active')}
           />
           <StatCard
             title="Occupancy Rate"
             value={`${dashboardData.stats.occupancyRate.toFixed(1)}%`}
             icon={TrendingUp}
-            color="orange"
           />
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Recent Bookings */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2 bg-white rounded-2xl border border-gray-100"
-          >
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Bookings</h2>
-                <button className="text-blue-600 text-sm font-medium hover:text-blue-700">
-                  View All
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* Recent Bookings & Quick Actions */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Recent Bookings */}
+            <div className="bg-white border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Recent Bookings</h2>
+                  <button 
+                    onClick={() => router.push('/dashboard/booking-management')}
+                    className="text-[#FF6A00] text-xs font-medium hover:text-[#E55E00] transition-colors"
+                  >
+                    View All
+                  </button>
+                </div>
+              </div>
+              <div className="p-4">
+                {dashboardData.recentBookings.length > 0 ? (
+                  <div>
+                    {dashboardData.recentBookings.map((booking, index) => (
+                      <RecentBookingRow key={booking.id || index} booking={booking} />
+                    ))}
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => router.push('/dashboard/booking-management?action=create')}
+                    className="text-center py-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-xs text-gray-500">No recent bookings found</p>
+                    <p className="text-xs text-[#FF6A00] mt-1">Create your first booking</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Quick Actions</h2>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3">
+                  {quickActions.map((action, index) => (
+                    <QuickActionCard
+                      key={action.title}
+                      title={action.title}
+                      description={action.description}
+                      icon={action.icon}
+                      onClick={action.onClick}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="space-y-4">
+            {/* Room Statistics */}
+            <div className="bg-white border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Room Overview</h2>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Total Rooms</span>
+                    <span className="text-sm font-semibold">{dashboardData.stats.totalRooms}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Available</span>
+                    <span className="text-sm font-semibold text-green-600">{dashboardData.stats.availableRooms}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">Occupied</span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      {dashboardData.stats.totalRooms - dashboardData.stats.availableRooms}
+                    </span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => router.push('/dashboard/manage-room')}
+                  className="w-full mt-4 py-2 bg-gray-50 hover:bg-[#FF6A00] hover:text-white text-xs font-medium transition-colors"
+                >
+                  Manage All Rooms
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              {dashboardData.recentBookings.length > 0 ? (
-                <div className="space-y-2">
-                  {dashboardData.recentBookings.map((booking, index) => (
-                    <RecentBookingRow key={booking.id || index} booking={booking} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No recent bookings found</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
 
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-4"
-          >
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="space-y-4">
-                <QuickActionCard
-                  title="Add New Hostel"
-                  description="Register a new hostel property"
-                  icon={Building}
-                  color="blue"
-                  onClick={() => {}}
-                />
-                <QuickActionCard
-                  title="Create Booking"
-                  description="Make a new booking for a student"
-                  icon={Plus}
-                  color="green"
-                  onClick={() => {}}
-                />
-                <QuickActionCard
-                  title="Manage Rooms"
-                  description="Update room availability and status"
-                  icon={Bed}
-                  color="purple"
-                  onClick={() => {}}
-                />
+            {/* Your Hostels Summary */}
+            <div className="bg-white border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Your Hostels</h2>
               </div>
-            </div>
-
-            {/* Room Statistics */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Room Overview</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Total Rooms</span>
-                  <span className="font-semibold">{dashboardData.stats.totalRooms}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Available</span>
-                  <span className="font-semibold text-green-600">{dashboardData.stats.availableRooms}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Occupied</span>
-                  <span className="font-semibold text-blue-600">
-                    {dashboardData.stats.totalRooms - dashboardData.stats.availableRooms}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {dashboardData.hostels.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-gray-100"
-          >
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Your Hostels</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dashboardData.hostels.map((hostel, index) => (
-                  <motion.div
-                    key={hostel.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{hostel.name}</h3>
-                        <div className="flex items-center text-sm text-gray-500 mb-2">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {hostel.address}
+              <div className="p-4">
+                <div className="space-y-3">
+                  {dashboardData.hostels.slice(0, 3).map((hostel) => (
+                    <div 
+                      key={hostel.id}
+                      onClick={() => router.push(`/dashboard/manage-hostels?id=${hostel.id}`)}
+                      className="p-3 border border-gray-200 hover:border-[#FF6A00] transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#FF6A00] transition-colors">
+                          {hostel.name}
+                        </h3>
+                        <div className={`px-2 py-1 text-xs font-medium ${
+                          hostel.is_active && hostel.accepting_bookings
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-50 text-gray-700'
+                        }`}>
+                          {hostel.is_active && hostel.accepting_bookings ? 'Active' : 'Inactive'}
                         </div>
                       </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        hostel.is_active && hostel.accepting_bookings
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {hostel.is_active && hostel.accepting_bookings ? 'Active' : 'Inactive'}
+                      <div className="flex items-center text-xs text-gray-500 mb-1">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {hostel.address}
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Base Price:</span>
-                        <span className="font-medium">GHS {hostel.base_price}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Rating:</span>
+                      <div className="flex items-center justify-between text-xs">
+                        <span>GHS {hostel.base_price}</span>
                         <div className="flex items-center">
-                          <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                          <Star className="w-3 h-3 text-yellow-400 mr-1" />
                           <span>{hostel.rating || 0}/5</span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
-                      <Phone className="w-3 h-3" />
-                      <span>{hostel.phone}</span>
-                    </div>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
+                {dashboardData.hostels.length > 3 && (
+                  <button 
+                    onClick={() => router.push('/dashboard/manage-hostels')}
+                    className="w-full mt-3 py-2 bg-gray-50 hover:bg-[#FF6A00] hover:text-white text-xs font-medium transition-colors"
+                  >
+                    View All {dashboardData.hostels.length} Hostels
+                  </button>
+                )}
               </div>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
       </motion.div>
     </div>
   );
 };
 
-const HostelAdminDashboard = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-
-  const toggleSidenav = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
-  return (
-    <div className="h-screen flex bg-gray-50">
-      {renderContent()}
-    </div>
-  );
-};
-
-export default HostelAdminDashboard;
+export default Dashboard;

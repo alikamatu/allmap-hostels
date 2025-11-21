@@ -95,22 +95,25 @@ const amenitiesList = [
 
 export default function AmenitiesSelector({ amenities, onAmenityChange }: AmenitiesSelectorProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center"
+        transition={{ duration: 0.2 }}
       >
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Hostel Amenities</h3>
-        <p className="text-gray-600">Select the facilities and services your hostel offers</p>
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          AMENITIES
+        </h3>
+        <p className="text-xs text-gray-600 mt-1">Select the facilities and services your hostel offers</p>
       </motion.div>
 
+      {/* Amenities Grid */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2, delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-3"
       >
         {amenitiesList.map((amenity, index) => {
           const Icon = amenity.icon;
@@ -119,36 +122,36 @@ export default function AmenitiesSelector({ amenities, onAmenityChange }: Amenit
           return (
             <motion.div
               key={amenity.key}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+              className={`p-3 cursor-pointer transition-colors duration-150 ${
                 isSelected
-                  ? 'border-black bg-black text-white shadow-lg'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:shadow-md'
+                  ? 'bg-[#FF6A00] text-white'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => onAmenityChange(amenity.key)}
             >
-              <div className="flex items-start space-x-3">
+              <div className="flex items-center gap-3">
                 <div className={`flex-shrink-0 ${isSelected ? 'text-white' : 'text-gray-600'}`}>
-                  <Icon size={24} />
+                  <Icon size={18} />
                 </div>
                 <div className="flex-1">
-                  <h4 className={`font-semibold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                  <h4 className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-900'}`}>
                     {amenity.label}
                   </h4>
-                  <p className={`text-sm mt-1 ${isSelected ? 'text-gray-200' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-0.5 ${isSelected ? 'text-gray-100' : 'text-gray-500'}`}>
                     {amenity.description}
                   </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  <div className={`w-4 h-4 border flex items-center justify-center ${
                     isSelected 
                       ? 'border-white bg-white' 
-                      : 'border-gray-300'
+                      : 'border-gray-400 bg-white'
                   }`}>
                     {isSelected && (
-                      <div className="w-2 h-2 bg-black rounded-full"></div>
+                      <div className="w-2 h-2 bg-[#FF6A00]"></div>
                     )}
                   </div>
                 </div>
@@ -158,19 +161,20 @@ export default function AmenitiesSelector({ amenities, onAmenityChange }: Amenit
         })}
       </motion.div>
 
+      {/* Info Box */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="bg-blue-50 border border-blue-200 rounded-xl p-4"
+        transition={{ duration: 0.2, delay: 0.3 }}
+        className="bg-gray-50 p-3"
       >
-        <div className="flex items-start space-x-3">
-          <div className="text-blue-600 mt-1">
-            <Shield size={20} />
+        <div className="flex items-start gap-3">
+          <div className="text-[#FF6A00] mt-0.5">
+            <Shield size={16} />
           </div>
           <div>
-            <h4 className="font-medium text-blue-900">Pro Tip</h4>
-            <p className="text-sm text-blue-700 mt-1">
+            <h4 className="text-xs font-medium text-gray-900">Pro Tip</h4>
+            <p className="text-xs text-gray-600 mt-0.5">
               Hostels with more amenities typically attract more students and can command higher prices. 
               Consider highlighting unique features that set your hostel apart from competitors.
             </p>
@@ -178,13 +182,14 @@ export default function AmenitiesSelector({ amenities, onAmenityChange }: Amenit
         </div>
       </motion.div>
 
+      {/* Selection Counter */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
+        transition={{ duration: 0.2, delay: 0.4 }}
         className="text-center"
       >
-        <p className="text-sm text-gray-500">
+        <p className="text-xs text-gray-600">
           Selected {Object.values(amenities).filter(Boolean).length} of {amenitiesList.length} amenities
         </p>
       </motion.div>

@@ -9,6 +9,8 @@ import axios, { AxiosError } from 'axios';
 
 // Components
 import LocationPicker from '@/components/dashboard/components/_addhostels/LocationPicker';
+import AmenitiesSelector from '@/components/dashboard/components/_addhostels/AmenitiesSelector';
+import ImageUploader from '@/components/dashboard/components/_addhostels/ImageUploader';
 
 interface HostelData {
   id: string;
@@ -18,35 +20,35 @@ interface HostelData {
   phone: string;
   SecondaryNumber: string;
   address: string;
-  base_price?: number;
-  payment_method?: 'bank' | 'momo' | 'both';
-  bank_details?: {
+  base_price: number;
+  payment_method: 'bank' | 'momo' | 'both';
+  bank_details: {
     bank_name: string;
     account_name: string;
     account_number: string;
     branch: string;
   };
-  momo_details?: {
+  momo_details: {
     provider: string;
     number: string;
     name: string;
   };
-  max_occupancy?: number;
-  house_rules?: string;
-  check_in_time?: string;
-  check_out_time?: string;
-  nearby_facilities?: string[];
+  max_occupancy: number;
+  house_rules: string;
+  check_in_time: string;
+  check_out_time: string;
+  nearby_facilities: string[];
   amenities: {
     wifi: boolean;
     laundry: boolean;
     cafeteria: boolean;
     parking: boolean;
     security: boolean;
-    gym?: boolean;
-    studyRoom?: boolean;
-    kitchen?: boolean;
-    ac?: boolean;
-    generator?: boolean;
+    gym: boolean;
+    studyRoom: boolean;
+    kitchen: boolean;
+    ac: boolean;
+    generator: boolean;
   };
   location: string;
   images: string[];
@@ -102,7 +104,6 @@ export default function EditHostelPage() {
       });
       
       const data = response.data;
-      setHostelData(data);
       
       // Parse location coordinates if available
       if (data.location) {
@@ -115,7 +116,7 @@ export default function EditHostelPage() {
         }
       }
 
-            // ...inside fetchHostelData, after setHostelData(data);
+      // Parse nearby_facilities if it's a string
       if (data.nearby_facilities && typeof data.nearby_facilities === 'string') {
         try {
           data.nearby_facilities = JSON.parse(data.nearby_facilities);
@@ -126,7 +127,53 @@ export default function EditHostelPage() {
       if (!Array.isArray(data.nearby_facilities)) {
         data.nearby_facilities = [];
       }
-      setHostelData(data);
+
+      // Ensure all required fields have default values
+      const defaultHostelData: HostelData = {
+        id: data.id || '',
+        name: data.name || '',
+        description: data.description || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        SecondaryNumber: data.SecondaryNumber || '',
+        address: data.address || '',
+        base_price: data.base_price || 0,
+        payment_method: data.payment_method || 'both',
+        bank_details: data.bank_details || {
+          bank_name: '',
+          account_name: '',
+          account_number: '',
+          branch: ''
+        },
+        momo_details: data.momo_details || {
+          provider: '',
+          number: '',
+          name: ''
+        },
+        max_occupancy: data.max_occupancy || 0,
+        house_rules: data.house_rules || '',
+        check_in_time: data.check_in_time || '14:00',
+        check_out_time: data.check_out_time || '12:00',
+        nearby_facilities: data.nearby_facilities || [],
+        amenities: {
+          wifi: data.amenities?.wifi || false,
+          laundry: data.amenities?.laundry || false,
+          cafeteria: data.amenities?.cafeteria || false,
+          parking: data.amenities?.parking || false,
+          security: data.amenities?.security || false,
+          gym: data.amenities?.gym || false,
+          studyRoom: data.amenities?.studyRoom || false,
+          kitchen: data.amenities?.kitchen || false,
+          ac: data.amenities?.ac || false,
+          generator: data.amenities?.generator || false,
+        },
+        location: data.location || '',
+        images: data.images || [],
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || ''
+      };
+
+      setHostelData(defaultHostelData);
       
     } catch (error) {
       console.error('Error fetching hostel data:', error);
@@ -150,10 +197,8 @@ export default function EditHostelPage() {
   }, [hostelId, fetchHostelData]);
 
   const parseLocationString = (locationStr: string): LocationCoords | null => {
-    // Handle null or undefined
     if (!locationStr) return null;
 
-    // If it's already an object with coordinates
     if (
       typeof locationStr === 'object' &&
       locationStr !== null &&
@@ -164,13 +209,11 @@ export default function EditHostelPage() {
       return { lng: coords[0], lat: coords[1] };
     }
     
-    // If it's a string in POINT format
     if (typeof locationStr === 'string') {
       const match = locationStr.match(/POINT\(([\d.-]+) ([\d.-]+)\)/);
       return match ? { lng: parseFloat(match[1]), lat: parseFloat(match[2]) } : null;
     }
     
-    // If it's an object with lng/lat properties
     if (typeof locationStr === 'object' && 'lng' in locationStr && 'lat' in locationStr) {
       return { lng: (locationStr as { lng: number }).lng, lat: (locationStr as { lat: number }).lat };
     }
@@ -179,25 +222,46 @@ export default function EditHostelPage() {
     return null;
   };
 
+  // Input handlers with data persistence
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setHostelData(prev => prev ? { ...prev, [name]: value } : null);
   };
 
-  const handleNumberInputChange = (field: string, value: number) => {
-    setHostelData(prev => prev ? { ...prev, [field]: value } : null);
+  const handleEmailChange = (email: string) => {
+    setHostelData(prev => prev ? { ...prev, email } : null);
   };
 
-  const handlePaymentMethodChange = (method: 'bank' | 'momo' | 'both') => {
-    setHostelData(prev => prev ? { ...prev, payment_method: method } : null);
+  const handlePhoneChange = (phone: string) => {
+    setHostelData(prev => prev ? { ...prev, phone } : null);
   };
 
-  const handleBankDetailsChange = (details: any) => {
-    setHostelData(prev => prev ? { ...prev, bank_details: details } : null);
+  const handleSecondaryPhoneChange = (SecondaryNumber: string) => {
+    setHostelData(prev => prev ? { ...prev, SecondaryNumber } : null);
   };
 
-  const handleMomoDetailsChange = (details: any) => {
-    setHostelData(prev => prev ? { ...prev, momo_details: details } : null);
+  const handleBasePriceChange = (base_price: number) => {
+    setHostelData(prev => prev ? { ...prev, base_price } : null);
+  };
+
+  const handlePaymentMethodChange = (payment_method: 'bank' | 'momo' | 'both') => {
+    setHostelData(prev => prev ? { ...prev, payment_method } : null);
+  };
+
+  const handleBankDetailsChange = (bank_details: any) => {
+    setHostelData(prev => prev ? { ...prev, bank_details } : null);
+  };
+
+  const handleMomoDetailsChange = (momo_details: any) => {
+    setHostelData(prev => prev ? { ...prev, momo_details } : null);
+  };
+
+  const handleMaxOccupancyChange = (max_occupancy: number) => {
+    setHostelData(prev => prev ? { ...prev, max_occupancy } : null);
+  };
+
+  const handleNearbyFacilitiesChange = (nearby_facilities: string[]) => {
+    setHostelData(prev => prev ? { ...prev, nearby_facilities } : null);
   };
 
   const handleAmenityChange = (amenity: string) => {
@@ -214,27 +278,25 @@ export default function EditHostelPage() {
     setLocationCoords(location);
   };
 
+  const handleAddressChange = (address: string) => {
+    setHostelData(prev => prev ? { ...prev, address } : null);
+  };
+
   const addFacility = () => {
-    if (newFacility.trim() && hostelData?.nearby_facilities && !hostelData.nearby_facilities.includes(newFacility.trim())) {
-      setHostelData(prev => prev ? {
-        ...prev,
-        nearby_facilities: [...(prev.nearby_facilities || []), newFacility.trim()]
-      } : null);
-      setNewFacility('');
-    } else if (newFacility.trim() && !hostelData?.nearby_facilities) {
-      setHostelData(prev => prev ? {
-        ...prev,
-        nearby_facilities: [newFacility.trim()]
-      } : null);
-      setNewFacility('');
+    if (newFacility.trim() && hostelData) {
+      const currentFacilities = hostelData.nearby_facilities || [];
+      if (!currentFacilities.includes(newFacility.trim())) {
+        handleNearbyFacilitiesChange([...currentFacilities, newFacility.trim()]);
+        setNewFacility('');
+      }
     }
   };
 
   const removeFacility = (facility: string) => {
-    setHostelData(prev => prev ? {
-      ...prev,
-      nearby_facilities: (prev.nearby_facilities || []).filter(f => f !== facility)
-    } : null);
+    if (hostelData) {
+      const currentFacilities = hostelData.nearby_facilities || [];
+      handleNearbyFacilitiesChange(currentFacilities.filter(f => f !== facility));
+    }
   };
 
   const handleImageUpload = (files: File[]) => {
@@ -297,26 +359,13 @@ export default function EditHostelPage() {
       formData.append('SecondaryNumber', hostelData.SecondaryNumber);
       formData.append('description', hostelData.description);
       formData.append('address', hostelData.address);
+      formData.append('base_price', hostelData.base_price.toString());
+      formData.append('payment_method', hostelData.payment_method);
+      formData.append('max_occupancy', hostelData.max_occupancy.toString());
+      formData.append('house_rules', hostelData.house_rules);
+      formData.append('check_in_time', hostelData.check_in_time);
+      formData.append('check_out_time', hostelData.check_out_time);
       
-      // Add new fields
-      if (hostelData.base_price !== undefined) {
-        formData.append('base_price', hostelData.base_price.toString());
-      }
-      if (hostelData.payment_method) {
-        formData.append('payment_method', hostelData.payment_method);
-      }
-      if (hostelData.max_occupancy !== undefined) {
-        formData.append('max_occupancy', hostelData.max_occupancy.toString());
-      }
-      if (hostelData.house_rules) {
-        formData.append('house_rules', hostelData.house_rules);
-      }
-      if (hostelData.check_in_time) {
-        formData.append('check_in_time', hostelData.check_in_time);
-      }
-      if (hostelData.check_out_time) {
-        formData.append('check_out_time', hostelData.check_out_time);
-      }
       if (hostelData.nearby_facilities) {
         formData.append('nearby_facilities', JSON.stringify(hostelData.nearby_facilities));
       }
@@ -346,7 +395,6 @@ export default function EditHostelPage() {
 
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       
-      // Use PUT instead of PATCH to match your controller
       await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/hostels/${hostelId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -386,9 +434,9 @@ export default function EditHostelPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6A00] mx-auto mb-4"></div>
           <p className="text-gray-600">Loading hostel data...</p>
         </div>
       </div>
@@ -397,13 +445,13 @@ export default function EditHostelPage() {
 
   if (!hostelData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Hostel Not Found</h2>
           <p className="text-gray-600 mb-4">The hostel you&apos;re looking for doesn&apos;t exist.</p>
           <button
             onClick={() => router.push('/dashboard/manage-hostels')}
-            className="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+            className="px-6 py-3 bg-[#FF6A00] text-white hover:bg-[#E55E00] transition-colors duration-150"
           >
             Back to Hostels
           </button>
@@ -413,42 +461,47 @@ export default function EditHostelPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-white p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="max-w-4xl mx-auto space-y-4"
+      >
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10"
-        >
-          <div className="flex items-center gap-4 mb-6">
-            <button
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ backgroundColor: '#f3f4f6' }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/dashboard/manage-hostels')}
-              className="p-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150"
             >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
+              <ArrowLeft className="h-3 w-3" />
+              Back
+            </motion.button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Edit Hostel</h1>
-              <p className="text-gray-600">Update your hostel information</p>
+              <h1 className="text-lg font-semibold text-gray-900">Edit Hostel</h1>
+              <p className="text-xs text-gray-600">Update your hostel information</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Basic Information */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Information</h2>
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              BASIC INFORMATION
+            </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Hostel Name *
                 </label>
                 <input
@@ -456,119 +509,133 @@ export default function EditHostelPage() {
                   name="name"
                   value={hostelData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter hostel name"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Email *
                 </label>
                 <input
                   type="email"
                   name="email"
                   value={hostelData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter hostel email"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone *
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Primary Phone *
                 </label>
                 <input
                   type="tel"
                   name="phone"
                   value={hostelData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter primary phone"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Secondary Phone
                 </label>
                 <input
                   type="tel"
                   name="SecondaryNumber"
                   value={hostelData.SecondaryNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  onChange={(e) => handleSecondaryPhoneChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter secondary phone"
                 />
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Description *
               </label>
               <textarea
                 name="description"
                 value={hostelData.description}
                 onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                rows={3}
+                className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                 placeholder="Describe your hostel facilities, rooms, and unique features"
                 required
               />
             </div>
           </motion.div>
 
-          {/* Pricing & Payment Information */}
+          {/* Pricing & Capacity */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Pricing & Payment</h2>
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              PRICING & CAPACITY
+            </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Base Price (GHS)
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Base Price (GHS) *
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  value={hostelData.base_price || 0}
-                  onChange={(e) => handleNumberInputChange('base_price', parseFloat(e.target.value) || 0)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  value={hostelData.base_price}
+                  onChange={(e) => handleBasePriceChange(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter base price"
+                  required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Maximum Occupancy
                 </label>
                 <input
                   type="number"
                   min="1"
-                  value={hostelData.max_occupancy || 0}
-                  onChange={(e) => handleNumberInputChange('max_occupancy', parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  value={hostelData.max_occupancy}
+                  onChange={(e) => handleMaxOccupancyChange(parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter maximum occupancy"
                 />
               </div>
             </div>
+          </motion.div>
 
-            {/* Payment Method Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Payment Methods
+          {/* Payment Information */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.2 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
+          >
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              PAYMENT INFORMATION
+            </h3>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Payment Methods *
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {(['bank', 'momo', 'both'] as const).map((method) => (
                   <div key={method} className="relative">
                     <input
@@ -580,18 +647,20 @@ export default function EditHostelPage() {
                       onChange={(e) => handlePaymentMethodChange(e.target.value as any)}
                       className="sr-only"
                     />
-                    <label
+                    <motion.label
                       htmlFor={method}
-                      className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                      whileHover={{ backgroundColor: '#f3f4f6' }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`flex items-center justify-center p-2 border text-xs font-medium cursor-pointer transition-colors duration-150 ${
                         hostelData.payment_method === method
-                          ? 'border-black bg-black text-white'
+                          ? 'bg-[#FF6A00] border-[#FF6A00] text-white'
                           : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                       }`}
                     >
-                      <span className="font-medium capitalize">
+                      <span className="capitalize">
                         {method === 'momo' ? 'Mobile Money' : method === 'both' ? 'Bank & MoMo' : 'Bank Transfer'}
                       </span>
-                    </label>
+                    </motion.label>
                   </div>
                 ))}
               </div>
@@ -599,18 +668,26 @@ export default function EditHostelPage() {
 
             {/* Bank Details */}
             {(hostelData.payment_method === 'bank' || hostelData.payment_method === 'both') && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                <h4 className="font-medium text-gray-900 mb-4">Bank Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3 p-3 bg-gray-50"
+              >
+                <h4 className="text-xs font-semibold text-gray-900">BANK DETAILS</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Bank Name *
+                    </label>
                     <select
                       value={hostelData.bank_details?.bank_name || ''}
                       onChange={(e) => handleBankDetailsChange({
                         ...hostelData.bank_details,
                         bank_name: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
+                      required
                     >
                       <option value="">Select Bank</option>
                       {ghanaianBanks.map((bank) => (
@@ -619,7 +696,9 @@ export default function EditHostelPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Account Name *
+                    </label>
                     <input
                       type="text"
                       value={hostelData.bank_details?.account_name || ''}
@@ -627,12 +706,15 @@ export default function EditHostelPage() {
                         ...hostelData.bank_details,
                         account_name: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                       placeholder="Enter account name"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Account Number *
+                    </label>
                     <input
                       type="text"
                       value={hostelData.bank_details?.account_number || ''}
@@ -640,12 +722,15 @@ export default function EditHostelPage() {
                         ...hostelData.bank_details,
                         account_number: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                       placeholder="Enter account number"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Branch
+                    </label>
                     <input
                       type="text"
                       value={hostelData.bank_details?.branch || ''}
@@ -653,28 +738,36 @@ export default function EditHostelPage() {
                         ...hostelData.bank_details,
                         branch: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                       placeholder="Enter branch"
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Mobile Money Details */}
             {(hostelData.payment_method === 'momo' || hostelData.payment_method === 'both') && (
-              <div className="p-4 bg-gray-50 rounded-xl">
-                <h4 className="font-medium text-gray-900 mb-4">Mobile Money Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3 p-3 bg-gray-50"
+              >
+                <h4 className="text-xs font-semibold text-gray-900">MOBILE MONEY DETAILS</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Provider *
+                    </label>
                     <select
                       value={hostelData.momo_details?.provider || ''}
                       onChange={(e) => handleMomoDetailsChange({
                         ...hostelData.momo_details,
                         provider: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
+                      required
                     >
                       <option value="">Select Provider</option>
                       {momoProviders.map((provider) => (
@@ -683,7 +776,9 @@ export default function EditHostelPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Mobile Number *
+                    </label>
                     <input
                       type="tel"
                       value={hostelData.momo_details?.number || ''}
@@ -691,12 +786,15 @@ export default function EditHostelPage() {
                         ...hostelData.momo_details,
                         number: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                       placeholder="Enter mobile number"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Account Name *
+                    </label>
                     <input
                       type="text"
                       value={hostelData.momo_details?.name || ''}
@@ -704,69 +802,71 @@ export default function EditHostelPage() {
                         ...hostelData.momo_details,
                         name: e.target.value
                       })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                      className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                       placeholder="Enter account name"
+                      required
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </motion.div>
 
           {/* Additional Information */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.3 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Additional Information</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              ADDITIONAL INFORMATION
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Check-in Time
                 </label>
                 <input
                   type="time"
                   name="check_in_time"
-                  value={hostelData.check_in_time || ''}
+                  value={hostelData.check_in_time}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Check-out Time
                 </label>
                 <input
                   type="time"
                   name="check_out_time"
-                  value={hostelData.check_out_time || ''}
+                  value={hostelData.check_out_time}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                 />
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 House Rules
               </label>
               <textarea
                 name="house_rules"
-                value={hostelData.house_rules || ''}
+                value={hostelData.house_rules}
                 onChange={handleInputChange}
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
-                placeholder="Enter house rules (e.g., No smoking, Quiet hours 10 PM - 6 AM, etc.)"
+                rows={2}
+                className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                placeholder="Enter house rules"
               />
             </div>
 
-            {/* Nearby Facilities */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Nearby Facilities
               </label>
               <div className="space-y-2">
@@ -776,29 +876,31 @@ export default function EditHostelPage() {
                     value={newFacility}
                     onChange={(e) => setNewFacility(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFacility())}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
-                    placeholder="Add nearby facility (e.g., University of Ghana, Ridge Hospital)"
+                    className="flex-1 px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                    placeholder="Add nearby facility"
                   />
-                  <button
+                  <motion.button
                     type="button"
+                    whileHover={{ backgroundColor: '#e55e00' }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={addFacility}
-                    className="px-4 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+                    className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150"
                   >
                     Add
-                  </button>
+                  </motion.button>
                 </div>
                 {hostelData.nearby_facilities && hostelData.nearby_facilities.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-1">
                     {hostelData.nearby_facilities.map((facility, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800"
+                        className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs"
                       >
                         {facility}
                         <button
                           type="button"
                           onClick={() => removeFacility(facility)}
-                          className="ml-2 text-gray-500 hover:text-red-500"
+                          className="ml-1 text-gray-500 hover:text-red-500 text-xs"
                         >
                           ×
                         </button>
@@ -812,16 +914,18 @@ export default function EditHostelPage() {
 
           {/* Location */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.4 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Location</h2>
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              LOCATION
+            </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Address *
                 </label>
                 <input
@@ -829,30 +933,32 @@ export default function EditHostelPage() {
                   name="address"
                   value={hostelData.address}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
                   placeholder="Enter full address"
                   required
                 />
               </div>
 
               <div>
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ backgroundColor: '#f3f4f6' }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setShowLocationPicker(!showLocationPicker)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300"
                 >
-                  <MapPin className="h-4 w-4 mr-2" />
+                  <MapPin className="h-3 w-3" />
                   {showLocationPicker ? 'Hide Map' : 'Update Location on Map'}
-                </button>
+                </motion.button>
               </div>
 
               {showLocationPicker && (
-                <div className="border border-gray-200 rounded-xl p-4">
+                <div className="border border-gray-200 p-3">
                   <LocationPicker 
                     location={locationCoords} 
                     address={hostelData.address}
                     onLocationChange={handleLocationChange}
-                    onAddressChange={(value: string) => setHostelData(prev => prev ? { ...prev, address: value } : null)}
+                    onAddressChange={handleAddressChange}
                   />
                 </div>
               )}
@@ -861,47 +967,36 @@ export default function EditHostelPage() {
 
           {/* Amenities */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.5 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Amenities</h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries(hostelData.amenities).map(([amenity, isActive]) => (
-                <label key={amenity} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={() => handleAmenityChange(amenity)}
-                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-                  />
-                  <span className="text-sm font-medium text-gray-700 capitalize">
-                    {amenity === 'studyRoom' ? 'Study Room' : amenity === 'ac' ? 'Air Conditioning' : amenity}
-                  </span>
-                </label>
-              ))}
-            </div>
+            <AmenitiesSelector 
+              amenities={hostelData.amenities} 
+              onAmenityChange={handleAmenityChange} 
+            />
           </motion.div>
 
           {/* Images */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.6 }}
+            className="bg-white border-t-4 border-t-[#FF6A00] p-4 space-y-4"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Images</h2>
-            
+            <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+              HOSTEL IMAGES
+            </h3>
+
             {/* Existing Images */}
             {hostelData.images.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-700 mb-4">Current Images</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div>
+                <h4 className="text-xs font-medium text-gray-700 mb-2">Current Images</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {hostelData.images.map((imageUrl, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <div key={index} className="relative group bg-gray-50">
+                      <div className="aspect-square overflow-hidden">
                         <img
                           src={imageUrl}
                           alt={`Hostel image ${index + 1}`}
@@ -910,104 +1005,70 @@ export default function EditHostelPage() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <button
+                      <motion.button
+                        whileHover={{ backgroundColor: '#e55e00' }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => removeExistingImage(imageUrl)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        className="absolute top-1 right-1 p-1 bg-[#FF6A00] text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <Trash2 className="h-3 w-3" />
+                      </motion.button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* New Images */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-700 mb-4">Add New Images</h3>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  handleImageUpload(files);
-                }}
-                className="hidden"
-                id="image-upload"
+            {/* New Images Upload */}
+            <div>
+              <h4 className="text-xs font-medium text-gray-700 mb-2">Add New Images</h4>
+              <ImageUploader 
+                images={newImages}
+                onUpload={handleImageUpload}
+                onRemove={removeNewImage}
               />
-              <label
-                htmlFor="image-upload"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-600">Click to upload images</span>
-              </label>
             </div>
-
-            {/* Preview New Images */}
-            {newImages.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-700 mb-4">New Images Preview</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {newImages.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`New image ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <button
-                        onClick={() => removeNewImage(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </motion.div>
 
           {/* Action Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex justify-between items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.7 }}
+            className="flex justify-between items-center pt-4 border-t border-gray-100"
           >
-            <button
+            <motion.button
+              whileHover={{ backgroundColor: '#f3f4f6' }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/dashboard/manage-hostels')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300"
             >
+              <ArrowLeft className="h-3 w-3" />
               Cancel
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
+              whileHover={{ backgroundColor: '#e55e00' }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleSubmit}
               disabled={saving}
-              className="px-8 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center disabled:opacity-70"
+              className="flex items-center gap-2 px-4 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-70"
             >
               {saving ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-3 w-3" />
                   Save Changes
                 </>
               )}
-            </button>
+            </motion.button>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

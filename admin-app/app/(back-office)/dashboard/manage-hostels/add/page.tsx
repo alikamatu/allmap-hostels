@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
-// Components
 import HostelForm from '@/components/dashboard/components/_addhostels/HostelForm';
 import LocationPicker from '@/components/dashboard/components/_addhostels/LocationPicker';
 import AmenitiesSelector from '@/components/dashboard/components/_addhostels/AmenitiesSelector';
@@ -272,47 +271,63 @@ export default function AddHostelPage() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Hostel</h1>
-          <p className="text-gray-600">Fill in the details to list your hostel on our platform</p>
-        </motion.div>
+    <div className="min-h-screen bg-white p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="max-w-4xl mx-auto space-y-4"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ backgroundColor: '#f3f4f6' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.back()}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back
+            </motion.button>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">Add New Hostel</h1>
+              <p className="text-xs text-gray-600">Fill in the details to list your hostel</p>
+            </div>
+          </div>
+        </div>
 
         {/* Progress Bar */}
         <motion.div 
-          className="mb-8"
+          className="mb-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             {[1, 2, 3, 4].map((num) => (
-              <div key={num} className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                  step >= num ? 'bg-black border-black' : 'border-gray-300'
+              <div key={num} className="flex flex-col items-center flex-1">
+                <div className={`w-6 h-6 flex items-center justify-center border ${
+                  step >= num 
+                    ? 'bg-[#FF6A00] border-[#FF6A00] text-white' 
+                    : 'border-gray-300 text-gray-400'
                 }`}>
-                  <span className={`font-medium ${step >= num ? 'text-white' : 'text-gray-400'}`}>
+                  <span className="text-xs font-medium">
                     {num}
                   </span>
                 </div>
-                <span className="mt-2 text-sm font-medium text-gray-700">
-                  {['Details & Payment', 'Location', 'Amenities', 'Images'][num - 1]}
+                <span className="mt-1 text-xs font-medium text-gray-700 text-center">
+                  {['Details', 'Location', 'Amenities', 'Images'][num - 1]}
                 </span>
               </div>
             ))}
           </div>
-          <div className="h-1 bg-gray-200 rounded-full">
+          <div className="h-1 bg-gray-100">
             <motion.div 
-              className="h-full bg-black rounded-full"
+              className="h-full bg-[#FF6A00]"
               initial={{ width: `${(step - 1) * 33.33}%` }}
               animate={{ width: `${(step - 1) * 33.33}%` }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.3 }}
             />
           </div>
         </motion.div>
@@ -322,8 +337,8 @@ export default function AddHostelPage() {
           key={step}
           initial={{ opacity: 0, x: step > 1 ? 20 : -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+          transition={{ duration: 0.2 }}
+          className="bg-white border-t-4 border-t-[#FF6A00]"
         >
           {step === 1 && (
             <HostelForm 
@@ -366,40 +381,47 @@ export default function AddHostelPage() {
           )}
           
           {/* Navigation Buttons */}
-          <div className="mt-10 flex justify-between">
-            <button
+          <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-6">
+            <motion.button
+              whileHover={{ backgroundColor: '#f3f4f6' }}
+              whileTap={{ scale: 0.95 }}
               onClick={handlePrevStep}
               disabled={step === 1}
-              className={`px-6 py-3 rounded-xl border ${
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-medium transition-colors duration-150 ${
                 step === 1 
-                  ? 'text-gray-400 border-gray-300 cursor-not-allowed' 
-                  : 'text-gray-800 border-gray-800 hover:bg-gray-50'
-              } font-medium transition-colors`}
+                  ? 'text-gray-400 cursor-not-allowed' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
             >
-              Back
-            </button>
+              <ArrowLeft className="h-3 w-3" />
+              Previous
+            </motion.button>
             
             {step < 4 ? (
-              <button
+              <motion.button
+                whileHover={{ backgroundColor: '#e55e00' }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleNextStep}
-                className="px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center"
+                className="flex items-center gap-2 px-4 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150"
               >
-                Next
-                <Plus className="ml-2 h-4 w-4" />
-              </button>
+                Next Step
+                <Plus className="h-3 w-3" />
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileHover={{ backgroundColor: '#e55e00' }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-3 bg-black text-white font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center disabled:opacity-70"
+                className="flex items-center gap-2 px-4 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-70"
               >
-                {loading ? 'Creating Hostel...' : 'Create Hostel'}
-                {!loading && <Plus className="ml-2 h-4 w-4" />}
-              </button>
+                {loading ? 'Creating...' : 'Create Hostel'}
+                {!loading && <Plus className="h-3 w-3" />}
+              </motion.button>
             )}
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -44,7 +44,7 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   };
@@ -70,17 +70,16 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
       text: `Are you sure you want to ${review?.hostelResponse ? 'update' : 'submit'} this response for ${review?.studentName}'s review?`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#1a73e8',
+      confirmButtonColor: '#FF6A00',
       cancelButtonColor: '#d32f2f',
       confirmButtonText: review?.hostelResponse ? 'Update Response' : 'Submit Response',
       cancelButtonText: 'Cancel',
       background: '#fff',
       customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
-        cancelButton: 'px-4 py-2 font-medium',
+        title: 'text-sm font-medium text-gray-900',
+        htmlContainer: 'text-xs text-gray-600',
+        confirmButton: 'px-3 py-1.5 text-xs font-medium',
+        cancelButton: 'px-3 py-1.5 text-xs font-medium',
       },
     });
 
@@ -95,14 +94,13 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
         title: review?.hostelResponse ? 'Response Updated' : 'Response Submitted',
         text: `Your response has been successfully ${review?.hostelResponse ? 'updated' : 'submitted'}.`,
         icon: 'success',
-        confirmButtonColor: '#1a73e8',
+        confirmButtonColor: '#FF6A00',
         confirmButtonText: 'OK',
         background: '#fff',
         customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
+          title: 'text-sm font-medium text-gray-900',
+          htmlContainer: 'text-xs text-gray-600',
+          confirmButton: 'px-3 py-1.5 text-xs font-medium',
         },
       }).then(() => {
         onClose();
@@ -114,14 +112,13 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
         title: 'Submission Failed',
         text: errorMessage,
         icon: 'error',
-        confirmButtonColor: '#1a73e8',
+        confirmButtonColor: '#FF6A00',
         confirmButtonText: 'OK',
         background: '#fff',
         customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
+          title: 'text-sm font-medium text-gray-900',
+          htmlContainer: 'text-xs text-gray-600',
+          confirmButton: 'px-3 py-1.5 text-xs font-medium',
         },
       });
     } finally {
@@ -157,38 +154,40 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Star className="h-6 w-6 text-blue-600" />
+            {/* Header */}
+            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-50">
+                    <Star className="h-4 w-4 text-blue-600" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {review.hostelResponse ? 'Edit Response' : 'Respond to Review'}
+                  <h2 className="text-sm font-semibold text-gray-900">
+                    {review.hostelResponse ? 'EDIT RESPONSE' : 'RESPOND TO REVIEW'}
                   </h2>
                 </div>
                 <button
                   onClick={handleClose}
                   disabled={isProcessing}
-                  className="p-1.5 rounded-full hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <X className="h-5 w-5 text-gray-500" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
+            </div>
 
+            <div className="p-4 space-y-4">
               {/* Original Review */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
-                <div className="flex items-center mb-3">
-                  <div className="flex items-center bg-yellow-50 px-3 py-1 rounded-full mr-3">
+              <div className="bg-gray-50 p-3">
+                <div className="flex items-center mb-2">
+                  <div className="flex items-center bg-yellow-50 px-2 py-0.5 mr-2">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`h-4 w-4 ${
+                          className={`h-3 w-3 ${
                             i < (review.rating || 0)
                               ? 'text-yellow-400 fill-current'
                               : 'text-gray-200'
@@ -198,34 +197,34 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
                     </div>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-xs font-medium text-gray-900">
                       {review.studentName}
                     </span>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-xs text-gray-500 ml-1">
                       • {formatDate(review.createdAt)}
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {review.reviewText}
                 </p>
               </div>
 
               {/* Error Message */}
               {error && (
-                <div className="mb-6 bg-red-50 border border-red-100 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-red-800">
-                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-sm">{error}</span>
+                <div className="bg-red-50 p-3">
+                  <div className="flex items-center gap-1.5 text-red-800">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    <span className="text-xs">{error}</span>
                   </div>
                 </div>
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit}>
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Response
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    YOUR RESPONSE
                   </label>
                   <textarea
                     value={response}
@@ -233,15 +232,15 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
                       setResponse(e.target.value);
                       setError('');
                     }}
-                    rows={6}
-                    className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50/50 transition-all duration-200 resize-y disabled:opacity-50 disabled:cursor-not-allowed ${
-                      error ? 'border-red-300' : 'border-gray-200'
+                    rows={4}
+                    className={`w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150 resize-y disabled:opacity-50 disabled:cursor-not-allowed ${
+                      error ? 'border border-red-300' : ''
                     }`}
                     placeholder="Write a professional response addressing the review. Be polite, helpful, and concise."
                     disabled={isProcessing}
                     required
                   />
-                  <div className="flex justify-between mt-2">
+                  <div className="flex justify-between mt-1">
                     <span className="text-xs text-gray-500">
                       {response.length} / 1000 characters
                     </span>
@@ -253,11 +252,12 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3">
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isProcessing}
                   >
                     Cancel
@@ -265,16 +265,16 @@ const ReviewResponseModal: React.FC<ReviewResponseModalProps> = ({
                   <button
                     type="submit"
                     disabled={isProcessing || !response.trim() || response.length > 1000}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                    className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 animate-spin" />
                         Submitting...
                       </>
                     ) : (
                       <>
-                        <Star className="h-4 w-4" />
+                        <Star className="h-3 w-3" />
                         {review.hostelResponse ? 'Update Response' : 'Submit Response'}
                       </>
                     )}

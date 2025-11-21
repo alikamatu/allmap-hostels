@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, User, Calendar, MapPin, Clock, Loader2 } from 'lucide-react';
 import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
 import { formatDate, formatDateTime } from '@/utils/date';
-import Swal from 'sweetalert2';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -88,62 +87,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     e.preventDefault();
     if (!canCheckIn || isSubmitting || loading) return;
 
-    const result = await Swal.fire({
-      title: 'Confirm Check-in',
-      text: `Are you sure you want to check in ${booking.studentName} for Room ${booking.room?.roomNumber}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1a73e8',
-      cancelButtonColor: '#d32f2f',
-      confirmButtonText: 'Yes, Check In',
-      cancelButtonText: 'Cancel',
-      background: '#fff',
-      customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
-        cancelButton: 'px-4 py-2 font-medium',
-      },
-    });
-
-    if (!result.isConfirmed) return;
-
     setIsSubmitting(true);
 
     try {
       await onSubmit(formData);
-      Swal.fire({
-        title: 'Check-in Successful',
-        text: `${booking.studentName} has been successfully checked in.`,
-        icon: 'success',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      }).then(() => {
-        onClose();
-      });
+      onClose();
     } catch (error) {
-      Swal.fire({
-        title: 'Check-in Failed',
-        text: error instanceof Error ? error.message : 'An error occurred during check-in.',
-        icon: 'error',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      });
+      console.error('Check-in failed:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -175,60 +125,60 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto border border-gray-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-orange-50">
+                  <CheckCircle className="h-4 w-4 text-orange-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Check-in Student</h3>
-                  <p className="text-sm text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
+                  <p className="text-xs text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
                 disabled={isProcessing}
-                className="p-1.5 rounded-full hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 hover:bg-gray-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 text-gray-500" />
               </button>
             </div>
 
             {/* Booking Details */}
-            <div className="p-6 bg-gray-50 border-b border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Student</div>
-                    <div className="font-medium text-gray-900">{booking.studentName}</div>
-                    <div className="text-sm text-gray-500">{booking.studentEmail}</div>
+                    <div className="text-xs text-gray-600">Student</div>
+                    <div className="font-medium text-gray-900 text-sm">{booking.studentName}</div>
+                    <div className="text-xs text-gray-500">{booking.studentEmail}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-gray-400" />
+                  <MapPin className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Room</div>
-                    <div className="font-medium text-gray-900">{booking.hostel?.name || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">Room {booking.room?.roomNumber || 'N/A'}</div>
+                    <div className="text-xs text-gray-600">Room</div>
+                    <div className="font-medium text-gray-900 text-sm">{booking.hostel?.name || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">Room {booking.room?.roomNumber || 'N/A'}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Scheduled Check-in</div>
-                    <div className="font-medium text-gray-900">{formatDate(booking.checkInDate)}</div>
+                    <div className="text-xs text-gray-600">Scheduled Check-in</div>
+                    <div className="font-medium text-gray-900 text-sm">{formatDate(booking.checkInDate)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Check-out Date</div>
-                    <div className="font-medium text-gray-900">{formatDate(booking.checkOutDate)}</div>
+                    <div className="text-xs text-gray-600">Check-out Date</div>
+                    <div className="font-medium text-gray-900 text-sm">{formatDate(booking.checkOutDate)}</div>
                   </div>
                 </div>
               </div>
@@ -236,13 +186,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
             {/* Warnings */}
             {showWarnings.length > 0 && (
-              <div className="p-4 border-b border-gray-100">
-                <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="p-3 border-b border-gray-200">
+                <div className="bg-yellow-50 border border-yellow-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-yellow-800">Attention Required</h4>
-                      <ul className="mt-2 text-sm text-yellow-700 space-y-1">
+                      <h4 className="font-semibold text-yellow-800 text-sm">Attention Required</h4>
+                      <ul className="mt-1 text-xs text-yellow-700 space-y-1">
                         {showWarnings.map((warning, index) => (
                           <li key={index}>• {warning}</li>
                         ))}
@@ -255,13 +205,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
             {/* Check-in Status */}
             {!canCheckIn && (
-              <div className="p-4 border-b border-gray-100">
-                <div className="bg-red-50 border border-red-100 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
+              <div className="p-3 border-b border-gray-200">
+                <div className="bg-red-50 border border-red-200 p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
                     <div>
-                      <h4 className="font-semibold text-red-800">Cannot Check-in</h4>
-                      <p className="text-sm text-red-700 mt-1">
+                      <h4 className="font-semibold text-red-800 text-sm">Cannot Check-in</h4>
+                      <p className="text-xs text-red-700 mt-1">
                         {booking.status === BookingStatus.PENDING && 'Booking must be confirmed first'}
                         {booking.status === BookingStatus.CHECKED_IN && 'Student is already checked in'}
                         {booking.status === BookingStatus.CHECKED_OUT && 'Booking is already completed'}
@@ -274,11 +224,11 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Actual Check-in Time */}
               <div>
                 <label htmlFor="actualCheckInTime" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="inline h-4 w-4 mr-2" />
+                  <Clock className="inline h-3 w-3 mr-2" />
                   Actual Check-in Time
                 </label>
                 <input
@@ -286,7 +236,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   id="actualCheckInTime"
                   value={formData.actualCheckInTime}
                   onChange={(e) => setFormData(prev => ({ ...prev, actualCheckInTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   disabled={isProcessing}
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -296,18 +246,18 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
               {/* Emergency Contacts Display */}
               {booking.emergencyContacts && booking.emergencyContacts.length > 0 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                <div className="bg-orange-50 border border-orange-200 p-3">
+                  <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2 text-sm">
+                    <User className="h-3 w-3" />
                     Emergency Contacts
                   </h4>
                   <div className="space-y-2">
                     {booking.emergencyContacts.map((contact, index) => (
-                      <div key={index} className="text-sm">
-                        <div className="font-medium text-blue-900">{contact.name}</div>
-                        <div className="text-blue-700">{contact.relationship} • {contact.phone}</div>
+                      <div key={index} className="text-xs">
+                        <div className="font-medium text-orange-900">{contact.name}</div>
+                        <div className="text-orange-700">{contact.relationship} • {contact.phone}</div>
                         {contact.email && (
-                          <div className="text-blue-600">{contact.email}</div>
+                          <div className="text-orange-600">{contact.email}</div>
                         )}
                       </div>
                     ))}
@@ -317,12 +267,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
               {/* Special Requests Display */}
               {booking.specialRequests && (
-                <div className="bg-purple-50 border border-purple-100 rounded-lg p-4">
-                  <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
+                <div className="bg-purple-50 border border-purple-200 p-3">
+                  <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2 text-sm">
+                    <AlertCircle className="h-3 w-3" />
                     Special Requests
                   </h4>
-                  <p className="text-sm text-purple-700 whitespace-pre-wrap">{booking.specialRequests}</p>
+                  <p className="text-xs text-purple-700 whitespace-pre-wrap">{booking.specialRequests}</p>
                 </div>
               )}
 
@@ -336,19 +286,19 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                   rows={3}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   placeholder="Optional notes about the check-in process..."
                   disabled={isProcessing}
                 />
               </div>
 
               {/* Checklist */}
-              <div className="bg-green-50 border border-green-100 rounded-lg p-4">
-                <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
+              <div className="bg-green-50 border border-green-200 p-3">
+                <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-3 w-3" />
                   Check-in Checklist
                 </h4>
-                <div className="space-y-2 text-sm text-green-700">
+                <div className="space-y-2 text-xs text-green-700">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -360,7 +310,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                           checklist: { ...prev.checklist!, idVerified: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="id-verified">Student ID verified</label>
@@ -376,7 +326,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                           checklist: { ...prev.checklist!, keysHanded: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="keys-handed">Room keys handed over</label>
@@ -392,7 +342,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                           checklist: { ...prev.checklist!, rulesExplained: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="rules-explained">Hostel rules explained</label>
@@ -408,7 +358,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                           checklist: { ...prev.checklist!, roomInspected: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="room-inspected">Room condition inspected</label>
@@ -424,7 +374,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                           checklist: { ...prev.checklist!, contactUpdated: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="contact-updated">Contact information updated</label>
@@ -433,28 +383,28 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   disabled={isProcessing}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-white bg-orange-600 border border-transparent hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-150"
                   disabled={isProcessing || !canCheckIn}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       Checking In...
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-3 w-3" />
                       Complete Check-in
                     </>
                   )}

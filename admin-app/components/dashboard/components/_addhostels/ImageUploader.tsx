@@ -10,28 +10,31 @@ export default function ImageUploader({ images, onUpload, onRemove }: { images: 
   };
 
   return (
-    <div>
+    <div className="space-y-4">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="mb-6"
+        transition={{ duration: 0.2 }}
       >
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Upload Images</h2>
-        <p className="text-gray-600">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          HOSTEL IMAGES
+        </h3>
+        <p className="text-xs text-gray-600 mt-1">
           Add photos of your hostel to attract more students
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {/* Image upload button */}
+      {/* Image Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        {/* Upload Button */}
         <motion.label
-          whileHover={{ scale: 1.03 }}
+          whileHover={{ backgroundColor: '#f3f4f6' }}
           whileTap={{ scale: 0.98 }}
-          className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-gray-400 transition-colors"
+          className="flex flex-col items-center justify-center h-32 bg-gray-50 cursor-pointer transition-colors duration-150 border border-gray-200"
         >
-          <Plus className="w-12 h-12 text-gray-400 mb-2" />
-          <span className="text-gray-600 font-medium">Add Photos</span>
+          <Plus className="w-6 h-6 text-gray-400 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">Add Photos</span>
           <input
             type="file"
             accept="image/*"
@@ -41,38 +44,41 @@ export default function ImageUploader({ images, onUpload, onRemove }: { images: 
           />
         </motion.label>
 
-        {/* Uploaded images */}
+        {/* Uploaded Images */}
         {images.map((file, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="h-48 rounded-2xl overflow-hidden relative group"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: index * 0.05 }}
+            className="h-32 relative group bg-gray-50"
           >
             <Image
               src={URL.createObjectURL(file)}
               alt={`Hostel preview ${index + 1}`}
               className="w-full h-full object-cover"
-              width={100}
-              height={100}
+              width={200}
+              height={128}
             />
-            <button
+            <motion.button
               type="button"
+              whileHover={{ backgroundColor: '#e55e00' }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => onRemove(index)}
-              className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-1 right-1 bg-[#FF6A00] text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
             >
-              <X size={20} />
-            </button>
+              <X size={14} />
+            </motion.button>
           </motion.div>
         ))}
       </div>
 
+      {/* Image Count */}
       {images.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-6 text-sm text-gray-500"
+          className="text-xs text-gray-600"
         >
           {images.length} photo{images.length !== 1 ? 's' : ''} selected
         </motion.div>

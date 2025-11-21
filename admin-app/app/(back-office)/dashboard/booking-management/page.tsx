@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
- Download, Plus, 
+  Download, Plus, MapPin
 } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion"
 
 // Types
 import { Booking, BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
@@ -29,7 +30,7 @@ import { exportToExcel } from '@/utils/export';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
-interface BookingFilters {
+interface BookingFiltersState {
   search: string;
   status: BookingStatus | 'all';
   paymentStatus: PaymentStatus | 'all';
@@ -45,7 +46,7 @@ interface BookingFilters {
 
 const BookingManagementPage: React.FC = () => {
   // State
-  const [filters, setFilters] = useState<BookingFilters>({
+  const [filters, setFilters] = useState<BookingFiltersState>({
     search: '',
     status: 'all',
     paymentStatus: 'all',
@@ -137,9 +138,8 @@ const BookingManagementPage: React.FC = () => {
     loadStats();
   }, [fetchStats]);
 
-  // Modified: Only fetch bookings when hostel is selected or other filters change (excluding hostelId changes)
+  // Fetch bookings when filters change
   useEffect(() => {
-    // Only fetch if hostel is selected
     if (!filters.hostelId) {
       return;
     }
@@ -155,26 +155,8 @@ const BookingManagementPage: React.FC = () => {
     fetchBookings(filterParams);
   }, [filters, currentPage, pageSize, fetchBookings]);
 
-  // Helper function to refresh selected booking data
-  const refreshSelectedBooking = useCallback(async (bookingId: string) => {
-    try {
-      if (getBookingById) {
-        const updatedBooking = await getBookingById(bookingId);
-        setSelectedBooking(updatedBooking);
-      }
-    } catch (error) {
-      console.error('Failed to refresh booking data:', error);
-    }
-  }, [getBookingById]);
-
-  // Helper function to update booking in the list
-  const updateBookingInList = useCallback((updatedBooking: Booking) => {
-    // This would be handled by the fetchBookings call, but we could optimize by updating locally
-    // For now, we'll rely on the refetch
-  }, []);
-
   // Handlers
-  const handleFilterChange = useCallback((newFilters: Partial<BookingFilters>) => {
+  const handleFilterChange = useCallback((newFilters: Partial<BookingFiltersState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setCurrentPage(1);
   }, []);
@@ -201,30 +183,16 @@ const BookingManagementPage: React.FC = () => {
     if (modalType === 'details') setSelectedBooking(null);
   }, []);
 
-  // Updated payment handler
   const handlePayment = async (bookingId: string, paymentData: any) => {
     try {
-      console.log('Recording payment...', { bookingId, paymentData });
-
       const formattedPaymentData = {
         ...paymentData,
         transactionRef: paymentData.transactionRef || null
       };
       
       const result = await recordPayment(bookingId, formattedPaymentData);
-
-      console.log('Payment recorded successfully:', result);
       
       if (result.booking) {
-        console.log('Updating selected booking with fresh data:', {
-          bookingId: result.booking.id,
-          previousAmountPaid: selectedBooking?.amountPaid,
-          newAmountPaid: result.booking.amountPaid,
-          previousAmountDue: selectedBooking?.amountDue,
-          newAmountDue: result.booking.amountDue,
-          paymentStatus: result.booking.paymentStatus
-        });
-        
         setSelectedBooking(prev => prev ? {
           ...prev,
           amountPaid: result.booking.amountPaid,
@@ -233,7 +201,6 @@ const BookingManagementPage: React.FC = () => {
         } : null);
       }
       
-      // Always refresh the bookings list to ensure consistency
       const filterParams = {
         page: currentPage,
         limit: pageSize,
@@ -244,7 +211,6 @@ const BookingManagementPage: React.FC = () => {
       
       await fetchBookings(filterParams);
       closeModal('payment');
-      console.log('Payment processing complete');
       
     } catch (error) {
       console.error('Payment failed:', error);
@@ -267,13 +233,9 @@ const BookingManagementPage: React.FC = () => {
   const handleCheckOut = async (bookingId: string, checkOutData: any) => {
     try {
       const updatedBooking = await checkOutBooking(bookingId, checkOutData);
-      
-      // Clear selection if the checked-out booking was selected
       setSelectedBookings(prev => prev.filter(id => id !== bookingId));
-      
       closeModal('checkOut');
       
-      // Refresh the list to ensure consistency
       const filterParams = {
         page: currentPage,
         limit: pageSize,
@@ -302,15 +264,12 @@ const BookingManagementPage: React.FC = () => {
             reason: 'Bulk cancellation', 
             notes: 'Cancelled via bulk action' 
           })));
-          
-          // Remove cancelled bookings from the list immediately
           setSelectedBookings(prev => prev.filter(id => !selectedBookings.includes(id)));
           break;
       }
       
       setSelectedBookings([]);
       
-      // Refresh the list
       const filterParams = {
         page: currentPage,
         limit: pageSize,
@@ -352,37 +311,40 @@ const BookingManagementPage: React.FC = () => {
     }
   };
 
-  // Get filtered bookings (automatically remove checked-out and cancelled)
+  // Get filtered bookings
   const activeBookings = filterActiveBookings(bookings);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="max-w-7xl mx-auto space-y-4"
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Booking Management</h1>
-            <p className="text-gray-600 mt-1">
-              Manage bookings, payments, and check-ins
-            </p>
+            <h1 className="text-lg font-semibold text-gray-900 mb-1">Booking Management</h1>
+            <p className="text-xs text-gray-600">Manage bookings, payments, and check-ins</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleExport}
               disabled={!filters.hostelId}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 text-xs font-medium border border-gray-300 hover:bg-gray-50 transition-colors duration-150 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3 w-3" />
               Export
             </button>
             
             <button
               onClick={() => openModal('create')}
               disabled={!filters.hostelId}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
               New Booking
             </button>
           </div>
@@ -411,17 +373,15 @@ const BookingManagementPage: React.FC = () => {
 
         {/* Show message when no hostel is selected */}
         {!filters.hostelId ? (
-          <div className="bg-white shadow rounded-lg">
-            <div className="p-8 text-center">
-              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Download className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Hostel</h3>
-              <p className="text-gray-500">Please select a hostel from the filters above to view bookings.</p>
+          <div className="bg-white border border-gray-200 p-6 text-center">
+            <div className="h-10 w-10 bg-gray-100 flex items-center justify-center mx-auto mb-3">
+              <MapPin className="h-5 w-5 text-gray-400" />
             </div>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">Select a Hostel</h3>
+            <p className="text-xs text-gray-500">Please select a hostel from the filters above to view bookings.</p>
           </div>
         ) : (
-          /* Bookings List - Show filtered bookings (excluding checked-out and cancelled) */
+          /* Bookings List */
           <BookingsList
             bookings={activeBookings}
             loading={bookingsLoading}
@@ -435,8 +395,6 @@ const BookingManagementPage: React.FC = () => {
             onConfirm={confirmBooking}
             onCancel={async (bookingId: string, data: any) => {
               await cancelBooking(bookingId, data);
-              // Remove cancelled booking from the list immediately
-              setSelectedBookings(prev => prev.filter(id => id !== bookingId));
               setSelectedBookings(prev => prev.filter(id => id !== bookingId));
             }}
             pagination={pagination}
@@ -446,58 +404,53 @@ const BookingManagementPage: React.FC = () => {
         )}
 
         {/* Modals */}
-        {selectedBooking && (
-          <>
-            {/* Booking Details Modal */}
-            <BookingDetailsModal
-              isOpen={modals.details}
-              onClose={() => closeModal('details')}
-              booking={selectedBooking}
-              onPayment={() => openModal('payment', selectedBooking)}
-              onCheckIn={() => openModal('checkIn', selectedBooking)}
-              onCheckOut={() => openModal('checkOut', selectedBooking)}
-            />
+          {selectedBooking && (
+            <>
+              <BookingDetailsModal
+                isOpen={modals.details}
+                onClose={() => closeModal('details')}
+                booking={selectedBooking}
+                onPayment={() => openModal('payment', selectedBooking)}
+                onCheckIn={() => openModal('checkIn', selectedBooking)}
+                onCheckOut={() => openModal('checkOut', selectedBooking)}
+              />
 
-            {/* Payment Modal */}
-            <PaymentModal
-              isOpen={modals.payment}
-              onClose={() => closeModal('payment')}
-              booking={selectedBooking}
-              onSubmit={(paymentData) => handlePayment(selectedBooking.id, paymentData)}
-              loading={paymentLoading}
-            />
+              <PaymentModal
+                isOpen={modals.payment}
+                onClose={() => closeModal('payment')}
+                booking={selectedBooking}
+                onSubmit={(paymentData) => handlePayment(selectedBooking.id, paymentData)}
+                loading={paymentLoading}
+              />
 
-            {/* Check-in Modal */}
-            <CheckInModal
-              isOpen={modals.checkIn}
-              onClose={() => closeModal('checkIn')}
-              booking={selectedBooking}
-              onSubmit={(checkInData) => handleCheckIn(selectedBooking.id, checkInData)}
-              loading={bookingsLoading}
-            />
+              <CheckInModal
+                isOpen={modals.checkIn}
+                onClose={() => closeModal('checkIn')}
+                booking={selectedBooking}
+                onSubmit={(checkInData) => handleCheckIn(selectedBooking.id, checkInData)}
+                loading={bookingsLoading}
+              />
 
-            {/* Check-out Modal */}
-            <CheckOutModal
-              isOpen={modals.checkOut}
-              onClose={() => closeModal('checkOut')}
-              booking={selectedBooking}
-              onSubmit={(checkOutData) => handleCheckOut(selectedBooking.id, checkOutData)}
-              loading={bookingsLoading}
-            />
-          </>
-        )}
+              <CheckOutModal
+                isOpen={modals.checkOut}
+                onClose={() => closeModal('checkOut')}
+                booking={selectedBooking}
+                onSubmit={(checkOutData) => handleCheckOut(selectedBooking.id, checkOutData)}
+                loading={bookingsLoading}
+              />
+            </>
+          )}
 
-        {/* Create Booking Modal */}
-        <CreateBookingModal
-          isOpen={modals.create}
-          onClose={() => closeModal('create')}
-          hostels={hostels}
-          onSubmit={async (data) => {
-            await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
-            closeModal('create');
-          }}
-        />
-      </div>
+          <CreateBookingModal
+            isOpen={modals.create}
+            onClose={() => closeModal('create')}
+            hostels={hostels}
+            onSubmit={async (data) => {
+              await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
+              closeModal('create');
+            }}
+          />
+      </motion.div>
     </div>
   );
 };

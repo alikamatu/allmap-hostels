@@ -93,20 +93,19 @@ export default function HostelForm({
   };
 
   return (
-    <form>
-      <div className="space-y-8">
-        {/* Basic Information */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-            Basic Information
+    <div className="space-y-4">
+      {/* Basic Information */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          BASIC INFORMATION
         </h3>
         
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.2 }}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
             Hostel Name *
           </label>
           <input
@@ -114,91 +113,44 @@ export default function HostelForm({
             name="name"
             value={hostelData.name}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
-            placeholder="Enter house rules (e.g., No smoking, Quiet hours 10 PM - 6 AM, etc.)"
+            className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+            placeholder="Enter hostel name"
+            required
           />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
+          transition={{ duration: 0.2, delay: 0.1 }}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nearby Facilities
-          </label>
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newFacility}
-                onChange={(e) => setNewFacility(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFacility())}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
-                placeholder="Add nearby facility (e.g., University of Ghana, Ridge Hospital)"
-              />
-              <button
-                type="button"
-                onClick={addFacility}
-                className="px-4 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
-              >
-                Add
-              </button>
-            </div>
-            {hostelData.nearby_facilities && hostelData.nearby_facilities.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {hostelData.nearby_facilities.map((facility, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800"
-                  >
-                    {facility}
-                    <button
-                      type="button"
-                      onClick={() => removeFacility(facility)}
-                      className="ml-2 text-gray-500 hover:text-red-500"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </div>
-    </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
             Description *
           </label>
           <textarea
             name="description"
             value={hostelData.description}
             onChange={handleInputChange}
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
             placeholder="Describe your hostel facilities, rooms, and unique features"
             required
           />
         </motion.div>
+      </div>
 
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-          Contact Information
+      {/* Contact Information */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          CONTACT INFORMATION
         </h3>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={{ duration: 0.2, delay: 0.2 }}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
             Email *
           </label>
           <input
@@ -206,19 +158,19 @@ export default function HostelForm({
             name="email"
             value={hostelData.email}
             onChange={(e) => handleEmailChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+            className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
             placeholder="Enter hostel email"
             required
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            transition={{ duration: 0.2, delay: 0.3 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Primary Phone *
             </label>
             <input
@@ -226,7 +178,7 @@ export default function HostelForm({
               name="phone"
               value={hostelData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               placeholder="Enter primary phone"
               required
             />
@@ -235,9 +187,9 @@ export default function HostelForm({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ duration: 0.2, delay: 0.4 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Secondary Phone *
             </label>
             <input
@@ -245,7 +197,7 @@ export default function HostelForm({
               name="SecondaryNumber"
               value={hostelData.SecondaryNumber}
               onChange={(e) => handleSecondaryPhoneChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               placeholder="Enter secondary phone"
               required
             />
@@ -253,19 +205,19 @@ export default function HostelForm({
         </div>
       </div>
 
-      {/* Pricing Information */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-          Pricing & Capacity
+      {/* Pricing & Capacity */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          PRICING & CAPACITY
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ duration: 0.2, delay: 0.5 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Base Price (GHS) *
             </label>
             <input
@@ -275,19 +227,19 @@ export default function HostelForm({
               name="base_price"
               value={hostelData.base_price}
               onChange={(e) => handleBasePriceChange(parseFloat(e.target.value) || 0)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               placeholder="Enter base price"
               required
             />
-            <p className="text-sm text-gray-500 mt-1">Starting price per semester</p>
+            <p className="text-xs text-gray-500 mt-1">Starting price per semester</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            transition={{ duration: 0.2, delay: 0.6 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Maximum Occupancy
             </label>
             <input
@@ -296,7 +248,7 @@ export default function HostelForm({
               name="max_occupancy"
               value={hostelData.max_occupancy}
               onChange={(e) => handleMaxOccupancyChange(parseInt(e.target.value) || 0)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
               placeholder="Enter maximum occupancy"
             />
           </motion.div>
@@ -304,20 +256,20 @@ export default function HostelForm({
       </div>
 
       {/* Payment Information */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-          Payment Information
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          PAYMENT INFORMATION
         </h3>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ duration: 0.2, delay: 0.7 }}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-xs font-medium text-gray-700 mb-2">
             Payment Methods *
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             {(['bank', 'momo', 'both'] as const).map((method) => (
               <div key={method} className="relative">
                 <input
@@ -329,18 +281,20 @@ export default function HostelForm({
                   onChange={(e) => handlePaymentMethodChange(e.target.value as any)}
                   className="sr-only"
                 />
-                <label
+                <motion.label
                   htmlFor={method}
-                  className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                  whileHover={{ backgroundColor: '#f3f4f6' }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`flex items-center justify-center p-2 border text-xs font-medium cursor-pointer transition-colors duration-150 ${
                     hostelData.payment_method === method
-                      ? 'border-black bg-black text-white'
+                      ? 'bg-[#FF6A00] border-[#FF6A00] text-white'
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  <span className="font-medium capitalize">
+                  <span className="capitalize">
                     {method === 'momo' ? 'Mobile Money' : method === 'both' ? 'Bank & MoMo' : 'Bank Transfer'}
                   </span>
-                </label>
+                </motion.label>
               </div>
             ))}
           </div>
@@ -351,13 +305,13 @@ export default function HostelForm({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-4 p-4 bg-gray-50 rounded-xl"
+            transition={{ duration: 0.2 }}
+            className="space-y-3 p-3 bg-gray-50"
           >
-            <h4 className="font-medium text-gray-900">Bank Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h4 className="text-xs font-semibold text-gray-900">BANK DETAILS</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Bank Name *
                 </label>
                 <select
@@ -366,7 +320,7 @@ export default function HostelForm({
                     ...hostelData.bank_details,
                     bank_name: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   required
                 >
                   <option value="">Select Bank</option>
@@ -376,7 +330,7 @@ export default function HostelForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Account Name *
                 </label>
                 <input
@@ -386,13 +340,13 @@ export default function HostelForm({
                     ...hostelData.bank_details,
                     account_name: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   placeholder="Enter account name"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Account Number *
                 </label>
                 <input
@@ -402,13 +356,13 @@ export default function HostelForm({
                     ...hostelData.bank_details,
                     account_number: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   placeholder="Enter account number"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Branch
                 </label>
                 <input
@@ -418,7 +372,7 @@ export default function HostelForm({
                     ...hostelData.bank_details,
                     branch: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   placeholder="Enter branch"
                 />
               </div>
@@ -431,13 +385,13 @@ export default function HostelForm({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-4 p-4 bg-gray-50 rounded-xl"
+            transition={{ duration: 0.2 }}
+            className="space-y-3 p-3 bg-gray-50"
           >
-            <h4 className="font-medium text-gray-900">Mobile Money Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h4 className="text-xs font-semibold text-gray-900">MOBILE MONEY DETAILS</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Provider *
                 </label>
                 <select
@@ -446,7 +400,7 @@ export default function HostelForm({
                     ...hostelData.momo_details,
                     provider: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   required
                 >
                   <option value="">Select Provider</option>
@@ -456,7 +410,7 @@ export default function HostelForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Mobile Number *
                 </label>
                 <input
@@ -466,13 +420,13 @@ export default function HostelForm({
                     ...hostelData.momo_details,
                     number: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   placeholder="Enter mobile number"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Account Name *
                 </label>
                 <input
@@ -482,7 +436,7 @@ export default function HostelForm({
                     ...hostelData.momo_details,
                     name: e.target.value
                   })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+                  className="w-full px-3 py-2 bg-white text-sm focus:outline-none transition-colors duration-150"
                   placeholder="Enter account name"
                   required
                 />
@@ -493,18 +447,18 @@ export default function HostelForm({
       </div>
 
       {/* Additional Information */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-          Additional Information
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
+          ADDITIONAL INFORMATION
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
+            transition={{ duration: 0.2, delay: 0.8 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Check-in Time
             </label>
             <input
@@ -512,16 +466,16 @@ export default function HostelForm({
               name="check_in_time"
               value={hostelData.check_in_time}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
             />
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.0 }}
+            transition={{ duration: 0.2, delay: 0.9 }}
           >
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               Check-out Time
             </label>
             <input
@@ -529,7 +483,7 @@ export default function HostelForm({
               name="check_out_time"
               value={hostelData.check_out_time}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+              className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
             />
           </motion.div>
         </div>
@@ -537,20 +491,71 @@ export default function HostelForm({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.1 }}
+          transition={{ duration: 0.2, delay: 1.0 }}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
             House Rules
           </label>
           <textarea
             name="house_rules"
             value={hostelData.house_rules}
             onChange={handleInputChange}
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-black focus:border-black"
+            rows={2}
+            className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+            placeholder="Enter house rules"
           />
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2, delay: 1.1 }}
+        >
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Nearby Facilities
+          </label>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newFacility}
+                onChange={(e) => setNewFacility(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFacility())}
+                className="flex-1 px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                placeholder="Add nearby facility"
+              />
+              <motion.button
+                type="button"
+                whileHover={{ backgroundColor: '#e55e00' }}
+                whileTap={{ scale: 0.95 }}
+                onClick={addFacility}
+                className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150"
+              >
+                Add
+              </motion.button>
+            </div>
+            {hostelData.nearby_facilities && hostelData.nearby_facilities.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {hostelData.nearby_facilities.map((facility, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs"
+                  >
+                    {facility}
+                    <button
+                      type="button"
+                      onClick={() => removeFacility(facility)}
+                      className="ml-1 text-gray-500 hover:text-red-500 text-xs"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
-    </form>
+    </div>
   );
-} 
+}

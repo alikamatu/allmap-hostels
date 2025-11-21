@@ -11,51 +11,55 @@ const StatsOverview = ({ rooms }: { rooms: Room[] }) => {
   };
 
   return (
-    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Total Rooms */}
+      <div className="bg-white border-t-4 border-t-[#FF6A00] p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">Total Rooms</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-xs font-medium text-gray-600">Total Rooms</p>
+            <p className="text-lg font-bold text-gray-900">{stats.total}</p>
           </div>
-          <div className="p-3 bg-blue-100 rounded-full">
-            <Building className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-gray-100">
+            <Building className="h-4 w-4 text-gray-600" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      {/* Available */}
+      <div className="bg-white border-t-4 border-t-green-500 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">Available</p>
-            <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+            <p className="text-xs font-medium text-gray-600">Available</p>
+            <p className="text-lg font-bold text-green-600">{stats.available}</p>
           </div>
-          <div className="p-3 bg-green-100 rounded-full">
-            <CheckCircle className="h-6 w-6 text-green-600" />
+          <div className="p-2 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      {/* Occupied */}
+      <div className="bg-white border-t-4 border-t-blue-500 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">Occupied</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.occupied}</p>
+            <p className="text-xs font-medium text-gray-600">Occupied</p>
+            <p className="text-lg font-bold text-blue-600">{stats.occupied}</p>
           </div>
-          <div className="p-3 bg-blue-100 rounded-full">
-            <Users className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-blue-50">
+            <Users className="h-4 w-4 text-blue-600" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      {/* Maintenance */}
+      <div className="bg-white border-t-4 border-t-yellow-500 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600">Maintenance</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.maintenance}</p>
+            <p className="text-xs font-medium text-gray-600">Maintenance</p>
+            <p className="text-lg font-bold text-yellow-600">{stats.maintenance}</p>
           </div>
-          <div className="p-3 bg-yellow-100 rounded-full">
-            <Settings className="h-6 w-6 text-yellow-600" />
+          <div className="p-2 bg-yellow-50">
+            <Settings className="h-4 w-4 text-yellow-600" />
           </div>
         </div>
       </div>

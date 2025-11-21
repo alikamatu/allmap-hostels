@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-white">
       {isDesktop && (
         <Sidenav 
           isCollapsed={isCollapsed} 
@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <motion.main
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
           className="flex-1 p-4 md:p-6 overflow-y-auto"
         >
           {children}

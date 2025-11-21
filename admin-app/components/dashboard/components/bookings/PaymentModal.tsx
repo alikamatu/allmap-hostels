@@ -6,7 +6,6 @@ import { X, CreditCard, DollarSign, AlertCircle, CheckCircle, Loader2 } from 'lu
 import { Booking } from '@/types/booking';
 import { formatCurrency } from '@/utils/currency';
 import { PaymentMethod } from '@/types/payment';
-import Swal from 'sweetalert2';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -94,27 +93,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     e.preventDefault();
     if (!validateForm() || isSubmitting) return;
 
-    const result = await Swal.fire({
-      title: 'Confirm Payment',
-      text: `Are you sure you want to record a payment of ${formatCurrency(formData.amount)} for ${booking.studentName}'s booking?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1a73e8',
-      cancelButtonColor: '#d32f2f',
-      confirmButtonText: 'Yes, Record Payment',
-      cancelButtonText: 'Cancel',
-      background: '#fff',
-      customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
-        cancelButton: 'px-4 py-2 font-medium',
-      },
-    });
-
-    if (!result.isConfirmed) return;
-
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -123,38 +101,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         ...formData,
         amount: Number(formData.amount),
       });
-      Swal.fire({
-        title: 'Payment Recorded',
-        text: `Payment of ${formatCurrency(formData.amount)} has been successfully recorded.`,
-        icon: 'success',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      }).then(() => {
-        onClose();
-      });
+      onClose();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Payment failed. Please try again.');
-      Swal.fire({
-        title: 'Payment Failed',
-        text: error instanceof Error ? error.message : 'An error occurred while recording the payment.',
-        icon: 'error',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,31 +152,31 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <CreditCard className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-orange-50">
+                  <CreditCard className="h-4 w-4 text-orange-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Record Payment</h3>
-                  <p className="text-sm text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
+                  <p className="text-xs text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
                 disabled={isProcessing}
-                className="p-1.5 rounded-full hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 hover:bg-gray-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 text-gray-500" />
               </button>
             </div>
 
             {/* Booking Summary */}
-            <div className="p-6 bg-gray-50 border-b border-gray-100">
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Student:</span>
@@ -241,7 +190,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <span className="text-gray-600">Already Paid:</span>
                   <span className="font-medium text-green-600">{formatCurrency(booking.amountPaid)}</span>
                 </div>
-                <div className="flex justify-between text-sm border-t pt-2">
+                <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
                   <span className="text-gray-600">Amount Due:</span>
                   <span className="font-semibold text-red-600">{formatCurrency(booking.amountDue)}</span>
                 </div>
@@ -250,7 +199,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Error Message */}
             {submitError && (
-              <div className="p-4 bg-red-50 border-b border-red-100">
+              <div className="p-3 bg-red-50 border-b border-red-200">
                 <div className="flex items-center gap-2 text-red-800">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span className="text-sm">{submitError}</span>
@@ -259,11 +208,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Quick Amount Selection */}
               {quickAmounts.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Quick Amount Selection
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -273,10 +222,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                         type="button"
                         onClick={() => handleQuickAmount(quick.value, quick.key)}
                         disabled={isProcessing}
-                        className={`p-3 text-sm border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`p-2 text-sm border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                           quickAmountSelected === quick.key
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                            ? 'border-orange-500 bg-orange-50 text-orange-700'
+                            : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50 bg-white'
                         }`}
                       >
                         <div className="font-medium">{quick.label}</div>
@@ -293,7 +242,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   Payment Amount *
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <DollarSign className="absolute left-3 top-2 h-4 w-4 text-gray-400" />
                   <input
                     type="number"
                     id="amount"
@@ -302,7 +251,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     max={booking.amountDue}
                     value={formData.amount}
                     onChange={(e) => handleAmountChange(e.target.value)}
-                    className={`pl-10 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`pl-9 w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
                       errors.amount ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="0.00"
@@ -310,8 +259,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   />
                 </div>
                 {errors.amount && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
                     {errors.amount}
                   </p>
                 )}
@@ -330,7 +279,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     setErrors(prev => ({ ...prev, paymentMethod: undefined }));
                     setSubmitError('');
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
                     errors.paymentMethod ? 'border-red-300' : 'border-gray-300'
                   }`}
                   disabled={isProcessing}
@@ -342,8 +291,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <option value={PaymentMethod.CHEQUE}>Cheque</option>
                 </select>
                 {errors.paymentMethod && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
                     {errors.paymentMethod}
                   </p>
                 )}
@@ -366,15 +315,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     setErrors(prev => ({ ...prev, transactionRef: undefined }));
                     setSubmitError('');
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
                     errors.transactionRef ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Enter transaction reference or receipt number"
                   disabled={isProcessing}
                 />
                 {errors.transactionRef && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
                     {errors.transactionRef}
                   </p>
                 )}
@@ -394,7 +343,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     setErrors(prev => ({ ...prev, notes: undefined }));
                     setSubmitError('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   placeholder="Optional notes about this payment..."
                   disabled={isProcessing}
                 />
@@ -402,24 +351,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
               {/* Payment Summary */}
               {formData.amount > 0 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
+                <div className="bg-orange-50 border border-orange-200 p-3">
+                  <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2 text-sm">
+                    <CreditCard className="h-4 w-4" />
                     Payment Summary
                   </h4>
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Payment Amount:</span>
-                      <span className="font-medium text-blue-900">{formatCurrency(formData.amount)}</span>
+                      <span className="text-orange-700">Payment Amount:</span>
+                      <span className="font-medium text-orange-900">{formatCurrency(formData.amount)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Remaining Balance:</span>
-                      <span className="font-medium text-blue-900">{formatCurrency(remainingAfterPayment)}</span>
+                      <span className="text-orange-700">Remaining Balance:</span>
+                      <span className="font-medium text-orange-900">{formatCurrency(remainingAfterPayment)}</span>
                     </div>
                     {willCompletePayment && (
                       <div className="flex items-center gap-2 text-green-700 mt-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">This payment will complete the booking</span>
+                        <CheckCircle className="h-3 w-3" />
+                        <span className="text-xs font-medium">This payment will complete the booking</span>
                       </div>
                     )}
                   </div>
@@ -427,18 +376,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               )}
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   disabled={isProcessing}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                  className="px-3 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-150"
                   disabled={isProcessing || formData.amount <= 0}
                 >
                   {isProcessing ? (

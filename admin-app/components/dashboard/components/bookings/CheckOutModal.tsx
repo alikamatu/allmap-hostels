@@ -6,7 +6,6 @@ import { X, LogOut, AlertCircle, User, Calendar, MapPin, Clock, DollarSign, Load
 import { Booking, BookingStatus } from '@/types/booking';
 import { formatDate, formatDateTime } from '@/utils/date';
 import { formatCurrency } from '@/utils/currency';
-import Swal from 'sweetalert2';
 
 interface CheckOutModalProps {
   isOpen: boolean;
@@ -127,62 +126,13 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
     e.preventDefault();
     if (!canCheckOut || isSubmitting || loading || !formData.keyReturned || !validateForm()) return;
 
-    const result = await Swal.fire({
-      title: 'Confirm Check-out',
-      text: `Are you sure you want to check out ${booking.studentName} from Room ${booking.room?.roomNumber}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1a73e8',
-      cancelButtonColor: '#d32f2f',
-      confirmButtonText: 'Yes, Check Out',
-      cancelButtonText: 'Cancel',
-      background: '#fff',
-      customClass: {
-        popup: 'rounded-xl shadow-lg',
-        title: 'text-lg font-medium text-gray-900',
-        htmlContainer: 'text-sm text-gray-600',
-        confirmButton: 'px-4 py-2 font-medium',
-        cancelButton: 'px-4 py-2 font-medium',
-      },
-    });
-
-    if (!result.isConfirmed) return;
-
     setIsSubmitting(true);
 
     try {
       await onSubmit(formData);
-      Swal.fire({
-        title: 'Check-out Successful',
-        text: `${booking.studentName} has been successfully checked out.`,
-        icon: 'success',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      }).then(() => {
-        onClose();
-      });
+      onClose();
     } catch (error) {
-      Swal.fire({
-        title: 'Check-out Failed',
-        text: error instanceof Error ? error.message : 'An error occurred during check-out.',
-        icon: 'error',
-        confirmButtonColor: '#1a73e8',
-        confirmButtonText: 'OK',
-        background: '#fff',
-        customClass: {
-          popup: 'rounded-xl shadow-lg',
-          title: 'text-lg font-medium text-gray-900',
-          htmlContainer: 'text-sm text-gray-600',
-          confirmButton: 'px-4 py-2 font-medium',
-        },
-      });
+      console.error('Check-out failed:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -218,58 +168,58 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <LogOut className="h-6 w-6 text-purple-600" />
+                <div className="p-2 bg-orange-50">
+                  <LogOut className="h-4 w-4 text-orange-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Check-out Student</h3>
-                  <p className="text-sm text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
+                  <p className="text-xs text-gray-500">Booking: {booking.id.substring(0, 8)}</p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
                 disabled={isProcessing}
-                className="p-1.5 rounded-full hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1 hover:bg-gray-100 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-4 w-4 text-gray-500" />
               </button>
             </div>
 
             {/* Booking Summary */}
-            <div className="p-6 bg-gray-50 border-b border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-gray-400" />
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Student</div>
-                    <div className="font-medium text-gray-900">{booking.studentName}</div>
+                    <div className="text-xs text-gray-600">Student</div>
+                    <div className="font-medium text-gray-900 text-sm">{booking.studentName}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Room</div>
-                    <div className="font-medium text-gray-900">{booking.hostel?.name || 'N/A'} - Room {booking.room?.roomNumber || 'N/A'}</div>
+                    <div className="text-xs text-gray-600">Room</div>
+                    <div className="font-medium text-gray-900 text-sm">{booking.hostel?.name || 'N/A'} - Room {booking.room?.roomNumber || 'N/A'}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Stay Duration</div>
-                    <div className="font-medium text-gray-900">{stayDuration} days</div>
+                    <div className="text-xs text-gray-600">Stay Duration</div>
+                    <div className="font-medium text-gray-900 text-sm">{stayDuration} days</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-600">Total Paid</div>
-                    <div className="font-medium text-gray-900">{formatCurrency(booking.amountPaid)}</div>
+                    <div className="text-xs text-gray-600">Total Paid</div>
+                    <div className="font-medium text-gray-900 text-sm">{formatCurrency(booking.amountPaid)}</div>
                   </div>
                 </div>
               </div>
@@ -277,13 +227,13 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
 
             {/* Warnings */}
             {showWarnings.length > 0 && (
-              <div className="p-4 border-b border-gray-100">
-                <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="p-3 border-b border-gray-200">
+                <div className="bg-yellow-50 border border-yellow-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-yellow-800">Attention Required</h4>
-                      <ul className="mt-2 text-sm text-yellow-700 space-y-1">
+                      <h4 className="font-semibold text-yellow-800 text-sm">Attention Required</h4>
+                      <ul className="mt-1 text-xs text-yellow-700 space-y-1">
                         {showWarnings.map((warning, index) => (
                           <li key={index}>• {warning}</li>
                         ))}
@@ -296,13 +246,13 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
 
             {/* Check-out Status */}
             {!canCheckOut && (
-              <div className="p-4 border-b border-gray-100">
-                <div className="bg-red-50 border border-red-100 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
+              <div className="p-3 border-b border-gray-200">
+                <div className="bg-red-50 border border-red-200 p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
                     <div>
-                      <h4 className="font-semibold text-red-800">Cannot Check-out</h4>
-                      <p className="text-sm text-red-700 mt-1">
+                      <h4 className="font-semibold text-red-800 text-sm">Cannot Check-out</h4>
+                      <p className="text-xs text-red-700 mt-1">
                         {booking.status === BookingStatus.PENDING && 'Student is not checked in'}
                         {booking.status === BookingStatus.CONFIRMED && 'Student is not checked in'}
                         {booking.status === BookingStatus.CHECKED_OUT && 'Student is already checked out'}
@@ -315,11 +265,11 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Actual Check-out Time */}
               <div>
                 <label htmlFor="actualCheckOutTime" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="inline h-4 w-4 mr-2" />
+                  <Clock className="inline h-3 w-3 mr-2" />
                   Actual Check-out Time
                 </label>
                 <input
@@ -327,17 +277,17 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                   id="actualCheckOutTime"
                   value={formData.actualCheckOutTime}
                   onChange={(e) => setFormData(prev => ({ ...prev, actualCheckOutTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   disabled={isProcessing}
                 />
               </div>
 
               {/* Room Condition */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Room Condition Assessment
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[
                     { value: 'excellent', label: 'Excellent', color: 'green' },
                     { value: 'good', label: 'Good', color: 'blue' },
@@ -349,10 +299,10 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                       type="button"
                       onClick={() => handleRoomConditionChange(condition.value)}
                       disabled={isProcessing}
-                      className={`p-3 text-sm border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`p-2 text-xs border transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                         formData.roomCondition === condition.value
                           ? `border-${condition.color}-500 bg-${condition.color}-50 text-${condition.color}-700`
-                          : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                          : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50 bg-white'
                       }`}
                     >
                       {condition.label}
@@ -368,7 +318,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                   id="keyReturned"
                   checked={formData.keyReturned}
                   onChange={(e) => setFormData(prev => ({ ...prev, keyReturned: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 disabled:opacity-50"
                   disabled={isProcessing}
                 />
                 <label htmlFor="keyReturned" className="text-sm font-medium text-gray-700">
@@ -378,9 +328,9 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
 
               {/* Damage Assessment */}
               {showDamageSection && (
-                <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 space-y-4">
-                  <h4 className="font-semibold text-orange-900 flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
+                <div className="bg-orange-50 border border-orange-200 p-3 space-y-3">
+                  <h4 className="font-semibold text-orange-900 flex items-center gap-2 text-sm">
+                    <AlertCircle className="h-3 w-3" />
                     Damage Assessment
                   </h4>
                   <div>
@@ -392,18 +342,18 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                       rows={3}
                       value={formData.damageNotes}
                       onChange={(e) => setFormData(prev => ({ ...prev, damageNotes: e.target.value }))}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 border border-orange-300 focus:outline-none focus:border-orange-500 bg-orange-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                       placeholder="Detail any damages, missing items, or cleanliness issues..."
                       disabled={isProcessing}
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="cleaningFee" className="block text-sm font-medium text-orange-700 mb-2">
                         Cleaning Fee (if applicable)
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <DollarSign className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
                         <input
                           type="number"
                           id="cleaningFee"
@@ -414,7 +364,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                             setFormData(prev => ({ ...prev, cleaningFee: parseFloat(e.target.value) || 0 }));
                             setErrors(prev => ({ ...prev, cleaningFee: undefined }));
                           }}
-                          className={`pl-10 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`pl-7 w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-orange-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
                             errors.cleaningFee ? 'border-red-300' : 'border-orange-300'
                           }`}
                           placeholder="0.00"
@@ -422,8 +372,8 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                         />
                       </div>
                       {errors.cleaningFee && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                          <AlertCircle className="h-4 w-4" />
+                        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
                           {errors.cleaningFee}
                         </p>
                       )}
@@ -433,7 +383,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                         Deposit Refund Amount
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <DollarSign className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
                         <input
                           type="number"
                           id="depositRefund"
@@ -444,7 +394,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                             setFormData(prev => ({ ...prev, depositRefund: parseFloat(e.target.value) || 0 }));
                             setErrors(prev => ({ ...prev, depositRefund: undefined }));
                           }}
-                          className={`pl-10 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          className={`pl-7 w-full px-3 py-2 border focus:outline-none focus:border-orange-500 bg-orange-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 ${
                             errors.depositRefund ? 'border-red-300' : 'border-orange-300'
                           }`}
                           placeholder="0.00"
@@ -452,8 +402,8 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                         />
                       </div>
                       {errors.depositRefund && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                          <AlertCircle className="h-4 w-4" />
+                        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
                           {errors.depositRefund}
                         </p>
                       )}
@@ -463,12 +413,12 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
               )}
 
               {/* Check-out Checklist */}
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
+              <div className="bg-blue-50 border border-blue-200 p-3">
+                <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-3 w-3" />
                   Check-out Checklist
                 </h4>
-                <div className="space-y-2 text-sm text-blue-700">
+                <div className="space-y-2 text-xs text-blue-700">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -480,7 +430,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                           checklist: { ...prev.checklist!, personalItemsRemoved: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="personal-items">All personal items removed</label>
@@ -496,7 +446,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                           checklist: { ...prev.checklist!, roomCleaned: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="room-cleaned">Room cleaned and inspected</label>
@@ -512,7 +462,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                           checklist: { ...prev.checklist!, utilitiesChecked: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="utilities-checked">All utilities turned off</label>
@@ -528,7 +478,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                           checklist: { ...prev.checklist!, damagesNoted: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="damages-noted">Any damages documented</label>
@@ -544,7 +494,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                           checklist: { ...prev.checklist!, forwardingAddressObtained: e.target.checked },
                         }))
                       }
-                      className="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                       disabled={isProcessing}
                     />
                     <label htmlFor="contact-info">Forwarding address obtained</label>
@@ -562,7 +512,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                   rows={3}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   placeholder="Optional notes about the check-out process..."
                   disabled={isProcessing}
                 />
@@ -570,12 +520,12 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
 
               {/* Financial Summary */}
               {((formData.cleaningFee ?? 0) > 0 || (formData.depositRefund ?? 0) > 0) && (
-                <div className="bg-gray-50 border border-gray-100 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
+                <div className="bg-gray-50 border border-gray-200 p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-sm">
+                    <DollarSign className="h-3 w-3" />
                     Financial Summary
                   </h4>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-2 text-xs">
                     {(formData.cleaningFee ?? 0) > 0 && (
                       <div className="flex justify-between">
                         <span className="text-red-600">Cleaning Fee:</span>
@@ -588,7 +538,7 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
                         <span className="font-medium text-green-600">+{formatCurrency(formData.depositRefund ?? 0)}</span>
                       </div>
                     )}
-                    <div className="border-t pt-2 flex justify-between font-medium">
+                    <div className="border-t border-gray-200 pt-2 flex justify-between font-medium">
                       <span>Net Amount:</span>
                       <span className={((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
                         {((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0)) >= 0 ? '+' : ''}{formatCurrency((formData.depositRefund ?? 0) - (formData.cleaningFee ?? 0))}
@@ -599,28 +549,28 @@ const CheckOutModal: React.FC<CheckOutModalProps> = ({
               )}
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
                   disabled={isProcessing}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                  className="px-3 py-2 text-xs font-medium text-white bg-orange-600 border border-transparent hover:bg-orange-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-150"
                   disabled={isProcessing || !canCheckOut || !formData.keyReturned}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       Checking Out...
                     </>
                   ) : (
                     <>
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className="h-3 w-3" />
                       Complete Check-out
                     </>
                   )}
