@@ -68,29 +68,8 @@ export default function VerificationStatusPage() {
   if (status === 'approved' || !user) {
     return (
       <div className="min-h-screen flex flex-col md:flex-row bg-white">
-        {/* Left Hero Section */}
-        <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
-          <span className="text-white font-bold text-xl">AllmapHostels</span>
-        </div>
-          
-          <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Welcome to AllmapHostels
-            </h1>
-            <p className="text-lg text-gray-300 mb-8 max-w-md">
-              Setting up your administrator dashboard...
-            </p>
-          </div>
-          
-          <div className="text-gray-500 text-sm">
-            © 2025 AllmapHostels. All rights reserved.
-          </div>
-        </div>
-
         {/* Loading Section */}
-        <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center items-center">
+        <div className="w-full p-6 md:p-12 flex flex-col justify-center items-center">
           <div className="w-full max-w-md text-center">
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 bg-[#FF6A00] flex items-center justify-center">
@@ -124,50 +103,8 @@ export default function VerificationStatusPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
-      {/* Left Hero Section */}
-      <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
-          <span className="text-white font-bold text-xl">AllmapHostels</span>
-        </div>
-        
-        <div className="flex-1 flex flex-col justify-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Verification Status
-          </h1>
-          <p className="text-lg text-gray-300 mb-8 max-w-md">
-            {status === 'loading' && 'Checking your administrator status...'}
-            {status === 'pending' && 'Your application is under review'}
-            {status === 'rejected' && 'Application review completed'}
-            {status === 'unverified' && 'Start your verification process'}
-          </p>
-          
-          <div className="space-y-4">
-            {[
-              "Secure admin dashboard access",
-              "Manage hostel listings worldwide",
-              "Real-time booking management",
-              "Advanced reporting tools"
-            ].map((text, i) => (
-              <div key={i} className="flex items-center">
-                <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span className="text-gray-300">{text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="text-gray-500 text-sm">
-          © 2025 AllmapHostels. All rights reserved.
-        </div>
-      </div>
-
       {/* Status Content Section */}
-      <div className="w-full md:w-1/2 bg-white p-6 md:p-12 flex flex-col justify-center items-center">
+      <div className="w-full bg-white p-6 md:p-12 flex flex-col justify-center items-center">
         <div className="w-full max-w-md">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}

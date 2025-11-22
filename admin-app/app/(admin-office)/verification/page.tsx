@@ -269,48 +269,8 @@ export default function AdminVerification() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
-      {/* Left Hero Section */}
-      <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
-          <span className="text-white font-bold text-xl">AllmapHostels</span>
-        </div>
-        
-        <div className="flex-1 flex flex-col justify-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Admin Verification
-          </h1>
-          <p className="text-lg text-gray-300 mb-8 max-w-md">
-            Complete your verification to access the full administrator dashboard and manage your hostels.
-          </p>
-          
-          <div className="space-y-4">
-            {[
-              "Full dashboard access",
-              "Manage multiple hostels",
-              "Real-time booking system",
-              "Advanced reporting tools",
-              "24/7 customer support"
-            ].map((text, i) => (
-              <div key={i} className="flex items-center">
-                <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center ">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span className="text-gray-300">{text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="text-gray-500 text-sm">
-          © 2025 AllmapHostels. All rights reserved.
-        </div>
-      </div>
-
       {/* Verification Form Section */}
-      <div className="w-full md:w-1/2 bg-white p-6 md:p-12 overflow-y-auto">
+      <div className="w-full bg-white p-6 md:p-12 overflow-y-auto">
         <FormProvider {...methods}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

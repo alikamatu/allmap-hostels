@@ -203,49 +203,8 @@ function VerifyEmailContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-4xl flex flex-col md:flex-row bg-white border border-gray-200 overflow-hidden">
-        {/* Left Hero Section */}
-        <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
-          <span className="text-white font-bold text-xl">AllmapHostels</span>
-        </div>
-          
-          <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Email Verification
-            </h1>
-            <p className="text-lg text-gray-300 mb-8 max-w-md">
-              {verification.status === 'loading' && 'We\'re confirming your email address...'}
-              {verification.status === 'success' && 'Welcome to the AllmapHostels community!'}
-              {verification.status !== 'success' && verification.status !== 'loading' && 'Let\'s get you verified and ready to explore.'}
-            </p>
-            
-            <div className="space-y-4">
-              {[
-                "Access hostels worldwide",
-                "Secure booking system", 
-                "Exclusive member benefits",
-                "24/7 customer support"
-              ].map((text, i) => (
-                <div key={i} className="flex items-center">
-                  <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                  </div>
-                  <span className="text-gray-300">{text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="text-gray-500 text-sm">
-            © 2025 AllmapHostels. All rights reserved.
-          </div>
-        </div>
-
         {/* Verification Content */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+        <div className="w-full p-8 md:p-12 flex flex-col justify-center">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -371,29 +330,8 @@ export default function VerifyEmail() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="w-full max-w-4xl flex flex-col md:flex-row bg-white border border-gray-200 overflow-hidden">
-          {/* Left Hero Section */}
-          <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
-          <span className="text-white font-bold text-xl">AllmapHostels</span>
-        </div>
-            
-            <div className="flex-1 flex flex-col justify-center">
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Email Verification
-              </h1>
-              <p className="text-lg text-gray-300 mb-8 max-w-md">
-                We are confirming your email address...
-              </p>
-            </div>
-            
-            <div className="text-gray-500 text-sm">
-              © 2025 AllmapHostels. All rights reserved.
-            </div>
-          </div>
-
           {/* Loading State */}
-          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center items-center">
+          <div className="w-full p-8 md:p-12 flex flex-col justify-center items-center">
             <div className="text-center">
               <div className="flex justify-center mb-6">
                 <div className="p-4 bg-blue-50">
