@@ -187,7 +187,7 @@ export const Authentication: React.FC = () => {
           {activeTab === 'login' && error?.includes('verify your email') && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
-                <strong>Didn't receive the verification email?</strong>{' '}
+                <strong>Did not receive the verification email?</strong>{' '}
                 Check your spam folder or{' '}
                 <button
                   type="button"

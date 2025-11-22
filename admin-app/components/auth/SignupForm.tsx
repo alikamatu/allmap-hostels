@@ -137,7 +137,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({
       {formData.role === 'student' && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-700">
-            <strong>Student Account:</strong> You'll need to complete your profile setup after verification, including school information and emergency contacts.
+            <strong>Student Account:</strong> You will need to complete your profile setup after verification, including school information and emergency contacts.
           </p>
         </div>
       )}
