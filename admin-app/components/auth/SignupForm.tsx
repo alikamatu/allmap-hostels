@@ -1,3 +1,6 @@
+// SignupForm.tsx - Add this after the password fields in renderStep2()
+"use client";
+
 import { motion } from 'framer-motion';
 import { FiArrowRight } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
@@ -58,11 +61,12 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         label="Phone Number"
         type="tel"
         icon="phone"
+        maxLength={10}
         value={formData.phone || ''}
         onChange={(e) => onFormDataChange({ phone: e.target.value })}
         placeholder="+1 (555) 123-4567"
       />
-      
+
       <button
         type="submit"
         className="w-full py-3 px-4 bg-[#FF6A00] text-white font-medium hover:bg-[#E55E00] flex items-center justify-center"
@@ -99,6 +103,44 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         required
         error={formData.confirmPassword && formData.password !== formData.confirmPassword ? "Passwords do not match" : undefined}
       />
+
+      {/* Terms and Conditions Checkbox */}
+      <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+        <input
+          type="checkbox"
+          id="acceptTerms"
+          checked={formData.acceptTerms || false}
+          onChange={(e) => onFormDataChange({ acceptTerms: e.target.checked })}
+          className="mt-1 rounded border-gray-300 text-[#FF6A00] focus:ring-[#FF6A00]"
+          required
+        />
+        <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+          I agree to the{' '}
+          <a 
+            href="/terms" 
+            target="_blank" 
+            className="text-[#FF6A00] hover:underline font-medium"
+          >
+            Terms and Conditions
+          </a>{' '}
+          and{' '}
+          <a 
+            href="/privacy" 
+            target="_blank" 
+            className="text-[#FF6A00] hover:underline font-medium"
+          >
+            Privacy Policy
+          </a>
+        </label>
+      </div>
+
+      {formData.role === 'student' && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            <strong>Student Account:</strong> You'll need to complete your profile setup after verification, including school information and emergency contacts.
+          </p>
+        </div>
+      )}
       
       <div className="flex space-x-3">
         <button
@@ -110,9 +152,9 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !formData.acceptTerms}
           className={`flex-1 py-3 px-4 text-white font-medium flex items-center justify-center ${
-            loading
+            loading || !formData.acceptTerms
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-[#FF6A00] hover:bg-[#E55E00]'
           }`}
@@ -120,10 +162,10 @@ export const SignupForm: React.FC<SignupFormProps> = ({
           {loading ? (
             <>
               <FaSpinner className="animate-spin mr-3" />
-              Creating Account...
+              {formData.role === 'student' ? 'Creating Student Account...' : 'Creating Account...'}
             </>
           ) : (
-            'Create Account'
+            formData.role === 'student' ? 'Create Student Account' : 'Create Account'
           )}
         </button>
       </div>
@@ -142,11 +184,14 @@ export const SignupForm: React.FC<SignupFormProps> = ({
         {step === 1 ? 'Create Your Account' : 'Set Your Password'}
       </h2>
       <p className="text-gray-600 mb-6">
-        {step === 1 ? 'Join thousands of travelers worldwide' : 'Create a secure password for your account'}
+        {step === 1 
+          ? 'Join thousands of travelers worldwide' 
+          : 'Create a secure password for your account'
+        }
       </p>
       
       {error && (
-        <div className="bg-red-50 text-red-700 p-3">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">
           {error}
         </div>
       )}

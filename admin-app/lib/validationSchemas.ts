@@ -1,16 +1,17 @@
 import { z } from 'zod';
 
-export const phoneRegex = /^\+?[1-9]\d{1,14}$/; // E.164 format
-
 export const adminVerificationSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  mobileNumber: z.string().regex(phoneRegex, "Invalid phone number format"),
-  alternatePhone: z.string().regex(phoneRegex, "Invalid phone number format").optional(),
-  idType: z.enum(['RG', 'National ID', 'Driver License', 'Passport', 'Other']),
-  idNumber: z.string().min(4, "ID number must be at least 4 characters"),
-  hostelProofType: z.enum(['Lease Agreement', 'Utility Bill', 'Property Deed', 'Other']),
-  termsAccepted: z.boolean().refine(val => val, "You must accept terms and conditions")
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  mobileNumber: z.string().min(1, 'Mobile number is required'),
+  alternatePhone: z.string().optional(),
+  idType: z.string().min(1, 'ID type is required'),
+  otherIdType: z.string().optional(),
+  idNumber: z.string().min(1, 'ID number is required'),
+  hostelProofType: z.string().min(1, 'Hostel proof type is required'),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: 'You must accept the terms and conditions'
+  })
 });
 
 export type AdminVerificationFormData = z.infer<typeof adminVerificationSchema>;

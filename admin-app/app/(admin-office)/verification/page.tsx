@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
 import { FiCheck, FiUpload, FiFile, FiHome, FiArrowRight } from 'react-icons/fi';
@@ -10,9 +10,9 @@ import { adminVerificationSchema, AdminVerificationFormData } from '@/lib/valida
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Reusable Form Components
-const FormInput = ({ name, label, placeholder, required = false, ...props }: any) => {
-  const { register, formState: { errors } } = useForm();
+// Fixed FormInput component using useFormContext
+const FormInput = ({ name, label, placeholder, required = false, type = 'text', ...props }: any) => {
+  const { register, formState: { errors } } = useFormContext();
   
   return (
     <div>
@@ -20,10 +20,11 @@ const FormInput = ({ name, label, placeholder, required = false, ...props }: any
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
+        type={type}
         {...register(name)}
         {...props}
         placeholder={placeholder}
-        className="w-full py-3 px-4 bg-white border border-gray-300 focus:outline-none focus:border-[#FF6A00]"
+        className="w-full py-3 px-4 bg-white border border-gray-300  focus:outline-none focus:ring-2 focus:ring-[#FF6A00] focus:border-transparent"
       />
       {errors[name] && (
         <p className="mt-1 text-sm text-red-600">{errors[name]?.message as string}</p>
@@ -32,8 +33,9 @@ const FormInput = ({ name, label, placeholder, required = false, ...props }: any
   );
 };
 
+// Fixed FormSelect component using useFormContext
 const FormSelect = ({ name, label, options, required = false }: any) => {
-  const { register, formState: { errors }, watch } = useForm();
+  const { register, formState: { errors } } = useFormContext();
   
   return (
     <div>
@@ -42,7 +44,7 @@ const FormSelect = ({ name, label, options, required = false }: any) => {
       </label>
       <select
         {...register(name)}
-        className="w-full py-3 px-4 bg-white border border-gray-300 focus:outline-none focus:border-[#FF6A00]"
+        className="w-full py-3 px-4 bg-white border border-gray-300  focus:outline-none focus:ring-2 focus:ring-[#FF6A00] focus:border-transparent"
       >
         <option value="">Select {label}</option>
         {options.map((option: any) => (
@@ -58,6 +60,7 @@ const FormSelect = ({ name, label, options, required = false }: any) => {
   );
 };
 
+// FileUploader component (keep as is)
 const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesChange }: any) => {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -107,7 +110,7 @@ const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesCh
       </label>
       
       <div
-        className={`border-2 border-dashed p-6 text-center transition-colors ${
+        className={`border-2 border-dashed  p-6 text-center transition-colors ${
           dragActive ? 'border-[#FF6A00] bg-orange-50' : 'border-gray-300'
         }`}
         onDragEnter={handleDrag}
@@ -132,7 +135,7 @@ const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesCh
         />
         <label
           htmlFor="file-upload"
-          className="inline-flex items-center px-4 py-2 bg-[#FF6A00] text-white text-sm font-medium hover:bg-[#E55E00] cursor-pointer"
+          className="inline-flex items-center px-4 py-2 bg-[#FF6A00] text-white text-sm font-medium  hover:bg-[#E55E00] cursor-pointer transition-colors"
         >
           <FiUpload className="mr-2" />
           Choose Files
@@ -143,7 +146,7 @@ const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesCh
       {files.length > 0 && (
         <div className="mt-4 space-y-2">
           {files.map((file, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200">
+            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 ">
               <div className="flex items-center">
                 <FiFile className="text-gray-400 mr-3" />
                 <span className="text-sm text-gray-700">{file.name}</span>
@@ -154,7 +157,7 @@ const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesCh
               <button
                 type="button"
                 onClick={() => removeFile(index)}
-                className="text-gray-400 hover:text-red-500"
+                className="text-gray-400 hover:text-red-500 text-lg font-bold"
               >
                 ×
               </button>
@@ -174,10 +177,14 @@ export default function AdminVerification() {
 
   const methods = useForm<AdminVerificationFormData>({
     resolver: zodResolver(adminVerificationSchema),
-    defaultValues: { termsAccepted: false }
+    defaultValues: { 
+      termsAccepted: false,
+      idType: '',
+      hostelProofType: ''
+    }
   });
 
-  const { register, handleSubmit, formState: { errors }, watch } = methods;
+  const { handleSubmit, formState: { errors }, watch } = methods;
 
   const handleIdFilesChange = (files: File[]) => {
     setIdFiles(files);
@@ -188,16 +195,23 @@ export default function AdminVerification() {
   };
 
   const onSubmit = async (data: AdminVerificationFormData) => {
+    console.log('Form submitted with data:', data);
+    console.log('ID files:', idFiles);
+    console.log('Hostel proof files:', hostelProofFiles);
+    
     try {
       setIsSubmitting(true);
       
       const formData = new FormData();
+      
+      // Append form data
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'idFiles' && key !== 'hostelProofFiles') {
-          formData.append(key, value?.toString() ?? '');
+        if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
         }
       });
 
+      // Append files
       idFiles.forEach(file => {
         formData.append('idDocuments', file);
       });
@@ -207,18 +221,27 @@ export default function AdminVerification() {
       });
 
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-
+      
+      console.log('Sending request to:', `${process.env.NEXT_PUBLIC_API_URL}/admin/verification`);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/verification`, {
         method: 'POST',
         body: formData,
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Verification request failed');
+        const errorText = await response.text();
+        console.error('Server response error:', errorText);
+        throw new Error(`Verification request failed: ${response.status} ${response.statusText}`);
       }
 
-      Swal.fire({
+      const result = await response.json();
+      console.log('Success response:', result);
+
+      await Swal.fire({
         title: 'Submitted!',
         text: 'Your verification request has been sent to the super admin',
         icon: 'success',
@@ -227,25 +250,30 @@ export default function AdminVerification() {
 
       router.push('/verification-status');
     } catch (error) {
-      Swal.fire({
+      console.error('Submission error:', error);
+      await Swal.fire({
         title: 'Error!',
-        text: 'There was a problem submitting your verification request',
+        text: error instanceof Error ? error.message : 'There was a problem submitting your verification request',
         icon: 'error',
         confirmButtonText: 'Try Again'
       });
-      console.error('Submission error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Debug logging
+  const watchedValues = watch();
+  console.log('Current form values:', watchedValues);
+  console.log('Form errors:', errors);
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
       {/* Left Hero Section */}
       <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-center mb-8">
-          <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
-          <span className="text-white font-bold text-xl">HostelHub</span>
+        <div className="flex items-end">
+          <img src="/logo/logo.png" className='w-12' alt="" />
+          <span className="text-white font-bold text-xl">AllmapHostels</span>
         </div>
         
         <div className="flex-1 flex flex-col justify-center">
@@ -265,7 +293,7 @@ export default function AdminVerification() {
               "24/7 customer support"
             ].map((text, i) => (
               <div key={i} className="flex items-center">
-                <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center">
+                <div className="w-5 h-5 bg-[#FF6A00] mr-3 flex items-center justify-center ">
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
                   </svg>
@@ -277,7 +305,7 @@ export default function AdminVerification() {
         </div>
         
         <div className="text-gray-500 text-sm">
-          © 2025 HostelHub. All rights reserved.
+          © 2025 AllmapHostels. All rights reserved.
         </div>
       </div>
 
@@ -317,12 +345,14 @@ export default function AdminVerification() {
                     name="mobileNumber" 
                     label="Mobile Number" 
                     placeholder="+1234567890" 
+                    type="tel"
                     required 
                   />
                   <FormInput 
                     name="alternatePhone" 
                     label="Alternate Phone" 
                     placeholder="+0987654321" 
+                    type="tel"
                   />
                 </div>
               </div>
@@ -345,7 +375,7 @@ export default function AdminVerification() {
                     required
                   />
                   
-                  {watch('idType') === 'Other' && (
+                  {watchedValues.idType === 'Other' && (
                     <FormInput
                       name="otherIdType"
                       label="Specify ID Type"
@@ -406,20 +436,18 @@ export default function AdminVerification() {
               </div>
 
               {/* Terms and Conditions */}
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="terms"
-                    type="checkbox"
-                    {...register('termsAccepted')}
-                    className="w-4 h-4 text-[#FF6A00] border-gray-300 focus:ring-[#FF6A00]"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
+              <div className="flex items-start space-x-3 p-4 bg-gray-50 ">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  {...methods.register('termsAccepted')}
+                  className="w-4 h-4 text-[#FF6A00] border-gray-300  focus:ring-[#FF6A00] mt-1"
+                />
+                <div className="text-sm">
                   <label htmlFor="terms" className="font-medium text-gray-700">
                     I agree to the terms and conditions
                   </label>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mt-1">
                     By submitting this form, I confirm that all information provided is accurate and complete.
                   </p>
                   {errors.termsAccepted && (
@@ -429,7 +457,6 @@ export default function AdminVerification() {
                   )}
                 </div>
               </div>
-
               {/* Action Buttons */}
               <div className="flex flex-col gap-4 pt-6">
                 <motion.button
@@ -437,7 +464,7 @@ export default function AdminVerification() {
                   disabled={isSubmitting}
                   whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
                   whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-                  className={`flex items-center justify-center gap-2 py-3 px-6 text-white font-medium ${
+                  className={`flex items-center justify-center gap-2 py-3 px-6 text-white font-medium  transition-colors ${
                     isSubmitting
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-[#FF6A00] hover:bg-[#E55E00]'
@@ -461,7 +488,7 @@ export default function AdminVerification() {
                   onClick={() => router.push('/')}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 py-3 px-6 font-medium transition-colors "
                 >
                   <FiHome />
                   Back to Home

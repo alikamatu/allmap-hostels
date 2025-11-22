@@ -146,9 +146,9 @@ function ResetPasswordContent() {
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
       {/* Left Hero Section */}
       <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-        <div className="flex items-center mb-8">
-          <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
-          <span className="text-white font-bold text-xl">HostelHub</span>
+        <div className="flex items-end">
+          <img src="/logo/logo.png" className='w-12' alt="" />
+          <span className="text-white font-bold text-xl">AllmapHostels</span>
         </div>
         
         <div className="flex-1 flex flex-col justify-center">
@@ -179,7 +179,7 @@ function ResetPasswordContent() {
         </div>
         
         <div className="text-gray-500 text-sm">
-          © 2025 HostelHub. All rights reserved.
+          © 2025 AllmapHostels. All rights reserved.
         </div>
       </div>
 
@@ -413,10 +413,10 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex flex-col md:flex-row bg-white">
         {/* Left Hero Section */}
         <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 flex flex-col justify-between">
-          <div className="flex items-center mb-8">
-            <div className="w-8 h-8 bg-[#FF6A00] mr-2"></div>
-            <span className="text-white font-bold text-xl">HostelHub</span>
-          </div>
+        <div className="flex items-end">
+          <img src="/logo/logo.png" className='w-12' alt="" />
+          <span className="text-white font-bold text-xl">AllmapHostels</span>
+        </div>
           
           <div className="flex-1 flex flex-col justify-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">
@@ -428,7 +428,7 @@ export default function ResetPasswordPage() {
           </div>
           
           <div className="text-gray-500 text-sm">
-            © 2025 HostelHub. All rights reserved.
+            © 2025 AllmapHostels. All rights reserved.
           </div>
         </div>
 
