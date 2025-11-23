@@ -345,6 +345,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         }],
         paymentReference: `deposit_booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         bookingFeeAmount: BOOKING_FEE,
+        depositAmount: 0,
       };
 
       console.log('📝 Creating booking with data:', bookingData);
