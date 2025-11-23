@@ -90,6 +90,37 @@ export default function HostelManagementPage() {
     }
   }, []);
 
+  const toggleBookingStatus = async (hostelId: string, currentStatus: boolean) => {
+    const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/${hostelId}/booking-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({ acceptingBookings: !currentStatus })
+      });
+
+      if (response.ok) {
+        // Update local state optimistically
+        setHostels(prev => prev.map(hostel => 
+          hostel.id === hostelId 
+            ? { ...hostel, accepting_bookings: !currentStatus }
+            : hostel
+        ));
+      } else {
+        console.error('Failed to update booking status');
+        // Revert optimistic update on error
+        fetchHostels();
+      }
+    } catch (err) {
+      console.error('Error updating booking status:', err);
+      // Revert optimistic update on error
+      fetchHostels();
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
   }, [fetchUserProfile]);
@@ -237,7 +268,7 @@ export default function HostelManagementPage() {
                   index={index}
                   onEdit={handleEditHostel}
                   onDelete={() => {}}
-                  onToggleBooking={() => {}}
+                  onToggleBooking={toggleBookingStatus}
                   userProfile={userProfile}
                 />
               ))}
@@ -253,18 +284,20 @@ const HostelCard = ({
   hostel,
   index,
   onEdit,
+  onToggleBooking,
   userProfile,
 }: {
   hostel: Hostel;
   index: number;
   onEdit: (id: string) => void;
   onDelete: () => void;
-  onToggleBooking: (currentStatus: boolean) => void;
+  onToggleBooking: (hostelId: string, currentStatus: boolean) => void;
   userProfile: UserProfile | null;
 }) => {
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
 
   const hasImages = hostel.images && hostel.images.length > 0;
   const acceptingBookings = hostel.accepting_bookings ?? true;
@@ -288,6 +321,15 @@ const HostelCard = ({
       setCurrentImageIndex((prev) => (prev - 1 + hostel.images.length) % hostel.images.length);
     }
   }, [hasImages, hostel.images.length]);
+
+  const handleToggleBooking = async () => {
+    setIsToggling(true);
+    try {
+      await onToggleBooking(hostel.id, acceptingBookings);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   return (
     <motion.div
@@ -382,7 +424,7 @@ const HostelCard = ({
         </div>
       </div>
 
-      {/* Status Bar */}
+      {/* Status Bar with Toggle Switch */}
       <div className={`px-3 py-1.5 text-xs font-medium ${
         acceptingBookings ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
       }`}>
@@ -400,20 +442,21 @@ const HostelCard = ({
               </>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            {hostel.capacity && (
-              <span className="flex items-center">
-                <Users className="h-3 w-3 mr-1" />
-                {hostel.capacity}
-              </span>
-            )}
-            {hostel.rooms && (
-              <span className="flex items-center">
-                <Bed className="h-3 w-3 mr-1" />
-                {hostel.rooms}
-              </span>
-            )}
-          </div>
+          
+          {/* Booking Status Toggle Switch */}
+          <button
+            onClick={handleToggleBooking}
+            disabled={isToggling}
+            className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors duration-200 ${
+              acceptingBookings ? 'bg-green-500' : 'bg-red-500'
+            } ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <span
+              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform duration-200 ${
+                acceptingBookings ? 'translate-x-3' : 'translate-x-0'
+              }`}
+            />
+          </button>
         </div>
       </div>
 

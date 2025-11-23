@@ -14,10 +14,14 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  gender?: string;
   is_verified: boolean;
   role: string;
-  gender: RoomGender;
   school_id: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_email?: string;
   school?: {
     id: string;
     name: string;

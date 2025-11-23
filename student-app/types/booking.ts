@@ -17,7 +17,7 @@ export enum PaymentStatus {
   PENDING = 'pending',
   PARTIAL = 'partial',
   PAID = 'paid',
-  REFUNDED = 'refunded',
+  CANCELLED = 'cancelled',
   OVERDUE = 'overdue',
 }
 
@@ -140,6 +140,8 @@ export interface Booking {
   studentEmail: string;
   studentPhone: string;
   bookingType: BookingType;
+  hasReview: boolean;
+  autoCancelAt?: string;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   checkInDate: string;
@@ -158,6 +160,12 @@ export interface Booking {
   cancellationReason?: string;
   createdAt: string;
   updatedAt: string;
+    paymentRequirements?: {
+      minimumRequired: number;
+      meetsRequirement: boolean;
+      daysUntilAutoCancel: number;
+      requirementDescription: string;
+    };
   hostel?: {
     id: string;
     name: string;
@@ -181,7 +189,10 @@ export interface BookingFormData {
   checkOutDate: string;
   bookingType: BookingType;
   specialRequests?: string;
-  emergencyContacts?: EmergencyContact[];
+  emergencyContactName: string;
+  emergencyContactRelationship: string;
+  emergencyContactPhone: string;
+  emergencyContactEmail?: string;
 }
 
 export interface BookingCalculation {

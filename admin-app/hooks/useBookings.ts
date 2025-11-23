@@ -23,10 +23,15 @@ interface BookingStats {
   checkedIn: number;
   checkedOut: number;
   cancelled: number;
+  noShow?: number;
   totalRevenue: number;
   paidRevenue: number;
   pendingRevenue: number;
+  bookingFeeRevenue?: number;
   occupancyRate: number;
+  byBookingType?: Record<string, number>;
+  byPaymentStatus?: Record<string, number>;
+  averageStayDuration?: number;
 }
 
 interface BookingResponse {
@@ -39,6 +44,22 @@ interface BookingResponse {
   };
 }
 
+const DEFAULT_STATS: BookingStats = {
+  total: 0,
+  pending: 0,
+  confirmed: 0,
+  checkedIn: 0,
+  checkedOut: 0,
+  cancelled: 0,
+  noShow: 0,
+  totalRevenue: 0,
+  paidRevenue: 0,
+  pendingRevenue: 0,
+  bookingFeeRevenue: 0,
+  occupancyRate: 0,
+  averageStayDuration: 0,
+};
+
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,25 +68,13 @@ export const useBookings = () => {
     page: 1,
     totalPages: 1,
     total: 0,
-    limit: 20
+    limit: 20,
   });
-const [stats, setStats] = useState({
-  total: 0,
-  pending: 0,
-  confirmed: 0,
-  checkedIn: 0,
-  checkedOut: 0,
-  cancelled: 0,
-  totalRevenue: 0,
-  paidRevenue: 0,
-  pendingRevenue: 0,
-  occupancyRate: 0
-});
+  const [stats, setStats] = useState<BookingStats>(DEFAULT_STATS);
 
   const getAuthToken = () => {
     return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
   };
-
 
   const makeApiRequest = async (url: string, options: RequestInit = {}) => {
     const token = getAuthToken();
@@ -90,105 +99,91 @@ const [stats, setStats] = useState({
     return response.json();
   };
 
-  const fetchBookings = useCallback(async (filters: BookingFilters = {}): Promise<BookingResponse> => {
-    setLoading(true);
-    setError(null);
+  const fetchBookings = useCallback(
+    async (filters: BookingFilters = {}): Promise<BookingResponse> => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const params = new URLSearchParams();
-      
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-          params.append(key, value.toString());
-        }
-      });
+      try {
+        const params = new URLSearchParams();
 
-      const data = await makeApiRequest(`/bookings?${params.toString()}`);
-      
-      setBookings(data.bookings || []);
-      setPagination(data.pagination || { page: 1, totalPages: 1, total: 0, limit: 20 });
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch bookings';
-      setError(errorMessage);
-      console.error('Error fetching bookings:', err);
-      return { bookings: [], pagination: { page: 1, totalPages: 1, total: 0, limit: 20 } };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+            params.append(key, value.toString());
+          }
+        });
 
-  // Fixed fetchBookingStats function - removed dependency on stats to prevent infinite re-renders
-  const fetchBookingStats = useCallback(async (hostelId?: string) => {
-    try {
-      const params = hostelId ? `?hostelId=${hostelId}` : '';
-      const data = await makeApiRequest(`/bookings/statistics${params}`);
-      setStats(data);
-      return data;
-    } catch (err) {
-      console.error('Error fetching booking stats:', err);
-      // Return default stats instead of current stats to prevent infinite loop
-      const defaultStats: BookingStats = {
-        total: 0,
-        pending: 0,
-        confirmed: 0,
-        checkedIn: 0,
-        checkedOut: 0,
-        cancelled: 0,
-        totalRevenue: 0,
-        paidRevenue: 0,
-        pendingRevenue: 0,
-        occupancyRate: 0
-      };
-      return defaultStats;
-    }
-  }, []); // Removed stats dependency
+        const data = await makeApiRequest(`/bookings?${params.toString()}`);
 
-const fetchStats = async (hostelId?: string) => {
-  try {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    const url = hostelId 
-      ? `${API_BASE_URL}/bookings/statistics?hostelId=${hostelId}`
-      : `${API_BASE_URL}/bookings/statistics`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        setBookings(data.bookings || []);
+        setPagination(data.pagination || { page: 1, totalPages: 1, total: 0, limit: 20 });
+
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch bookings';
+        setError(errorMessage);
+        console.error('Error fetching bookings:', err);
+        return { bookings: [], pagination: { page: 1, totalPages: 1, total: 0, limit: 20 } };
+      } finally {
+        setLoading(false);
       }
-    });
-    
-    if (response.ok) {
-      const statsData = await response.json();
-      setStats(statsData);
-    }
-  } catch (error) {
-    console.error('Failed to fetch stats:', error);
-  }
-};
+    },
+    []
+  );
 
-  const createBooking = useCallback(async (bookingData: any): Promise<Booking> => {
-    setLoading(true);
+  // Unified stats fetching function - properly handles hostelId
+  const fetchStats = useCallback(async (hostelId?: string): Promise<BookingStats> => {
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const data = await makeApiRequest(`${process.env.NEXT_PUBLIC_API_URL}/bookings/admin-create`, {
-        method: 'POST',
-        body: JSON.stringify(bookingData),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      return data;
+      console.log('📊 Fetching stats for hostel:', hostelId);
+
+      const url = hostelId
+        ? `/bookings/statistics?hostelId=${hostelId}`
+        : '/bookings/statistics';
+
+      const data = await makeApiRequest(url);
+
+      console.log('✅ Stats fetched:', data);
+
+      // Merge with defaults to ensure all fields exist
+      const mergedStats: BookingStats = {
+        ...DEFAULT_STATS,
+        ...data,
+      };
+
+      setStats(mergedStats);
+      return mergedStats;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error('❌ Failed to fetch stats:', err);
+      // Return default stats instead of throwing
+      setStats(DEFAULT_STATS);
+      return DEFAULT_STATS;
     }
   }, []);
+
+  const createBooking = useCallback(
+    async (bookingData: any): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const token = getAuthToken();
+        const data = await makeApiRequest(`/bookings/admin-create`, {
+          method: 'POST',
+          body: JSON.stringify(bookingData),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        return data.booking || data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to create booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const updateBooking = useCallback(async (bookingId: string, updateData: any): Promise<Booking> => {
     setLoading(true);
@@ -197,11 +192,8 @@ const fetchStats = async (hostelId?: string) => {
         method: 'PUT',
         body: JSON.stringify(updateData),
       });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? data : booking
-      ));
+
+      setBookings(prev => prev.map(booking => (booking.id === bookingId ? data : booking)));
 
       return data;
     } catch (err) {
@@ -213,51 +205,63 @@ const fetchStats = async (hostelId?: string) => {
     }
   }, []);
 
-  const confirmBooking = useCallback(async (bookingId: string, confirmData: { notes?: string }): Promise<Booking> => {
-    setLoading(true);
-    try {
-      const data = await makeApiRequest(`/bookings/${bookingId}/confirm`, {
-        method: 'PATCH',
-        body: JSON.stringify(confirmData),
-      });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? { ...booking, status: BookingStatus.CONFIRMED, confirmedAt: new Date().toISOString() } : booking
-      ));
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to confirm booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const confirmBooking = useCallback(
+    async (bookingId: string, confirmData: { notes?: string }): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const data = await makeApiRequest(`/bookings/${bookingId}/confirm`, {
+          method: 'PATCH',
+          body: JSON.stringify(confirmData),
+        });
 
-  const cancelBooking = useCallback(async (bookingId: string, cancelData: { reason: string; notes?: string }): Promise<Booking> => {
-    setLoading(true);
-    try {
-      const data = await makeApiRequest(`/bookings/${bookingId}/cancel`, {
-        method: 'PATCH',
-        body: JSON.stringify(cancelData),
-      });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? { ...booking, status: BookingStatus.CANCELLED, cancelledAt: new Date().toISOString() } : booking
-      ));
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setBookings(prev =>
+          prev.map(booking =>
+            booking.id === bookingId
+              ? { ...booking, status: BookingStatus.CONFIRMED, confirmedAt: new Date().toISOString() }
+              : booking
+          )
+        );
+
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to confirm booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const cancelBooking = useCallback(
+    async (bookingId: string, cancelData: { reason: string; notes?: string }): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const data = await makeApiRequest(`/bookings/${bookingId}/cancel`, {
+          method: 'PATCH',
+          body: JSON.stringify(cancelData),
+        });
+
+        setBookings(prev =>
+          prev.map(booking =>
+            booking.id === bookingId
+              ? { ...booking, status: BookingStatus.CANCELLED, cancelledAt: new Date().toISOString() }
+              : booking
+          )
+        );
+
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to cancel booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const getBookingById = useCallback(async (bookingId: string): Promise<Booking> => {
     try {
@@ -265,8 +269,8 @@ const fetchStats = async (hostelId?: string) => {
       const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -281,79 +285,91 @@ const fetchStats = async (hostelId?: string) => {
     }
   }, []);
 
-  const checkInBooking = useCallback(async (bookingId: string, checkInData: { notes?: string, [key: string]: unknown }): Promise<Booking> => {
-    setLoading(true);
-    try {
-      const data = await makeApiRequest(`/bookings/${bookingId}/checkin`, {
-        method: 'PATCH',
-        body: JSON.stringify(checkInData),
-      });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? { ...booking, status: BookingStatus.CHECKED_IN, checkedInAt: new Date().toISOString() } : booking
-      ));
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to check in booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const checkInBooking = useCallback(
+    async (bookingId: string, checkInData: { notes?: string; [key: string]: unknown }): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const data = await makeApiRequest(`/bookings/${bookingId}/checkin`, {
+          method: 'PATCH',
+          body: JSON.stringify(checkInData),
+        });
 
-  const checkOutBooking = useCallback(async (bookingId: string, checkOutData: { notes?: string, [key: string]: unknown }): Promise<Booking> => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('access_token')
-      const data = await makeApiRequest(`/bookings/${bookingId}/checkout`, {
-        method: 'PATCH',
-        body: JSON.stringify(checkOutData),
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? { ...booking, status: BookingStatus.CHECKED_OUT, checkedOutAt: new Date().toISOString() } : booking
-      ));
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to check out booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setBookings(prev =>
+          prev.map(booking =>
+            booking.id === bookingId
+              ? { ...booking, status: BookingStatus.CHECKED_IN, checkedInAt: new Date().toISOString() }
+              : booking
+          )
+        );
 
-  const extendBooking = useCallback(async (bookingId: string, extendData: { newCheckOutDate: string; reason?: string }): Promise<Booking> => {
-    setLoading(true);
-    try {
-      const data = await makeApiRequest(`/bookings/${bookingId}/extend`, {
-        method: 'PATCH',
-        body: JSON.stringify(extendData),
-      });
-      
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId ? data : booking
-      ));
-      
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to extend booking';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to check in booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const checkOutBooking = useCallback(
+    async (bookingId: string, checkOutData: { notes?: string; [key: string]: unknown }): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const token = getAuthToken();
+        const data = await makeApiRequest(`/bookings/${bookingId}/checkout`, {
+          method: 'PATCH',
+          body: JSON.stringify(checkOutData),
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        setBookings(prev =>
+          prev.map(booking =>
+            booking.id === bookingId
+              ? { ...booking, status: BookingStatus.CHECKED_OUT, checkedOutAt: new Date().toISOString() }
+              : booking
+          )
+        );
+
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to check out booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const extendBooking = useCallback(
+    async (bookingId: string, extendData: { newCheckOutDate: string; reason?: string }): Promise<Booking> => {
+      setLoading(true);
+      try {
+        const data = await makeApiRequest(`/bookings/${bookingId}/extend`, {
+          method: 'PATCH',
+          body: JSON.stringify(extendData),
+        });
+
+        setBookings(prev => prev.map(booking => (booking.id === bookingId ? data : booking)));
+
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to extend booking';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const deleteBooking = useCallback(async (bookingId: string): Promise<void> => {
     setLoading(true);
@@ -361,8 +377,7 @@ const fetchStats = async (hostelId?: string) => {
       await makeApiRequest(`/bookings/${bookingId}`, {
         method: 'DELETE',
       });
-      
-      // Update local state
+
       setBookings(prev => prev.filter(booking => booking.id !== bookingId));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete booking';
@@ -373,64 +388,65 @@ const fetchStats = async (hostelId?: string) => {
     }
   }, []);
 
-  const searchBookings = useCallback(async (searchTerm: string, filters: BookingFilters = {}): Promise<Booking[]> => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append('q', searchTerm);
-      
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-          params.append(key, value.toString());
-        }
-      });
+  const searchBookings = useCallback(
+    async (searchTerm: string, filters: BookingFilters = {}): Promise<Booking[]> => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append('q', searchTerm);
 
-      const data = await makeApiRequest(`/bookings/search?${params.toString()}`);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to search bookings';
-      setError(errorMessage);
-      console.error('Error searching bookings:', err);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+            params.append(key, value.toString());
+          }
+        });
 
-  const generateReport = useCallback(async (reportFilters: {
-    hostelId?: string;
-    startDate?: string;
-    endDate?: string;
-    reportType?: 'bookings' | 'revenue' | 'occupancy' | 'payments';
-  }) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      
-      Object.entries(reportFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
+        const data = await makeApiRequest(`/bookings/search?${params.toString()}`);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to search bookings';
+        setError(errorMessage);
+        console.error('Error searching bookings:', err);
+        return [];
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-      const data = await makeApiRequest(`/bookings/reports?${params.toString()}`);
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate report';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const generateReport = useCallback(
+    async (reportFilters: {
+      hostelId?: string;
+      startDate?: string;
+      endDate?: string;
+      reportType?: 'bookings' | 'revenue' | 'occupancy' | 'payments';
+    }) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
 
-  // Fixed updateBookingInList function - properly defined with useCallback
+        Object.entries(reportFilters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            params.append(key, value.toString());
+          }
+        });
+
+        const data = await makeApiRequest(`/bookings/reports?${params.toString()}`);
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate report';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   const updateBookingInList = useCallback((updatedBooking: Booking) => {
-    setBookings(prev => 
-      prev.map(booking => 
-        booking.id === updatedBooking.id ? updatedBooking : booking
-      )
-    );
+    setBookings(prev => prev.map(booking => (booking.id === updatedBooking.id ? updatedBooking : booking)));
   }, []);
 
   return {
@@ -443,7 +459,7 @@ const fetchStats = async (hostelId?: string) => {
 
     // Actions
     fetchBookings,
-    fetchBookingStats,
+    fetchStats, // Single unified function
     createBooking,
     updateBooking,
     confirmBooking,
@@ -456,7 +472,6 @@ const fetchStats = async (hostelId?: string) => {
     generateReport,
     getBookingById,
     updateBookingInList,
-    fetchStats, // Added this to the return statement
 
     // Utilities
     setError,

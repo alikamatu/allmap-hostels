@@ -46,6 +46,13 @@ export interface BookingResponse {
   checkedOutAt?: string;
   cancelledAt?: string;
   cancellationReason?: string;
+    autoCancelAt?: string; // Add this property
+  paymentRequirements?: {
+    minimumRequired: number;
+    meetsRequirement: boolean;
+    daysUntilAutoCancel: number;
+    requirementDescription: string;
+  };
   emergencyContacts?: Array<{
     name: string;
     relationship: string;
@@ -162,10 +169,34 @@ class BookingService {
     return response.json();
   }
 
+   calculatePaymentRequirement(booking: BookingResponse) {
+    const minRequired = booking.totalAmount * 0.5; // 50% of semester fee
+    const daysUntilCancel = this.getDaysUntilAutoCancel(booking);
+    
+    return {
+      minimumRequired: minRequired,
+      meetsRequirement: booking.amountPaid >= minRequired,
+      daysUntilAutoCancel: daysUntilCancel,
+      requirementDescription: `At least 50% (GHS ${minRequired.toFixed(2)}) of the semester fee must be paid within 7 days to avoid automatic cancellation`
+    };
+  }
+
+  // Calculate days until auto-cancellation
+  private getDaysUntilAutoCancel(booking: BookingResponse): number {
+    if (!booking.autoCancelAt) return 7; // Default 7 days if not set
+    
+    const autoCancelDate = new Date(booking.autoCancelAt);
+    const now = new Date();
+    const diffTime = autoCancelDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  }
+
   // Create a new booking with enhanced error handling
   async createBooking(bookingData: CreateBookingRequest): Promise<BookingResponse> {
     try {
-      return await this.makeRequest<BookingResponse>('/bookings/create', {
+      return await this.makeRequest<BookingResponse>('/bookings/create-with-deposit-balance', {
         method: 'POST',
         body: JSON.stringify(bookingData),
       });
@@ -186,6 +217,28 @@ class BookingService {
       throw error;
     }
   }
+
+async createBookingWithDeposit(bookingData: any): Promise<BookingResponse> {
+  try {
+    const response = await this.makeRequest<BookingResponse>('/bookings/create-with-deposit', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...bookingData,
+        depositAmount: 70,
+        bookingFeeAmount: 70,
+        paymentReference: `deposit_${Date.now()}`,
+        paymentVerified: true,
+      }),
+    });
+    return response;
+  } catch (error: any) {
+    // If dedicated endpoint fails, try regular booking endpoint
+    if (error.message.includes('create-with-deposit')) {
+      return await this.createBooking(bookingData);
+    }
+    throw error;
+  }
+}
 
   // Check room availability for specific dates with enhanced filtering
   async checkRoomAvailability(
@@ -221,13 +274,24 @@ class BookingService {
 
   
 
-  // Get user's bookings with active booking detection
   async getUserBookings(studentId: string): Promise<BookingResponse[]> {
     try {
       const bookings = await this.makeRequest<BookingResponse[]>(`/bookings/student/${studentId}`);
       
-      // Sort bookings by creation date (newest first)
-      return bookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      // Add payment requirements to each booking
+      const bookingsWithRequirements = bookings.map(booking => {
+        if (booking.status === 'confirmed' || booking.status === 'pending') {
+          return {
+            ...booking,
+            paymentRequirements: this.calculatePaymentRequirement(booking)
+          };
+        }
+        return booking;
+      });
+      
+      return bookingsWithRequirements.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     } catch (error: any) {
       throw new Error(`Failed to fetch your bookings: ${error.message}`);
     }
@@ -255,8 +319,15 @@ class BookingService {
     }
   }
 
- async getBookingById(bookingId: string): Promise<BookingResponse> {
-    return this.makeRequest<BookingResponse>(`/bookings/${bookingId}`);
+  async getBookingById(bookingId: string): Promise<BookingResponse> {
+    const booking = await this.makeRequest<BookingResponse>(`/bookings/${bookingId}`);
+    
+    // Add payment requirements calculation
+    if (booking.status === 'confirmed' || booking.status === 'pending') {
+      booking.paymentRequirements = this.calculatePaymentRequirement(booking);
+    }
+    
+    return booking;
   }
 
   async updateBooking(

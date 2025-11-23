@@ -62,6 +62,7 @@ const BookingManagementPage: React.FC = () => {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
+  const [hasAutoSelectedHostel, setHasAutoSelectedHostel] = useState(false);
 
   // Modal states
   const [modals, setModals] = useState({
@@ -100,7 +101,7 @@ const BookingManagementPage: React.FC = () => {
     );
   }, []);
 
-  // Fetch hostels on mount
+  // Fetch hostels on mount and auto-select first hostel
   useEffect(() => {
     const fetchHostels = async () => {
       try {
@@ -115,6 +116,13 @@ const BookingManagementPage: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           setHostels(data);
+          
+          // Auto-select the first hostel if none is selected and we haven't auto-selected before
+          if (data.length > 0 && !filters.hostelId && !hasAutoSelectedHostel) {
+            console.log('🏢 Auto-selecting first hostel:', data[0].name);
+            setFilters(prev => ({ ...prev, hostelId: data[0].id }));
+            setHasAutoSelectedHostel(true);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch hostels:', error);
@@ -122,21 +130,27 @@ const BookingManagementPage: React.FC = () => {
     };
     
     fetchHostels();
-  }, []);
+  }, [filters.hostelId, hasAutoSelectedHostel]);
 
+  // Fetch stats when hostel ID changes
   useEffect(() => {
     const loadStats = async () => {
       try {
-        if (fetchStats) {
-          await fetchStats();
+        if (!filters.hostelId) {
+          console.log('⚠️ No hostel selected, skipping stats load');
+          return;
         }
+
+        console.log('📊 Fetching stats for hostel:', filters.hostelId);
+        const statsData = await fetchStats(filters.hostelId);
+        console.log('✅ Stats loaded:', statsData);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error('❌ Failed to fetch stats:', error);
       }
     };
 
     loadStats();
-  }, [fetchStats]);
+  }, [filters.hostelId, fetchStats]);
 
   // Fetch bookings when filters change
   useEffect(() => {
@@ -155,9 +169,17 @@ const BookingManagementPage: React.FC = () => {
     fetchBookings(filterParams);
   }, [filters, currentPage, pageSize, fetchBookings]);
 
-  // Handlers
   const handleFilterChange = useCallback((newFilters: Partial<BookingFiltersState>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters(prev => {
+      const updated = { ...prev, ...newFilters };
+      
+      // If hostel filter changed, we'll let the useEffect handle stats fetching
+      if (newFilters.hostelId && newFilters.hostelId !== prev.hostelId) {
+        console.log('🏢 Hostel changed to:', newFilters.hostelId);
+      }
+      
+      return updated;
+    });
     setCurrentPage(1);
   }, []);
 
@@ -222,7 +244,16 @@ const BookingManagementPage: React.FC = () => {
     try {
       const updatedBooking = await checkInBooking(bookingId, checkInData);
       setSelectedBooking(updatedBooking);
-      await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
+      
+      const filterParams = {
+        page: currentPage,
+        limit: pageSize,
+        ...filters,
+        ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
+        ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
+      };
+      await fetchBookings(filterParams);
+      
       closeModal('checkIn');
     } catch (error) {
       console.error('Check-in failed:', error);
@@ -244,6 +275,12 @@ const BookingManagementPage: React.FC = () => {
         ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
       };
       await fetchBookings(filterParams);
+      
+      // Refresh stats after checkout
+      if (filters.hostelId) {
+        console.log('📊 Refreshing stats after check-out');
+        await fetchStats(filters.hostelId);
+      }
       
     } catch (error) {
       console.error('Check-out failed:', error);
@@ -278,6 +315,12 @@ const BookingManagementPage: React.FC = () => {
         ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
       };
       await fetchBookings(filterParams);
+      
+      // Refresh stats after bulk action
+      if (filters.hostelId) {
+        console.log('📊 Refreshing stats after bulk action');
+        await fetchStats(filters.hostelId);
+      }
       
     } catch (error) {
       console.error('Bulk action failed:', error);
@@ -377,8 +420,8 @@ const BookingManagementPage: React.FC = () => {
             <div className="h-10 w-10 bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <MapPin className="h-5 w-5 text-gray-400" />
             </div>
-            <h3 className="text-sm font-medium text-gray-900 mb-1">Select a Hostel</h3>
-            <p className="text-xs text-gray-500">Please select a hostel from the filters above to view bookings.</p>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">Loading Hostels...</h3>
+            <p className="text-xs text-gray-500">Please wait while we load available hostels.</p>
           </div>
         ) : (
           /* Bookings List */
@@ -404,52 +447,66 @@ const BookingManagementPage: React.FC = () => {
         )}
 
         {/* Modals */}
-          {selectedBooking && (
-            <>
-              <BookingDetailsModal
-                isOpen={modals.details}
-                onClose={() => closeModal('details')}
-                booking={selectedBooking}
-                onPayment={() => openModal('payment', selectedBooking)}
-                onCheckIn={() => openModal('checkIn', selectedBooking)}
-                onCheckOut={() => openModal('checkOut', selectedBooking)}
-              />
+        {selectedBooking && (
+          <>
+            <BookingDetailsModal
+              isOpen={modals.details}
+              onClose={() => closeModal('details')}
+              booking={selectedBooking}
+              onPayment={() => openModal('payment', selectedBooking)}
+              onCheckIn={() => openModal('checkIn', selectedBooking)}
+              onCheckOut={() => openModal('checkOut', selectedBooking)}
+            />
 
-              <PaymentModal
-                isOpen={modals.payment}
-                onClose={() => closeModal('payment')}
-                booking={selectedBooking}
-                onSubmit={(paymentData) => handlePayment(selectedBooking.id, paymentData)}
-                loading={paymentLoading}
-              />
+            <PaymentModal
+              isOpen={modals.payment}
+              onClose={() => closeModal('payment')}
+              booking={selectedBooking}
+              onSubmit={(paymentData) => handlePayment(selectedBooking.id, paymentData)}
+              loading={paymentLoading}
+            />
 
-              <CheckInModal
-                isOpen={modals.checkIn}
-                onClose={() => closeModal('checkIn')}
-                booking={selectedBooking}
-                onSubmit={(checkInData) => handleCheckIn(selectedBooking.id, checkInData)}
-                loading={bookingsLoading}
-              />
+            <CheckInModal
+              isOpen={modals.checkIn}
+              onClose={() => closeModal('checkIn')}
+              booking={selectedBooking}
+              onSubmit={(checkInData) => handleCheckIn(selectedBooking.id, checkInData)}
+              loading={bookingsLoading}
+            />
 
-              <CheckOutModal
-                isOpen={modals.checkOut}
-                onClose={() => closeModal('checkOut')}
-                booking={selectedBooking}
-                onSubmit={(checkOutData) => handleCheckOut(selectedBooking.id, checkOutData)}
-                loading={bookingsLoading}
-              />
-            </>
-          )}
+            <CheckOutModal
+              isOpen={modals.checkOut}
+              onClose={() => closeModal('checkOut')}
+              booking={selectedBooking}
+              onSubmit={(checkOutData) => handleCheckOut(selectedBooking.id, checkOutData)}
+              loading={bookingsLoading}
+            />
+          </>
+        )}
 
-          <CreateBookingModal
-            isOpen={modals.create}
-            onClose={() => closeModal('create')}
-            hostels={hostels}
-            onSubmit={async (data) => {
-              await fetchBookings({ page: currentPage, limit: pageSize, ...filters });
-              closeModal('create');
-            }}
-          />
+        <CreateBookingModal
+          isOpen={modals.create}
+          onClose={() => closeModal('create')}
+          hostels={hostels}
+          onSubmit={async (data) => {
+            const filterParams = {
+              page: currentPage,
+              limit: pageSize,
+              ...filters,
+              ...(filters.dateRange.from && { checkInFrom: filters.dateRange.from }),
+              ...(filters.dateRange.to && { checkInTo: filters.dateRange.to })
+            };
+            await fetchBookings(filterParams);
+            
+            // Refresh stats after booking creation
+            if (filters.hostelId) {
+              console.log('📊 Refreshing stats after new booking');
+              await fetchStats(filters.hostelId);
+            }
+            
+            closeModal('create');
+          }}
+        />
       </motion.div>
     </div>
   );
