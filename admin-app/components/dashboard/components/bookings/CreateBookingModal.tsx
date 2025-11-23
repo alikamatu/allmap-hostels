@@ -341,62 +341,65 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     }
   };
 
-  const handlePaymentSuccess = async (reference: string) => {
-    try {
-      setPaymentStatus(PaymentStatus.SUCCESS);
-      
-      const emergencyContacts = formData.emergencyContactName ? [{
-        name: formData.emergencyContactName,
-        phone: formData.emergencyContactPhone,
-        relationship: formData.emergencyContactRelationship
-      }] : [];
+  // In the handlePaymentSuccess function, update the bookingData object:
 
-      // Only send fields that are defined in the backend DTO
-      const bookingData = {
-        hostelId: formData.hostelId,
-        roomId: formData.roomId,
-        studentId: formData.studentId,
-        studentName: formData.studentName,
-        studentEmail: formData.studentEmail,
-        studentPhone: formData.studentPhone,
-        bookingType: formData.bookingType,
-        checkInDate: formData.checkInDate,
-        checkOutDate: formData.checkOutDate,
-        paymentReference: reference,
-        bookingFeeAmount: BOOKING_FEE,
-        // Optional fields - only include if they have values
-        ...(formData.specialRequests && { specialRequests: formData.specialRequests }),
-        ...(emergencyContacts.length > 0 && { emergencyContacts })
-      };
+const handlePaymentSuccess = async (reference: string) => {
+  try {
+    setPaymentStatus(PaymentStatus.SUCCESS);
+    
+    const emergencyContacts = formData.emergencyContactName ? [{
+      name: formData.emergencyContactName,
+      phone: formData.emergencyContactPhone,
+      relationship: formData.emergencyContactRelationship
+    }] : [];
 
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/bookings/admin-create`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bookingData)
-      });
+    // Add depositAmount as a number to the booking data
+    const bookingData = {
+      hostelId: formData.hostelId,
+      roomId: formData.roomId,
+      studentId: formData.studentId,
+      studentName: formData.studentName,
+      studentEmail: formData.studentEmail,
+      studentPhone: formData.studentPhone,
+      bookingType: formData.bookingType,
+      checkInDate: formData.checkInDate,
+      checkOutDate: formData.checkOutDate,
+      paymentReference: reference,
+      bookingFeeAmount: BOOKING_FEE,
+      depositAmount: 0, // Add this line - set to 0 since it's not being used for admin booking
+      // Optional fields - only include if they have values
+      ...(formData.specialRequests && { specialRequests: formData.specialRequests }),
+      ...(emergencyContacts.length > 0 && { emergencyContacts })
+    };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || `Booking failed: ${response.status}`);
-      }
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    const response = await fetch(`${API_BASE_URL}/bookings/admin-create`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bookingData)
+    });
 
-      const result = await response.json();
-      await onSubmit(result.booking || result);
-      
-      setTimeout(() => {
-        resetForm();
-        onClose();
-      }, 2000);
-      
-    } catch (error: any) {
-      setError(`Failed to create booking: ${error.message}`);
-      setPaymentStatus(PaymentStatus.FAILED);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `Booking failed: ${response.status}`);
     }
-  };
+
+    const result = await response.json();
+    await onSubmit(result.booking || result);
+    
+    setTimeout(() => {
+      resetForm();
+      onClose();
+    }, 2000);
+    
+  } catch (error: any) {
+    setError(`Failed to create booking: ${error.message}`);
+    setPaymentStatus(PaymentStatus.FAILED);
+  }
+};
 
   const resetForm = () => {
     setFormData({
