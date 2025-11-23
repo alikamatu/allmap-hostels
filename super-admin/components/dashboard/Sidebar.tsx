@@ -72,7 +72,7 @@ const SidebarItem = ({
             transition={{ duration: 0.2 }}
             className="ml-4 flex items-center justify-between flex-1"
           >
-            <span className="text-lg font-semibold whitespace-nowrap">
+            <span className="text-sm font-semibold whitespace-nowrap">
               {text}
             </span>
             {badge && (
