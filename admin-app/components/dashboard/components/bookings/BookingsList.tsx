@@ -40,6 +40,7 @@ const getStatusBadge = (status: BookingStatus) => {
     [BookingStatus.CHECKED_IN]: 'bg-green-100 text-green-800 border-green-200',
     [BookingStatus.CHECKED_OUT]: 'bg-gray-100 text-gray-800 border-gray-200',
     [BookingStatus.CANCELLED]: 'bg-red-100 text-red-800 border-red-200',
+    [BookingStatus.NO_SHOW]: 'bg-red-100 text-red-800 border-red-200',
   };
 
   const variantClass = variants[status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
