@@ -33,10 +33,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     checkOutDate: '',
     bookingType: BookingType.SEMESTER,
     specialRequests: '',
-    emergencyContactPhone: '',
-    emergencyContactName: '',
-    emergencyContactRelationship: '',
-    emergencyContactEmail: '',
   });
   const [errors, setErrors] = useState<BookingFormErrors>({});
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
@@ -69,6 +65,10 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         studentName: profile.name || prev.studentName,
         studentEmail: profile.email || prev.studentEmail,
         studentPhone: profile.phone || prev.studentPhone,
+        emergency_contact_name: profile.emergency_contact_name || prev.emergency_contact_name,
+        emergency_contact_relationship: profile.emergency_contact_relationship || prev.emergency_contact_relationship,
+        emergency_contact_phone: profile.emergency_contact_phone || prev.emergency_contact_phone,
+        emergency_contact_email: profile.emergency_contact_email || prev.emergency_contact_email,
       }));
       setHasAutoFilled(true);
     }
@@ -337,12 +337,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         checkOutDate: formData.checkOutDate,
         bookingType: formData.bookingType,
         specialRequests: formData.specialRequests,
-        emergencyContacts: [{
-          name: formData.emergencyContactName,
-          relationship: formData.emergencyContactRelationship,
-          phone: formData.emergencyContactPhone,
-          email: formData.emergencyContactEmail,
-        }],
         paymentReference: `deposit_booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         bookingFeeAmount: BOOKING_FEE,
         depositAmount: 0,
