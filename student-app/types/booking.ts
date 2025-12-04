@@ -189,10 +189,7 @@ export interface BookingFormData {
   checkOutDate: string;
   bookingType: BookingType;
   specialRequests?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  emergency_contact_relationship?: string;
-  emergency_contact_email?: string;
+  emergencyContacts?: EmergencyContact[];
 }
 
 export interface BookingCalculation {

@@ -123,6 +123,7 @@ export default function HostelsPage() {
             base_price: hostel.base_price,
             distance,
             accepting_bookings: hostel.accepting_bookings,
+            is_verified: hostel.is_verified,
           };
         });
 

@@ -47,8 +47,14 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
                 </div>
               )}
               {!hostel.accepting_bookings && (
-                <span className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full">
+                <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                   Not Accepting Bookings
+                </span>
+              )}
+
+              {!hostel.is_verified && (
+                <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  Listed
                 </span>
               )}
             </div>
