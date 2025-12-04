@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaCalendarAlt, FaUser, FaPhone, FaEnvelope, FaExclamationTriangle, FaSync, FaSpinner, FaCreditCard, FaLock, FaWallet } from 'react-icons/fa';
+import { FaTimes, FaCalendarAlt, FaSync, FaSpinner, FaWallet } from 'react-icons/fa';
 import { FiAlertTriangle, FiCheck } from 'react-icons/fi';
-import { BookingType, Room, BookingFormData, BookingFormErrors } from '@/types/booking';
+import { BookingType, Room, BookingFormData, BookingFormErrors, EmergencyContact } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
@@ -34,6 +34,11 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     bookingType: BookingType.SEMESTER,
     specialRequests: '',
   });
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([{ 
+    name: '', 
+    relationship: '', 
+    phone: '' 
+  }]);
   const [errors, setErrors] = useState<BookingFormErrors>({});
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
@@ -60,16 +65,29 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   // Auto-populate form with user profile data
   useEffect(() => {
     if (profile && !hasAutoFilled && isOpen) {
+      const newEmergencyContacts: EmergencyContact[] = [];
+      
+      // If profile has emergency contact data, add it to the array
+      if (profile.emergency_contact_name && profile.emergency_contact_phone && profile.emergency_contact_relationship) {
+        newEmergencyContacts.push({
+          name: profile.emergency_contact_name,
+          relationship: profile.emergency_contact_relationship,
+          phone: profile.emergency_contact_phone,
+          email: profile.emergency_contact_email || undefined
+        });
+      }
+
       setFormData(prev => ({
         ...prev,
         studentName: profile.name || prev.studentName,
         studentEmail: profile.email || prev.studentEmail,
         studentPhone: profile.phone || prev.studentPhone,
-        emergency_contact_name: profile.emergency_contact_name || prev.emergency_contact_name,
-        emergency_contact_relationship: profile.emergency_contact_relationship || prev.emergency_contact_relationship,
-        emergency_contact_phone: profile.emergency_contact_phone || prev.emergency_contact_phone,
-        emergency_contact_email: profile.emergency_contact_email || prev.emergency_contact_email,
       }));
+      
+      if (newEmergencyContacts.length > 0) {
+        setEmergencyContacts(newEmergencyContacts);
+      }
+      
       setHasAutoFilled(true);
     }
   }, [profile, hasAutoFilled, isOpen]);
@@ -90,8 +108,22 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         checkOutDate: nextMonth.toISOString().split('T')[0],
         bookingType: BookingType.SEMESTER,
         specialRequests: '',
-        emergencyContacts: [{ name: '', relationship: '', phone: '' }],
       }));
+      
+      // Initialize emergency contacts from profile or empty array
+      const initialEmergencyContacts: EmergencyContact[] = [];
+      if (profile?.emergency_contact_name && profile?.emergency_contact_phone && profile?.emergency_contact_relationship) {
+        initialEmergencyContacts.push({
+          name: profile.emergency_contact_name,
+          relationship: profile.emergency_contact_relationship,
+          phone: profile.emergency_contact_phone,
+          email: profile.emergency_contact_email || undefined
+        });
+      } else {
+        initialEmergencyContacts.push({ name: '', relationship: '', phone: '' });
+      }
+      setEmergencyContacts(initialEmergencyContacts);
+      
       setErrors({});
       setSelectedRoomId('');
       setAvailableRooms([]);
@@ -219,9 +251,27 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       }
     }
 
+    // Validate emergency contacts
+    const emergencyContactErrors: string[] = [];
+    emergencyContacts.forEach((contact, index) => {
+      if (!contact.name.trim()) {
+        emergencyContactErrors.push(`Emergency contact ${index + 1}: Name is required`);
+      }
+      if (!contact.relationship.trim()) {
+        emergencyContactErrors.push(`Emergency contact ${index + 1}: Relationship is required`);
+      }
+      if (!contact.phone.trim()) {
+        emergencyContactErrors.push(`Emergency contact ${index + 1}: Phone is required`);
+      }
+    });
+    
+    if (emergencyContactErrors.length > 0) {
+      newErrors.emergencyContacts = emergencyContactErrors.join(', ');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, emergencyContacts]);
 
   const checkAvailability = useCallback(async () => {
     if (!formData.checkInDate || !formData.checkOutDate) return;
@@ -286,8 +336,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
       }
     } catch (error: any) {
       console.error('❌ Auto-check failed:', error);
-      // Don't set booking error for auto-check failures to avoid annoying users
-      // setBookingError(`Auto-check failed: ${error.message}`);
     } finally {
       setCheckingAvailability(false);
     }
@@ -303,6 +351,29 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     }
   }, []);
 
+  const handleEmergencyContactChange = useCallback((index: number, field: keyof EmergencyContact, value: string) => {
+    setEmergencyContacts(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+    
+    // Clear emergency contact errors when user starts typing
+    if (errors.emergencyContacts) {
+      setErrors(prev => ({ ...prev, emergencyContacts: undefined }));
+    }
+  }, [errors.emergencyContacts]);
+
+  const addEmergencyContact = useCallback(() => {
+    setEmergencyContacts(prev => [...prev, { name: '', relationship: '', phone: '' }]);
+  }, []);
+
+  const removeEmergencyContact = useCallback((index: number) => {
+    if (emergencyContacts.length > 1) {
+      setEmergencyContacts(prev => prev.filter((_, i) => i !== index));
+    }
+  }, [emergencyContacts.length]);
+
   const handleCheckAvailability = useCallback(async () => {
     if (validateForm()) {
       // Force a manual check and ensure auto-check continues
@@ -312,6 +383,10 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   }, [validateForm, checkAvailability]);
 
   const handleConfirmBooking = useCallback(async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     if (!profile || !selectedRoomId || !formData.checkInDate || !formData.checkOutDate) {
       setBookingError('Please select all required fields');
       return;
@@ -326,6 +401,11 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     setBookingError(null);
 
     try {
+      // Filter out empty emergency contacts
+      const validEmergencyContacts = emergencyContacts.filter(
+        contact => contact.name.trim() && contact.relationship.trim() && contact.phone.trim()
+      );
+
       const bookingData = {
         hostelId: hostel.id,
         roomId: selectedRoomId,
@@ -337,12 +417,14 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         checkOutDate: formData.checkOutDate,
         bookingType: formData.bookingType,
         specialRequests: formData.specialRequests,
+        emergencyContacts: validEmergencyContacts.length > 0 ? validEmergencyContacts : undefined,
         paymentReference: `deposit_booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         bookingFeeAmount: BOOKING_FEE,
         depositAmount: 0,
       };
 
       console.log('📝 Creating booking with data:', bookingData);
+      console.log('📋 Emergency contacts being sent:', validEmergencyContacts);
 
       const booking = await bookingService.createBookingWithDeposit(bookingData);
 
@@ -369,7 +451,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     } finally {
       setLoading(false);
     }
-  }, [profile, selectedRoomId, formData, hostel.id, depositBalance, totalAmount, onClose]);
+  }, [profile, selectedRoomId, formData, emergencyContacts, hostel.id, depositBalance, totalAmount, onClose, validateForm]);
 
   const canBook = selectedRoomId && depositBalance >= BOOKING_FEE && availableRooms.length > 0;
 
@@ -541,6 +623,107 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <option value={BookingType.MONTHLY}>Monthly</option>
                   <option value={BookingType.WEEKLY}>Weekly</option>
                 </select>
+              </div>
+
+              {/* Emergency Contacts Section */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-black">Emergency Contact(s)</h3>
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    onClick={addEmergencyContact}
+                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 "
+                  >
+                    + Add Another
+                  </motion.button>
+                </div>
+                
+                {emergencyContacts.map((contact, index) => (
+                  <div key={index} className="p-4 border border-gray-200  space-y-4">
+                    {emergencyContacts.length > 1 && (
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium text-black">Contact {index + 1}</h4>
+                        <button
+                          type="button"
+                          onClick={() => removeEmergencyContact(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={contact.name}
+                          onChange={(e) => handleEmergencyContactChange(index, 'name', e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
+                          placeholder="Full name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Relationship *
+                        </label>
+                        <input
+                          type="text"
+                          value={contact.relationship}
+                          onChange={(e) => handleEmergencyContactChange(index, 'relationship', e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
+                          placeholder="e.g., Parent, Guardian, Sibling"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Phone *
+                        </label>
+                        <input
+                          type="tel"
+                          value={contact.phone}
+                          onChange={(e) => handleEmergencyContactChange(index, 'phone', e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
+                          placeholder="Phone number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          Email (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          value={contact.email || ''}
+                          onChange={(e) => handleEmergencyContactChange(index, 'email', e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
+                          placeholder="Email address"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {errors.emergencyContacts && (
+                  <p className="text-red-600 text-sm mt-1">{errors.emergencyContacts}</p>
+                )}
+              </div>
+
+              {/* Special Requests */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">Special Requests (Optional)</label>
+                <textarea
+                  value={formData.specialRequests || ''}
+                  onChange={(e) => handleInputChange('specialRequests', e.target.value)}
+                  className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black min-h-[100px]"
+                  placeholder="Any special requests or requirements..."
+                />
               </div>
 
               {/* Check Availability Button */}

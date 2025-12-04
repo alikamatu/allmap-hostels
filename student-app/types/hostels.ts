@@ -11,6 +11,7 @@ export interface HostelCard {
   base_price: number | null;
   distance: number | null;
   accepting_bookings: boolean;
+  is_verified: boolean;
 }
 
 export interface Hostel {
