@@ -9,18 +9,22 @@ interface RoomCardProps {
   roomType: RoomType;
   onBook: (roomType: RoomType) => void;
   onViewRoom: (roomTypeId: string) => void;
+  onCheckAvailability: (roomType: RoomType) => void; // Add this prop
   acceptingBookings: boolean;
+  IsVerified: boolean;
 }
 
 export const RoomCard = memo(({ 
   roomType, 
   onBook, 
-  onViewRoom, 
+  onViewRoom,
+  onCheckAvailability, // Add this prop
+  IsVerified,
   acceptingBookings 
 }: RoomCardProps) => {
   return (
     <motion.div
-      className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+      className="bg-white border border-gray-200 overflow-hidden shadow-sm"
       whileHover={{ y: -5, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -88,40 +92,53 @@ export const RoomCard = memo(({
           </div>
         </div>
 
-        <div className="flex gap-3">
+        {!IsVerified && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
-            onClick={() => onViewRoom(roomType.id)}
-            disabled={!acceptingBookings}
+            onClick={() => onCheckAvailability(roomType)} // Call the new function
+            className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
           >
-            View Details
+            Check Availability
           </motion.button>
+        )}
 
-          {!acceptingBookings ? (
-            <motion.button
-              className="flex-1 bg-red-100 text-red-800 py-3 px-4 font-medium rounded-lg transition cursor-not-allowed"
-              disabled={true}
-            >
-              Unavailable
-            </motion.button>
-          ) : (
+        {IsVerified && (
+          <div className="flex gap-3">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`flex-1 py-3 px-4 font-medium rounded-lg transition ${
-                roomType.availableRooms > 0
-                  ? 'bg-black text-white hover:bg-gray-800'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              onClick={() => roomType.availableRooms > 0 && onBook(roomType)}
-              disabled={roomType.availableRooms === 0}
+              className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
+              onClick={() => onViewRoom(roomType.id)}
+              disabled={!acceptingBookings}
             >
-              {roomType.availableRooms > 0 ? 'Book Now' : 'Fully Booked'}
+              View Details
             </motion.button>
-          )}
-        </div>
+
+            {!acceptingBookings ? (
+              <motion.button
+                className="flex-1 bg-red-100 text-red-800 py-3 px-4 font-medium rounded-lg transition cursor-not-allowed"
+                disabled={true}
+              >
+                Unavailable
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`flex-1 py-3 px-4 font-medium rounded-lg transition ${
+                  roomType.availableRooms > 0
+                    ? 'bg-black text-white hover:bg-gray-800'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                onClick={() => roomType.availableRooms > 0 && onBook(roomType)}
+                disabled={roomType.availableRooms === 0}
+              >
+                {roomType.availableRooms > 0 ? 'Book Now' : 'Fully Booked'}
+              </motion.button>
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );

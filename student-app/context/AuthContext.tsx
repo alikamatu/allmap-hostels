@@ -104,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       localStorage.setItem('user', JSON.stringify(loginData.user));
+      localStorage.setItem('userId', loginData.user.id);
       setUser(loginData.user);
 
       // Check if onboarding is completed
@@ -118,16 +119,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
-    setUser(null);
-    router.push('/');
-  };
-
+const logout = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('userId'); // Add this line
+  localStorage.removeItem('hasAccess'); // Clear paywall flags
+  localStorage.removeItem('accessExpiry');
+  localStorage.removeItem('preview_used');
+  sessionStorage.removeItem('access_token');
+  sessionStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('userId'); // Also clear from session
+  setUser(null);
+  router.push('/');
+};
   const register = async (
     name: string,
     phone: string,

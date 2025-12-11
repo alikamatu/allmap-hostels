@@ -44,6 +44,7 @@ export default function HostelsPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const schoolCoords = useDistanceFilter();
   const schoolName = useUserSchoolName();
+  
 
   // Initialize filters from localStorage
   const [filters, setFilters] = useState({

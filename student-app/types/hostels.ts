@@ -29,6 +29,7 @@ export interface Hostel {
   };
   roomTypes: RoomType[];
   accepting_bookings: boolean;
+  is_verified: boolean;
   location: string;
   rating: number;
   reviews: number;
