@@ -28,7 +28,6 @@ export default function UserBookingsPage() {
     error, 
     fetchUserBookings, 
     cancelBooking, 
-    extendBooking 
   } = useBookings();
 
   useEffect(() => {

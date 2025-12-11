@@ -1,39 +1,40 @@
 import React from 'react';
-import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { HostelCard } from '@/types/hostels';
+import { Lock, Eye } from 'lucide-react';
+import { usePaywall } from '@/context/paywall-context';
+import { useRouter } from 'next/navigation';
 
 interface HostelListProps {
   hostels: HostelCard[];
 }
 
 export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
+  const { hasAccess, isPreview, unlockAccess } = usePaywall();
+  const router = useRouter()
+  
+  const canView = hasAccess || isPreview;
+
   if (hostels.length === 0) {
     return (
-      <div className="col-span-full text-center py-12">
+      <div className="col-span-full text-center py-12 border border-black">
         <p className="text-gray-800 text-lg">No hostels match your filters</p>
         <p className="text-gray-700 mt-2">Try adjusting your search criteria</p>
       </div>
     );
   }
 
-  
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-      {hostels.map((hostel) => {
-        // Debug logging to see what price data we have
-        console.log(`Hostel ${hostel.name}:`, {
-          lowestPrice: hostel.lowestPrice,
-          highestPrice: hostel.highestPrice,
-          base_price: hostel.base_price
-        });
-
-        return (
-          <Link
-            key={hostel.id}
-            href={`/dashboard/hostels/${hostel.id}`}
-            className="block overflow-hidden hover:scale-101 transition-all duration-800"
-          >
+      {hostels.map((hostel, index) => (
+        <motion.div
+          key={hostel.id}
+          onClick={ ()=> router.push(`/dashboard/hostels/${hostel.id}`) }
+          className="block overflow-hidden hover:scale-101 transition-all duration-800 cursor-pointer"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+        >
             <div className="relative aspect-square">
               {hostel.imageUrl ? (
                 <img
@@ -57,7 +58,25 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
                   Listed
                 </span>
               )}
+              
+              {/* Paywall Overlay */}
+              {!canView && (
+                <div className="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center p-4">
+                  <Lock size={48} className="text-white mb-4" />
+                  <div className="text-white text-2xl font-bold mb-2">LOCKED</div>
+                  <div className="text-white text-center mb-6">
+                    Unlock all hostels with 30-day access
+                  </div>
+                  <button
+                    onClick={unlockAccess}
+                    className="bg-white text-black px-6 py-2 font-bold hover:bg-gray-100"
+                  >
+                    Unlock Access
+                  </button>
+                </div>
+              )}
             </div>
+            
             <div className="pt-2">
               <h2 className="text-lg text-gray-800 truncate">{hostel.name}</h2>
               <p className="text-md font-thin text-gray-800 truncate">{hostel.address}</p>
@@ -73,9 +92,13 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
                 )}
               </div>
             </div>
-          </Link>
-        );
-      })}
+            
+            {/* Locked interaction */}
+            {!canView && (
+              <div className="absolute inset-0 cursor-pointer" onClick={unlockAccess} />
+            )}
+        </motion.div>
+      ))}
     </div>
   );
 };

@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { FiAlertTriangle } from 'react-icons/fi';
 import { FaWifi, FaParking, FaUtensils, FaShieldAlt, FaTshirt, FaBed } from 'react-icons/fa';
 
-
 // Hooks
 import { useHostel } from '@/hooks/useHostel';
 import { useImageGallery } from '@/hooks/useImageGallery';
@@ -15,6 +14,7 @@ import { useImageGallery } from '@/hooks/useImageGallery';
 import { RoomType } from '@/types/hostels';
 import { MapModal } from '@/_components/hostels/MapModal';
 import { BookingModal } from '@/_components/bookings/BookingModal';
+import { ContactModal } from '@/_components/hostelid/ContactModal'; // Add this import
 import { HostelHeader } from '@/_components/hostelid/HostelHeader';
 import { ImageGallery } from '@/_components/hostelid/ImageGallery';
 import { HostelInformation } from '@/_components/hostelid/HostelInformation';
@@ -37,6 +37,7 @@ export default function HostelDetailPage() {
   const [showMap, setShowMap] = useState(false);
   const [sortBy, setSortBy] = useState<'price' | 'availability'>('price');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false); // Add this state
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
 
   const handleViewRoom = useCallback((roomTypeId: string) => {
@@ -48,6 +49,12 @@ export default function HostelDetailPage() {
       setSelectedRoomType(roomType);
       setBookingModalOpen(true);
     }
+  }, []);
+
+  // Add this function for verified hostels
+  const handleCheckAvailability = useCallback((roomType: RoomType) => {
+    setSelectedRoomType(roomType);
+    setContactModalOpen(true);
   }, []);
 
   // Sort room types
@@ -127,6 +134,18 @@ export default function HostelDetailPage() {
           }}
         />
       )}
+
+      {/* Add Contact Modal */}
+      <ContactModal
+        isOpen={contactModalOpen}
+        onClose={() => {
+          setContactModalOpen(false);
+          setSelectedRoomType(null);
+        }}
+        hostelName={hostel.name}
+        roomTypeName={selectedRoomType?.name}
+        contactInfo={hostel.contact}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <HostelHeader hostel={hostel} />
@@ -240,7 +259,9 @@ export default function HostelDetailPage() {
                   key={roomType.id}
                   roomType={roomType} 
                   onBook={handleBookRoom}
-                  onViewRoom={handleViewRoom} 
+                  onViewRoom={handleViewRoom}
+                  onCheckAvailability={handleCheckAvailability} // Add this prop
+                  IsVerified={hostel.is_verified}
                   acceptingBookings={hostel.accepting_bookings}
                 />
               ))}

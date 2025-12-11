@@ -1,21 +1,34 @@
-import Navbar from "@/_components/Navbar";
+"use client";
 
-interface HostelLayoutProps {
-  children: React.ReactNode;
+import { Countdown } from '@/_components/dashboard/countdown';
+import { PaywallModal } from '@/_components/dashboard/paywall-modal';
+import Navbar from '@/_components/Navbar';
+import { PaywallProvider, usePaywall } from '@/context/paywall-context';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PaywallProvider>
+      <PaywallContent>{children}</PaywallContent>
+    </PaywallProvider>
+  );
 }
 
-const HostelLayout: React.FC<HostelLayoutProps> = ({ children }) => {
-  return (
-    <div className="hostel-layout">
-      <main className="hostel-content">
-        {/* <div className="flex fixed inset-0 z-40 top-0 h-screen w-screen bg-black/10 backdrop-blur-xs"></div> */}
-        <div className="flex mb-12">
-        <Navbar />
-        </div>
-        {children}
-      </main>
-    </div>
-  );
-};
+function PaywallContent({ children }: { children: React.ReactNode }) {
+  const { previewTimeLeft, showPaywall, hasAccess } = usePaywall();
 
-export default HostelLayout;
+  return (
+    <>
+    <div className="flex mb-6">
+    <Navbar />
+    </div>
+      {hasAccess && <Countdown timeLeft={previewTimeLeft} />}
+      
+      {children}
+      
+      <PaywallModal
+        isOpen={showPaywall}
+        onClose={() => {}}
+      />
+    </>
+  );
+}

@@ -1,6 +1,5 @@
 import { Booking } from '@/types/booking';
 import { BookingCard } from './BookingCard';
-import { HouseIcon } from 'lucide-react';
 
 interface BookingListProps {
   bookings: Booking[];
