@@ -168,14 +168,26 @@ export default function HostelsPage() {
 
   const filteredHostels = useFilteredHostels(hostels, schoolCoords, filters);
 
+  // Separate verified and unverified hostels
+  const verifiedHostels = filteredHostels.filter(hostel => hostel.is_verified);
+  const unverifiedHostels = filteredHostels.filter(hostel => !hostel.is_verified);
+
   // Generate filter summary
   const filterSummary = () => {
     const parts: string[] = [];
-    if (filteredHostels.length > 0) {
-      parts.push(`Showing ${filteredHostels.length} hostel${filteredHostels.length !== 1 ? 's' : ''}`);
-    } else {
+    
+    if (verifiedHostels.length > 0) {
+      parts.push(`${verifiedHostels.length} verified hostel${verifiedHostels.length !== 1 ? 's' : ''}`);
+    }
+    
+    if (unverifiedHostels.length > 0) {
+      parts.push(`${unverifiedHostels.length} listed hostel${unverifiedHostels.length !== 1 ? 's' : ''}`);
+    }
+    
+    if (filteredHostels.length === 0) {
       parts.push('No hostels found');
     }
+    
     if (filters.maxDistance) parts.push(`within ${filters.maxDistance} km`);
     if (filters.minPrice || filters.maxPrice) {
       parts.push(`¢${filters.minPrice || '0'}–${filters.maxPrice || '∞'}`);
@@ -329,7 +341,33 @@ export default function HostelsPage() {
                         {showMap ? (
                           <MemoizedMapView hostels={filteredHostels} schoolCoords={schoolCoords} />
                         ) : (
-                          <MemoizedHostelList hostels={filteredHostels} />
+                          <div className="space-y-8">
+                            {/* Verified Hostels Section */}
+                            {verifiedHostels.length > 0 && (
+                              <section>
+                                <h2 className="text-xl font-bold text-black">
+                                  Bookable Hostels ({verifiedHostels.length})
+                                </h2>
+                                <p className="text-sm text-gray-600 mb-4">
+                                  Verified hostels you can book directly on AllMap.
+                                </p>
+                                <MemoizedHostelList hostels={verifiedHostels} />
+                              </section>
+                            )}
+
+                            {/* Unverified Hostels Section */}
+                            {unverifiedHostels.length > 0 && (
+                              <section>
+                                <h2 className="text-xl font-bold text-black">
+                                  Call-to-Book Hostels ({unverifiedHostels.length})
+                                </h2>
+                                <p className="text-sm text-gray-600 mb-4">
+                                  Hostels not yet onboarded. We help you contact them.
+                                </p>
+                                <MemoizedHostelList hostels={unverifiedHostels} />
+                              </section>
+                            )}
+                          </div>
                         )}
                       </motion.div>
                     )}
