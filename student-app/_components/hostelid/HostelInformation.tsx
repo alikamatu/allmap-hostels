@@ -23,15 +23,6 @@ export const HostelInformation = ({ hostel, onShowMap }: HostelInformationProps)
       <h2 className="text-xl font-bold text-black mb-4">Hostel Information</h2>
       <hr className="border-t border-gray-200 mb-4" />
       <div className="space-y-6">
-        {hostel.contact && (
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Contact</h3>
-            {hostel.contact.admin && <p className="text-gray-800 mb-1">Admin: {hostel.contact.admin}</p>}
-            {hostel.contact.phone && <p className="text-gray-800 mb-1">Phone: {hostel.contact.phone}</p>}
-            {hostel.contact.email && <p className="text-gray-800">Email: {hostel.contact.email}</p>}
-          </div>
-        )}
-        <div>
           <h3 className="font-semibold text-gray-800 mb-2">Location</h3>
           <p className="text-gray-800 mb-2">{hostel.address}</p>
           <button 
@@ -40,10 +31,10 @@ export const HostelInformation = ({ hostel, onShowMap }: HostelInformationProps)
           >
             View on map →
           </button>
-        </div>
         
         {/* Quick Stats */}
-        <div>
+        {hostel.is_verified && (
+                  <div>
           <h3 className="font-semibold text-gray-800 mb-2">Quick Stats</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -64,6 +55,7 @@ export const HostelInformation = ({ hostel, onShowMap }: HostelInformationProps)
             </div>
           </div>
         </div>
+        )}
       </div>
     </motion.div>
   );
