@@ -77,7 +77,6 @@ export default function RootLayout({
         <AuthProvider>
           <OnboardingGuard>
             <ThemeProvider>
-              {/* <Navbar /> */}
               {children}
             </ThemeProvider>
           </OnboardingGuard>

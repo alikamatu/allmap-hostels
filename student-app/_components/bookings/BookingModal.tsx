@@ -481,12 +481,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 {profile && !profileLoading && (
                   <div className="flex items-center mt-2">
                     <p className="text-sm text-black">✓ Booking as {profile.name}</p>
-                    {autoCheckEnabled && (
-                      <div className="flex items-center ml-4 text-green-600 text-sm">
-                        <FaSync className="animate-spin mr-1" />
-                        <span>Auto-checking every 3s</span>
-                      </div>
-                    )}
                   </div>
                 )}
                 {profileError && (
@@ -612,7 +606,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
               </div>
 
               {/* Booking Type */}
-              <div>
+              <div className='hidden'>
                 <label className="block text-sm font-medium text-black mb-2">Booking Type *</label>
                 <select
                   value={formData.bookingType}
@@ -623,96 +617,6 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                   <option value={BookingType.MONTHLY}>Monthly</option>
                   <option value={BookingType.WEEKLY}>Weekly</option>
                 </select>
-              </div>
-
-              {/* Emergency Contacts Section */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-black">Emergency Contact(s)</h3>
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.05 }}
-                    onClick={addEmergencyContact}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 "
-                  >
-                    + Add Another
-                  </motion.button>
-                </div>
-                
-                {emergencyContacts.map((contact, index) => (
-                  <div key={index} className="p-4 border border-gray-200  space-y-4">
-                    {emergencyContacts.length > 1 && (
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium text-black">Contact {index + 1}</h4>
-                        <button
-                          type="button"
-                          onClick={() => removeEmergencyContact(index)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-2">
-                          Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={contact.name}
-                          onChange={(e) => handleEmergencyContactChange(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
-                          placeholder="Full name"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-2">
-                          Relationship *
-                        </label>
-                        <input
-                          type="text"
-                          value={contact.relationship}
-                          onChange={(e) => handleEmergencyContactChange(index, 'relationship', e.target.value)}
-                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
-                          placeholder="e.g., Parent, Guardian, Sibling"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-2">
-                          Phone *
-                        </label>
-                        <input
-                          type="tel"
-                          value={contact.phone}
-                          onChange={(e) => handleEmergencyContactChange(index, 'phone', e.target.value)}
-                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
-                          placeholder="Phone number"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-2">
-                          Email (Optional)
-                        </label>
-                        <input
-                          type="email"
-                          value={contact.email || ''}
-                          onChange={(e) => handleEmergencyContactChange(index, 'email', e.target.value)}
-                          className="w-full px-3 py-2 border-b border-gray-300 focus:border-black outline-none bg-white text-black"
-                          placeholder="Email address"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {errors.emergencyContacts && (
-                  <p className="text-red-600 text-sm mt-1">{errors.emergencyContacts}</p>
-                )}
               </div>
 
               {/* Special Requests */}
@@ -731,7 +635,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 whileHover={{ scale: 1.02 }}
                 onClick={handleCheckAvailability}
                 disabled={checkingAvailability || !formData.checkInDate || !formData.checkOutDate}
-                className="w-full px-6 py-3 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50  flex items-center justify-center"
+                className="hidden w-full px-6 py-3 bg-black text-white font-medium hover:bg-gray-800 disabled:opacity-50  flex items-center justify-center"
               >
                 {checkingAvailability ? (
                   <>
