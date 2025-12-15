@@ -2,6 +2,7 @@
 
 import { Countdown } from '@/_components/dashboard/countdown';
 import { PaywallModal } from '@/_components/dashboard/paywall-modal';
+import Footer from '@/_components/footer';
 import Navbar from '@/_components/Navbar';
 import { PaywallProvider, usePaywall } from '@/context/paywall-context';
 
@@ -24,6 +25,7 @@ function PaywallContent({ children }: { children: React.ReactNode }) {
       {hasAccess && <Countdown timeLeft={previewTimeLeft} />}
       
       {children}
+      <Footer />
       
       <PaywallModal
         isOpen={showPaywall}
