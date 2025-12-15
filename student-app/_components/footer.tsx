@@ -21,10 +21,10 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-white mt-24">
+    <footer className="bg-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
+        {/* <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12"> */}
           {/* <div className="space-y-4">
             <Link href="/" className="inline-block">
               <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ export default function Footer() {
               ))}
             </div>
           </div> */}
-        </div>
+        {/* </div> */}
 
         {/* Separator */}
         <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />

@@ -60,9 +60,9 @@ export const RoomCard = memo(({
     >
       <div className="p-6">
 
-        {IsVerified && (
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-xl font-bold text-black">{roomType.name}</h3>
+        {IsVerified && (
           <span
             className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
               roomType.availableRooms > 3 
@@ -74,8 +74,8 @@ export const RoomCard = memo(({
           >
             {roomType.availableRooms > 0 ? `${roomType.availableRooms} available` : 'Fully booked'}
           </span>
-        </div>
         )}
+        </div>
         
         <p className="text-gray-800 text-sm mb-6 line-clamp-2 leading-relaxed">
           {roomType.description || 'Comfortable living space with essential amenities'}
@@ -87,8 +87,8 @@ export const RoomCard = memo(({
             <p className="text-xs text-gray-800">per semester</p>
             <div className="mt-2">
               <span className={`text-xs px-3 py-1 rounded-full font-medium ${getGenderBadgeColor()}`}>
+                {isMixedGender() && '• For Both '}
                 {formatAllowedGenders(roomType.allowedGenders || [])}
-                {isMixedGender() && ' • Mixed'}
               </span>
             </div>
           </div>
