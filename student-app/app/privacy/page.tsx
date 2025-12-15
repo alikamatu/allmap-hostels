@@ -8,8 +8,8 @@ export default function PrivacyPolicyPage() {
       <h1 className="text-2xl font-bold mb-6">Privacy Policy</h1>
 
       <p className="text-sm mb-6">
-        This Privacy Policy explains how AllMap Hostels ("AllMapHostels", "we",
-        "our", or "us") collects, uses, discloses, and protects your personal
+        This Privacy Policy explains how AllMap Hostels (&quots;AllMapHostels&quots;, &quots;we&quots;,
+        &quots;our&quots;, or &quots;us&quots;) collects, uses, discloses, and protects your personal
         information when you use our website and services.
       </p>
 
