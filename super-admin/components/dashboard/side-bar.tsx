@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { id: 'overview', icon: Home, label: 'Overview' },
+  { id: '', icon: Home, label: 'Overview' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics' },
   { id: 'users', icon: Users, label: 'Users' },
   { id: 'hostels', icon: Building, label: 'Hostels' },
