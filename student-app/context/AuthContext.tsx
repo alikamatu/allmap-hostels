@@ -2,6 +2,7 @@
 
 import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { is } from 'zod/v4/locales';
 
 interface OnboardingData {
   school_id: string;
@@ -156,6 +157,7 @@ const logout = () => {
           role,
           gender,
           terms_accepted: termsAccepted,
+          is_verified: true,
         }),
       });
 
