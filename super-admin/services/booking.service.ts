@@ -13,7 +13,7 @@ const apiService = {
     headers?: any;
   }): Promise<T> {
     const token = localStorage.getItem('access_token');
-    const response = await fetch('http://localhost:1000' + options.url, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}` + options.url, {
       method: options.method,
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ const apiService = {
     headers?: any;
   }): Promise<T> {
     const token = localStorage.getItem('access_token');
-    let fullUrl = 'http://localhost:1000' + options.url;
+    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + options.url;
     
     if (options.params) {
       const queryString = new URLSearchParams(options.params).toString();
@@ -173,7 +173,7 @@ class BookingService {
 
   async exportBookings(filters?: BookingFilters): Promise<Blob> {
     const token = localStorage.getItem('access_token');
-    let fullUrl = 'http://localhost:1000' + '/admin/bookings/export/csv';
+    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + '/admin/bookings/export/csv';
     
     if (filters) {
       const queryString = new URLSearchParams(filters as any).toString();
