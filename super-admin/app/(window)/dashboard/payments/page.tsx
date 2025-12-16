@@ -6,7 +6,6 @@ import {
   CreditCard,
   DollarSign,
   Users,
-  Clock,
   Calendar,
   Download,
   Filter,
@@ -14,7 +13,6 @@ import {
   TrendingUp,
   Shield,
   Eye,
-  Plus,
   RefreshCw,
   BarChart3,
   AlertCircle,
@@ -23,9 +21,9 @@ import { useAccess } from '@/hooks/useAccess';
 import { AccessFilters, AccessStatus } from '@/types/access.types';
 import AccessStats from '@/components/dashboard/payments/access-stats';
 import AccessTable from '@/components/dashboard/payments/access-table';
-// import AccessFiltersPanel from '@/components/payments/AccessFiltersPanel';
-// import RevenueChart from '@/components/payments/RevenueChart';
-// import PreviewUsagePanel from '@/components/payments/PreviewUsagePanel';
+import AccessFiltersPanel from '@/components/dashboard/payments/access-filters-panel';
+import RevenueChart from '@/components/dashboard/payments/revenue-chart';
+import PreviewUsagePanel from '@/components/dashboard/payments/preview-usage-panel';
 
 export default function PaymentsPage() {
   const [filters, setFilters] = useState<AccessFilters>({
@@ -214,13 +212,13 @@ export default function PaymentsPage() {
             </div>
 
             {/* Filters Panel */}
-            {/* {showFilters && (
+            {showFilters && (
               <AccessFiltersPanel
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClose={() => setShowFilters(false)}
               />
-            )} */}
+            )}
           </div>
 
           {/* Access Table */}
@@ -283,7 +281,7 @@ export default function PaymentsPage() {
           </div>
 
           {/* Revenue Chart */}
-          {/* <RevenueChart data={revenueStats} /> */}
+          <RevenueChart data={revenueStats} />
 
           {/* Revenue by Source */}
           <div className="bg-white p-4">
@@ -388,7 +386,6 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {/* Preview Usage Modal
       {showPreviewPanel && (
         <PreviewUsagePanel
           isOpen={showPreviewPanel}
@@ -397,7 +394,7 @@ export default function PaymentsPage() {
           stats={previewStats}
           onRefresh={refetchPreview}
         />
-      )} */}
+      )} 
     </div>
   );
 }
