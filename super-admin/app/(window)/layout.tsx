@@ -1,19 +1,16 @@
-import { DashboardSidebar } from "@/components/dashboard/Sidebar";
+import Sidebar from "@/components/dashboard/sidebar";
 
-interface AdminLayoutProps {
+export default function DashboardLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
-
-    return (
+}) {
+  return (
     <div className="flex h-screen">
-      <main className="flex-1 min-h-screen">
+      <Sidebar />
+      <div className="flex-1 overflow-hidden">
         {children}
-      </main>
-      <div className="flex-shrink-0">
-        <DashboardSidebar />
       </div>
     </div>
-    )
+  );
 }

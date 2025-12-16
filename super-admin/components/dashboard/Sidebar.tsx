@@ -1,337 +1,189 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiX,
-  FiMenu,
-  FiUserCheck,
-  FiUser,
-  FiHome,
-  FiMail,
-  FiBarChart,
-  FiSun,
-  FiMoon,
-  FiMonitor,
-} from 'react-icons/fi';
+  Home,
+  BarChart3,
+  Users,
+  Building,
+  Calendar,
+  CreditCard,
+  Star,
+  MessageSquare,
+  Shield,
+  Settings,
+  Bell,
+  LogOut,
+  ChevronRight
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useTheme } from '@/context/ThemeProvider';
 
-const SidebarItem = ({
-  icon,
-  text,
-  isOpen,
-  isActive,
-  href,
-  onClick,
-  badge,
-}: {
-  icon: React.ReactNode;
-  text: string;
-  isOpen: boolean;
-  isActive: boolean;
-  href: string;
-  onClick: () => void;
-  badge?: string;
-}) => {
-  const ItemContent = (
-    <motion.div
-      whileHover={{ scale: 1.02, x: 2 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`
-        p-4 cursor-pointer rounded-xl flex items-center relative transition-all duration-200
-        ${isActive 
-          ? 'bg-primary text-primary-foreground shadow-sm' 
-          : 'hover:bg-accent hover:text-accent-foreground'
-        }
-        ${!isOpen ? 'justify-center' : ''}
-      `}
-    >
-      <div className="text-2xl flex-shrink-0">
-        {icon}
-      </div>
-      
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: -20, width: 0 }}
-            animate={{ opacity: 1, x: 0, width: 'auto' }}
-            exit={{ opacity: 0, x: -20, width: 0 }}
-            transition={{ duration: 0.2 }}
-            className="ml-4 flex items-center justify-between flex-1"
-          >
-            <span className="text-sm font-semibold whitespace-nowrap">
-              {text}
-            </span>
-            {badge && (
-              <Badge 
-                variant={isActive ? "secondary" : "default"}
-                className="ml-2 text-xs"
-              >
-                {badge}
-              </Badge>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {!isOpen && badge && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full"></div>
-      )}
-    </motion.div>
-  );
+const navItems = [
+  { id: 'overview', icon: Home, label: 'Overview' },
+  { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+  { id: 'users', icon: Users, label: 'Users' },
+  { id: 'hostels', icon: Building, label: 'Hostels' },
+  { id: 'bookings', icon: Calendar, label: 'Bookings' },
+  { id: 'payments', icon: CreditCard, label: 'Payments' },
+  { id: 'reviews', icon: Star, label: 'Reviews' },
+  { id: 'support', icon: MessageSquare, label: 'Support' },
+  { id: 'admins', icon: Shield, label: 'Admins' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
+];
 
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link href={href} passHref className="block">
-            {ItemContent}
-          </Link>
-        </TooltipTrigger>
-        {!isOpen && (
-          <TooltipContent side="left">
-            <p>{text}</p>
-          </TooltipContent>
-        )}
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-const ThemeToggle = ({ isOpen }: { isOpen: boolean }) => {
-  const { theme, setTheme } = useTheme();
-
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light': return <FiSun className="h-4 w-4" />;
-      case 'dark': return <FiMoon className="h-4 w-4" />;
-      case 'system': return <FiMonitor className="h-4 w-4" />;
-      default: return <FiSun className="h-4 w-4" />;
-    }
-  };
-
-  const getThemeLabel = () => {
-    switch (theme) {
-      case 'light': return 'Light';
-      case 'dark': return 'Dark';
-      case 'system': return 'System';
-      default: return 'Light';
-    }
-  };
-
-  if (!isOpen) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full h-12 p-0 hover:bg-accent"
-                >
-                  {getThemeIcon()}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="left">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                  <FiSun className="mr-2 h-4 w-4" />
-                  Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                  <FiMoon className="mr-2 h-4 w-4" />
-                  Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                  <FiMonitor className="mr-2 h-4 w-4" />
-                  System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            <p>Theme: {getThemeLabel()}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start h-12 px-4 hover:bg-accent"
-        >
-          {getThemeIcon()}
-          <span className="ml-3 text-sm font-medium">{getThemeLabel()}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-48">        
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          <FiSun className="mr-2 h-4 w-4" />
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          <FiMoon className="mr-2 h-4 w-4" />
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          <FiMonitor className="mr-2 h-4 w-4" />
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-export const DashboardSidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [mounted, setMounted] = useState(false);
+export default function Sidebar() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    setMounted(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setIsCollapsed(true);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
-  const navItems = [
-    { id: 'Home', icon: <FiBarChart />, href: '/dashboard', badge: undefined },
-    { id: 'Verify', icon: <FiUserCheck />, href: '/dashboard/verify', badge: '3' },
-    { id: 'Users', icon: <FiUser />, href: '/dashboard/users' },
-    { id: 'Agency', icon: <FiHome />, href: '/agency' },
-    { id: 'Contact', icon: <FiMail />, href: '/contact' },
-  ];
+  const sidebarVariants = {
+    open: { width: 240 },
+    closed: { width: isMobile ? 0 : 60 },
+  };
 
-  if (!mounted) {
-    return (
-      <div className="h-screen w-[100px] bg-sidebar border-r border-border flex flex-col order-last">
-        <div className="animate-pulse p-6">
-          <div className="w-12 h-8 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  const itemVariants = {
+    hover: { x: 4 },
+    tap: { x: 0 },
+  };
 
   return (
-    <motion.div
-      initial={false}
-      animate={{ width: isOpen ? 320 : 100 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="h-screen bg-sidebar border-r border-border flex flex-col order-last relative overflow-hidden"
-    >
-      {/* Header */}
-      <div className="p-6 flex justify-between items-center relative z-10">
-        <AnimatePresence>
-          {isOpen ? (
-            <motion.h1
-              key="full-logo"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="font-bold text-3xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text"
-            >
-              ALLMAP
-            </motion.h1>
-          ) : (
-            <motion.h1
-              key="short-logo"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="font-bold text-2xl bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"
-            >
-              AM
-            </motion.h1>
-          )}
-        </AnimatePresence>
+    <>
+      <motion.aside
+        initial={false}
+        animate={isCollapsed ? 'closed' : 'open'}
+        variants={sidebarVariants}
+        transition={{ duration: 0.2 }}
+        className="h-screen bg-white flex-shrink-0 overflow-hidden relative"
+      >
+        {/* Logo */}
+        <div className="h-16 flex items-center px-6 border-b border-gray-100">
+          <motion.div
+            animate={{ opacity: isCollapsed ? 0 : 1 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center"
+          >
+            <div className="w-6 h-6 bg-[#ff7a00] mr-3"></div>
+            <span className="text-13 font-semibold text-gray-900">ALLMAP ADMIN</span>
+          </motion.div>
+          <motion.div
+            animate={{ opacity: isCollapsed ? 1 : 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-1/2 transform -translate-x-1/2"
+          >
+            <div className="w-6 h-6 bg-[#ff7a00]"></div>
+          </motion.div>
+        </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
+        {/* Navigation */}
+        <nav className="py-6 px-3">
+          {navItems.map((item) => {
+            const isActive = pathname.includes(item.id);
+            return (
+              <motion.div
+                key={item.id}
+                variants={itemVariants}
+                whileHover="hover"
+                whileTap="tap"
+                transition={{ duration: 0.15 }}
+              >
+                <Link
+                  href={`/dashboard/${item.id}`}
+                  className={`flex items-center h-10 px-3 mb-1 relative ${
+                    isActive ? 'text-[#ff7a00]' : 'text-gray-600'
+                  } hover:text-gray-900`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute left-0 w-[2px] h-full bg-[#ff7a00]"
+                      transition={{ duration: 0.2 }}
+                    />
+                  )}
+                  <item.icon size={16} className="flex-shrink-0" />
+                  <AnimatePresence>
+                    {!isCollapsed && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="ml-3 text-12 font-medium whitespace-nowrap"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </nav>
+
+        {/* User Section */}
+        <div className="absolute bottom-0 left-0 right-0 border-t border-gray-100">
+          <div className="h-16 flex items-center justify-between px-3">
+            {!isCollapsed ? (
+              <>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+                    <span className="text-11 font-semibold text-gray-700">SA</span>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-12 font-medium text-gray-900">Super Admin</p>
+                    <p className="text-10 text-gray-500">admin@allmap.com</p>
+                  </div>
+                </div>
+                <button className="text-gray-500 hover:text-gray-900">
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <div className="w-full flex justify-center">
+                <div className="w-8 h-8 bg-gray-200 flex items-center justify-center">
+                  <span className="text-11 font-semibold text-gray-700">SA</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Toggle Button */}
+        <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-accent rounded-lg transition-colors"
+          className="absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 flex items-center justify-center"
         >
           <motion.div
-            animate={{ rotate: isOpen ? 0 : 180 }}
+            animate={{ rotate: isCollapsed ? 0 : 180 }}
             transition={{ duration: 0.2 }}
           >
-            {isOpen ? <FiX size={20} /> : <FiMenu size={20} />}
+            <ChevronRight size={12} />
           </motion.div>
-        </Button>
-      </div>
+        </button>
+      </motion.aside>
 
-      <Separator className="mx-4" />
-
-      {/* Navigation Items */}
-      <div className="flex-1 p-4 space-y-2">
-        {navItems.map((item) => (
-          <SidebarItem
-            key={item.id}
-            icon={item.icon}
-            text={item.id}
-            isOpen={isOpen}
-            isActive={pathname === item.href}
-            href={item.href}
-            onClick={() => {}}
-            badge={item.badge}
-          />
-        ))}
-      </div>
-
-      <Separator className="mx-4" />
-
-      {/* Theme Toggle */}
-      <div className="p-4">
-        <ThemeToggle isOpen={isOpen} />
-      </div>
-
-      {/* Footer */}
-      <motion.div
-        className="p-4 text-center text-sm text-muted-foreground"
-        animate={{ opacity: isOpen ? 1 : 0.7 }}
-      >
-        <AnimatePresence>
-          {isOpen ? (
-            <motion.div
-              key="full-footer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              © {new Date().getFullYear()} ALLMAP
-              <br />
-              <span className="text-xs">Student Housing Platform</span>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="short-footer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-xs"
-            >
-              {new Date().getFullYear()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+      {/* Mobile Overlay */}
+      {isMobile && isCollapsed && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" />
+      )}
+    </>
   );
-};
+}

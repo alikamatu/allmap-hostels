@@ -1,199 +1,281 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { UserFilters, User } from "@/types/user.types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { useUsers } from "@/services/useUsers";
-import { UserStatsCards } from "@/components/dashboard/user-management/UserStatsCards";
-import { UserFiltersComponent } from "@/components/dashboard/user-management/UserFilters";
-import { UserActions } from "@/components/dashboard/user-management/UserActions";
-import { UserDetailsDialog } from "@/components/dashboard/user-management/UserDetailsDialog";
+import { useState } from 'react';
+import { 
+  UserPlus, 
+  Download, 
+  Filter,
+  Search,
+} from 'lucide-react';
+import { useUsers } from '@/hooks/useUsers';
+import { UserFilters, UserRole, UserStatus } from '@/types/user.types';
+import UserTable from '@/components/dashboard/users/user-table';
+import UserFiltersPanel from '@/components/dashboard/users/user-filters-panel';
+import CreateUserModal from '@/components/dashboard/users/create-user-modal';
+import EditUserModal from '@/components/dashboard/users/edit-user-modal';
+import UserDetailsModal from '@/components/dashboard/users/user-details-modal';
+import BulkActions from '@/components/dashboard/users/bulk-actions';
+import UserStats from '@/components/dashboard/users/user-stats';
 
-export default function UserManagementPage() {
-  const [filters, setFilters] = useState<UserFilters>({});
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  
-  const { users, stats, loading, error, updateUserStatus, updateUserRole, deleteUser, refetch } = useUsers(filters);
+export default function UsersPage() {
+  const [filters, setFilters] = useState<UserFilters>({
+    page: 1,
+    limit: 20,
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleStatusChange = async (userId: string, status: 'verified' | 'unverified' | 'pending') => {
-    const success = await updateUserStatus(userId, status);
-    if (success) {
-      toast.success(`User status updated to ${status}`);
+  const {
+    users,
+    stats,
+    pagination,
+    loading,
+    error,
+    refetch,
+    createUser,
+    updateUser,
+    verifyUser,
+    updateUserRole,
+    deleteUser,
+    bulkVerifyUsers,
+    bulkDeleteUsers,
+    exportUsers,
+  } = useUsers(filters);
+
+  const handleFilterChange = (newFilters: Partial<UserFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+  };
+
+  const handleSearch = () => {
+    handleFilterChange({ search: searchTerm || undefined });
+  };
+
+  const handleCreateUser = async (data: any) => {
+    const result = await createUser(data);
+    if (result) {
+      setShowCreateModal(false);
+    }
+  };
+
+  const handleUpdateUser = async (data: any) => {
+    if (selectedUser) {
+      const result = await updateUser(selectedUser.id, data);
+      if (result) {
+        setShowEditModal(false);
+        setSelectedUser(null);
+      }
+    }
+  };
+
+  const handleVerifyUser = async (userId: string) => {
+    await verifyUser(userId);
+  };
+
+  const handleUpdateRole = async (userId: string, role: UserRole) => {
+    await updateUserRole(userId, role);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      await deleteUser(userId);
+    }
+  };
+
+  const handleExport = async () => {
+    const csv = await exportUsers(filters);
+    if (csv) {
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    }
+  };
+
+  const handleBulkVerify = async () => {
+    if (selectedUsers.size === 0) return;
+    
+    if (confirm(`Verify ${selectedUsers.size} users?`)) {
+      await bulkVerifyUsers(Array.from(selectedUsers));
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.size === 0) return;
+    
+    if (confirm(`Delete ${selectedUsers.size} users? This action cannot be undone.`)) {
+      await bulkDeleteUsers(Array.from(selectedUsers));
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.size === users.length) {
+      setSelectedUsers(new Set());
     } else {
-      toast.error("Failed to update user status");
+      setSelectedUsers(new Set(users.map(user => user.id)));
     }
   };
 
-  const handleRoleChange = async (userId: string, role: 'student' | 'hostel_admin') => {
-    const success = await updateUserRole(userId, role);
-    if (success) {
-      toast.success(`User role updated to ${role}`);
+  const handleSelectUser = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
     } else {
-      toast.error("Failed to update user role");
+      newSelected.add(userId);
     }
-  };
-
-  const handleDelete = async (userId: string) => {
-    const success = await deleteUser(userId);
-    if (success) {
-      toast.success("User deleted successfully");
-    } else {
-      toast.error("Failed to delete user");
-    }
-  };
-
-  const handleViewDetails = (user: User) => {
-    setSelectedUser(user);
-    setDetailsDialogOpen(true);
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'verified': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'unverified': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'hostel_admin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'student': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
+    setSelectedUsers(newSelected);
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground">
-          Manage all users, their roles, and verification status
-        </p>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-20 font-semibold text-gray-900">User Management</h1>
+          <p className="text-12 text-gray-500">Manage all users, roles, and permissions</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 text-12 font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <Download size={14} />
+            Export
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 text-12 font-medium bg-[#ff7a00] text-white hover:bg-orange-600"
+          >
+            <UserPlus size={14} />
+            Add User
+          </button>
+        </div>
       </div>
 
-      <UserStatsCards stats={stats} loading={loading} />
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
+          <p className="text-11 font-medium text-red-600">{error}</p>
+        </div>
+      )}
 
-      <UserFiltersComponent 
-        filters={filters} 
-        onFiltersChange={setFilters}
-        onClearFilters={handleClearFilters}
-      />
+      {/* Stats Cards */}
+      {stats && <UserStats stats={stats} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>
-            {users.length} user{users.length !== 1 ? 's' : ''} found
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <div className="text-center py-10 text-destructive">
-              <p>Error loading users: {error}</p>
-              <button 
-                onClick={() => refetch()} 
-                className="mt-4 text-primary hover:underline"
+      {/* Bulk Actions */}
+      {selectedUsers.size > 0 && (
+        <BulkActions
+          selectedCount={selectedUsers.size}
+          onBulkVerify={handleBulkVerify}
+          onBulkDelete={handleBulkDelete}
+          onClearSelection={() => setSelectedUsers(new Set())}
+        />
+      )}
+
+      {/* Filters Bar */}
+      <div className="bg-white p-4 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search users by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="w-full pl-10 pr-4 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00] focus:border-[#ff7a00]"
+              />
+              <button
+                onClick={handleSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-11 font-medium text-[#ff7a00] hover:text-orange-700"
               >
-                Try again
+                Search
               </button>
             </div>
-          ) : loading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-1/4" />
-                    <Skeleton className="h-4 w-1/3" />
-                  </div>
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-8 rounded-md" />
-                </div>
-              ))}
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <p>No users found matching your filters</p>
-              {Object.keys(filters).length > 0 && (
-                <button 
-                  onClick={handleClearFilters}
-                  className="mt-2 text-primary hover:underline"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <div className="font-medium">{user.name || 'No Name'}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getRoleColor(user.role)}>
-                          {user.role.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(user.status)}>
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_verified ? "default" : "secondary"}>
-                          {user.is_verified ? 'Yes' : 'No'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <UserActions
-                          user={user}
-                          onStatusChange={handleStatusChange}
-                          onRoleChange={handleRoleChange}
-                          onDelete={handleDelete}
-                          onViewDetails={handleViewDetails}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-3 py-2 text-11 font-medium ${
+                showFilters ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Filter size={14} />
+              Filters
+            </button>
+          </div>
+        </div>
 
-      <UserDetailsDialog
-        user={selectedUser}
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
+        {/* Filters Panel */}
+        {showFilters && (
+          <UserFiltersPanel
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClose={() => setShowFilters(false)}
+          />
+        )}
+      </div>
+
+      {/* Users Table */}
+      <UserTable
+        users={users}
+        loading={loading}
+        pagination={pagination}
+        selectedUsers={selectedUsers}
+        onSelectAll={handleSelectAll}
+        onSelectUser={handleSelectUser}
+        onPageChange={(page) => handleFilterChange({ page })}
+        onViewUser={(user) => {
+          setSelectedUser(user);
+          setShowDetailsModal(true);
+        }}
+        onEditUser={(user) => {
+          setSelectedUser(user);
+          setShowEditModal(true);
+        }}
+        onVerifyUser={handleVerifyUser}
+        onUpdateRole={handleUpdateRole}
+        onDeleteUser={handleDeleteUser}
       />
+
+      {/* Modals */}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={handleCreateUser}
+      />
+
+      {selectedUser && (
+        <>
+          <EditUserModal
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              setSelectedUser(null);
+            }}
+            user={selectedUser}
+            onUpdate={handleUpdateUser}
+          />
+
+          <UserDetailsModal
+            isOpen={showDetailsModal}
+            onClose={() => {
+              setShowDetailsModal(false);
+              setSelectedUser(null);
+            }}
+            user={selectedUser}
+          />
+        </>
+      )}
     </div>
   );
 }

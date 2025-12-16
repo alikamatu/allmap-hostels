@@ -145,7 +145,7 @@ export default function SignUpPage() {
                 <CheckCircleIcon className="h-12 w-12 mb-3 text-green-600" />
                 <p className="text-center font-semibold text-lg mb-2">Registration Successful!</p>
                 <p className="text-center text-sm">
-                  Check your email at <span className="font-semibold">{email}</span> to verify your account.
+                  Check your email at <span className="font-semibold">{email}</span> or Junk/Spam folder to verify your account.
                 </p>
                 <p className="text-center text-xs text-gray-600 mt-2">
                   After verification, you will complete your profile setup.

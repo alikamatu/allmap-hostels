@@ -56,7 +56,7 @@ function VerifyEmailContent() {
       hasVerified.current = true;
       setVerification({
         status: 'error',
-        message: 'No verification token provided.'
+        message: 'No verification token provided, check your Junk/Spam folder if you can not find the email'
       });
     }
   }, []); // Remove searchParams from dependencies to prevent re-runs
