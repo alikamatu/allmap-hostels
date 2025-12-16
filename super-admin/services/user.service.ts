@@ -26,7 +26,7 @@ const apiService = {
       fetchHeaders['Authorization'] = `Bearer ${token}`;
     }
 
-    let fullUrl = 'http://localhost:1000' + url;
+    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + url;
     if (params) {
       const queryString = new URLSearchParams(params).toString();
       fullUrl += `?${queryString}`;

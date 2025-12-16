@@ -18,7 +18,7 @@ const apiService = {
       headers?: any;
     }): Promise<T> {
       const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:1000' + options.url  , {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}` + options.url  , {
         method: options.method,
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ const apiService = {
         params?: any;
         headers?: any;
     }): Promise<T> {
-        let fullUrl = 'http://localhost:1000' + options.url;
+        let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + options.url;
         if (options.params) {
             const queryString = new URLSearchParams(options.params).toString();
             fullUrl += `?${queryString}`;
