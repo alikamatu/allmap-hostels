@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaQuestionCircle, FaBook, FaCreditCard, FaUser, FaMapMarkerAlt, FaCalendarAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
-import { FiSearch, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiSearch, FiChevronDown, FiChevronUp, FiMessageCircle } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function HelpPage() {
   const [activeCategory, setActiveCategory] = useState('booking');
@@ -234,6 +235,12 @@ export default function HelpPage() {
                   <div className="flex items-center">
                     <FaEnvelope className="text-black mr-2" />
                     <span className="text-black">alikamatuosama14@gmail.com</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiMessageCircle className="text-black mr-2" />
+                    <span>
+                      <Link href="/dashboard/feedback" className='text-orange-500'>Contact Support</Link>
+                    </span>
                   </div>
                 </div>
               </div>
