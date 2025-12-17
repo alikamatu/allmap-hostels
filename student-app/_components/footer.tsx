@@ -90,6 +90,7 @@ export default function Footer() {
             <p className="text-xs text-gray-500 leading-relaxed">
               AllMap Hostels is under active development. Listings, availability, and prices may change.
             </p>
+            <Link href="/dashboard/feedback" className="text-orange-500 hover:text-orange-600">Send a Feedback</Link>
           </div>
 
           {/* Copyright */}

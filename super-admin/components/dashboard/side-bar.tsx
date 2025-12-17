@@ -28,7 +28,7 @@ const navItems = [
   { id: 'bookings', icon: Calendar, label: 'Bookings' },
   { id: 'payments', icon: CreditCard, label: 'Payments' },
   { id: 'reviews', icon: Star, label: 'Reviews' },
-  { id: 'support', icon: MessageSquare, label: 'Support' },
+  { id: 'feedback', icon: MessageSquare, label: 'Support' },
   { id: 'admins', icon: Shield, label: 'Admins' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
