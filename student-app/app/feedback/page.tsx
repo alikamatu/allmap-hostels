@@ -120,7 +120,7 @@ export default function PublicContactPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-light text-gray-900 mb-2">Get in Touch</h1>
           <p className="text-gray-600">
-            Have questions, suggestions, or need support? We're here to help.
+            Have questions, suggestions, or need support? We are here to help.
           </p>
         </div>
 
@@ -159,7 +159,7 @@ export default function PublicContactPage() {
 
             {/* Category */}
             <div>
-              <label className="block text-sm text-gray-600 mb-1">What's this about?</label>
+              <label className="block text-sm text-gray-600 mb-1">What is this about?</label>
               <select
                 name="category"
                 value={formData.category}
@@ -223,7 +223,7 @@ export default function PublicContactPage() {
             {/* Messages */}
             {success && (
               <div className="text-center text-green-600">
-                ✓ Thank you! Your message has been sent. We'll get back to you soon.
+                ✓ Thank you! Your message has been sent. We will get back to you soon.
               </div>
             )}
             
