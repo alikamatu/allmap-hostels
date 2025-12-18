@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 import { useSchoolSearch } from '@/hooks/useSchoolSearch';
@@ -78,7 +78,7 @@ export default function OnboardingPage() {
 
     const success = await submitOnboarding(onboardingData);
     if (success) {
-      router.push('/');
+      router.push('/dashboard');
     }
   };
 

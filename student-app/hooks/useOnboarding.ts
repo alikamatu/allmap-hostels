@@ -54,6 +54,15 @@ export const useOnboarding = () => {
         throw new Error(errorData.message || 'Failed to complete onboarding');
       }
 
+        //add school id to user data in  local storage
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        userData.school_id = data.school_id;
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        //add onboarding completed to user data in  local storage
+        userData.onboarding_completed = true;
+        localStorage.setItem('user', JSON.stringify(userData));
+
       return true;
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
