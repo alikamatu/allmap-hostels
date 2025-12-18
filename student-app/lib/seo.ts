@@ -14,7 +14,7 @@ interface PageMetadataOptions {
   keywords?: string[];
   image?: string;
   url?: string;
-  type?: 'website' | 'article' | 'product';
+  type?: 'website' | 'article';
   index?: boolean;
   canonicalUrl?: string;
 }
@@ -38,7 +38,7 @@ export function generatePageMetadata(options: PageMetadataOptions): Metadata {
     title: `${title} | AllMap Hostels`,
     description,
     keywords: [...keywords, 'AllMap Hostels', 'student hostels'],
-    canonical: canonicalUrl,
+    ...(canonicalUrl && { alternates: { canonical: canonicalUrl } }),
     openGraph: {
       title: `${title} | AllMap Hostels`,
       description,
