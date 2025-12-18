@@ -1,0 +1,27 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /_next/
+Disallow: /__next/
+Disallow: /*.json$
+Disallow: /admin
+Disallow: /dashboard/profile
+Disallow: /dashboard/bookings/*/edit
+
+# Sitemap
+Sitemap: https://student.allmap-hostels.com/sitemap.xml
+
+# Crawl delay (milliseconds)
+Crawl-delay: 0.5
+
+# Rules for specific crawlers
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
