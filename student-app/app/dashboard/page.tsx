@@ -45,7 +45,7 @@ export default function HostelsPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const schoolCoords = useDistanceFilter();
   const schoolName = useUserSchoolName();
-  const { hasAccess, unlockAccess } = usePaywall();
+  const { hasAccess, openPaywallModal } = usePaywall(); // Change from unlockAccess to openPaywallModal
 
   const canView = hasAccess;
   
@@ -226,7 +226,7 @@ export default function HostelsPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={unlockAccess}
+                  onClick={openPaywallModal} // Changed from unlockAccess to openPaywallModal
                   className="fixed bottom-4 right-4 sm:static bg-black text-white px-6 py-3 font-medium transition hover:bg-gray-800 flex items-center gap-2 z-10"
                   aria-label="Unlock access"
                 >

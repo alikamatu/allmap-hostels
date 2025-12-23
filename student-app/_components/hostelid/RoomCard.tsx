@@ -4,7 +4,8 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { RoomType } from '@/types/hostels';
 import { formatPrice } from '@/utils/formatters';
-import { usePaywall } from '@/context/paywall-context'; // Import the paywall context
+import { usePaywall } from '@/context/paywall-context';
+import { Lock } from 'lucide-react';
 
 interface RoomCardProps {
   roomType: RoomType;
@@ -53,6 +54,9 @@ export const RoomCard = memo(({
     }
     return 'bg-green-100 text-green-800';
   };
+
+  // Check if price should be locked (for unverified hostels when user doesn't have access)
+  const shouldLockPrice = !IsVerified && !hasAccess && showPaywall;
 
   // Handle paywall button click
   const handlePayForAccess = () => {
@@ -123,7 +127,19 @@ export const RoomCard = memo(({
         
         <div className="flex justify-between items-center mb-6">
           <div>
-            <p className="text-lg font-bold text-black">{formatPrice(roomType.pricePerSemester)}</p>
+            {/* Price Display - Locked for unverified hostels when no access */}
+            <div className="flex items-center gap-2">
+              {shouldLockPrice ? (
+                <div className="flex items-center gap-2">
+                  <Lock size={16} className="text-gray-400" />
+                  <p className="text-lg font-bold text-gray-400">Price locked</p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-black">
+                  {formatPrice(roomType.pricePerSemester)}
+                </p>
+              )}
+            </div>
             <p className="text-xs text-gray-800">per semester</p>
             <div className="mt-2">
               <span className={`text-xs px-3 py-1 rounded-full font-medium ${getGenderBadgeColor()}`}>
@@ -165,6 +181,16 @@ export const RoomCard = memo(({
             )}
           </div>
         </div>
+
+        {/* Lock info message for unverified hostels when price is locked */}
+        {shouldLockPrice && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800 text-sm flex items-center gap-2">
+              <Lock size={14} />
+              Subscribe to see prices and check availability
+            </p>
+          </div>
+        )}
 
         {!IsVerified && getUnverifiedButton()}
 

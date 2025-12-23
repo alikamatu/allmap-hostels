@@ -70,7 +70,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   };
 
   const features = [
-    '200+ hostels with verified details',
+    'Unlimited hostels with verified details',
     'Exact distance from your school (with map)',
     'No walking under the sun to check hostels',
     'Contact numbers + directions included',
