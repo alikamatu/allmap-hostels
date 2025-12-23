@@ -4,28 +4,27 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 
 interface PaywallContextType {
   hasAccess: boolean;
-  isPreview: boolean;
-  previewTimeLeft: number;
   showPaywall: boolean;
   unlockAccess: () => void;
   checkAccess: () => Promise<boolean>;
   refreshAccess: () => Promise<void>;
   resetInitialCheck: () => void;
   hasUsedPreview: boolean;
+  isPaywallModalOpen: boolean;
+  openPaywallModal: () => void;
+  closePaywallModal: () => void;
 }
 
 const PaywallContext = createContext<PaywallContextType | undefined>(undefined);
 
-const PREVIEW_DURATION = 30; // seconds
 const PREVIEW_USED_KEY = 'preview_used';
 
 export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
-  const [isPreview, setIsPreview] = useState<boolean>(false);
-  const [previewTimeLeft, setPreviewTimeLeft] = useState<number>(PREVIEW_DURATION);
   const [showPaywall, setShowPaywall] = useState<boolean>(false);
   const [hasUsedPreview, setHasUsedPreview] = useState<boolean>(false);
   const initialCheckDone = useRef(false);
+  const [isPaywallModalOpen, setIsPaywallModalOpen] = useState<boolean>(false);
 
   const resetInitialCheck = () => {
     console.log('🔄 Resetting initial check flag');
@@ -62,6 +61,28 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
     return userId;
   }, []);
 
+  const openPaywallModal = useCallback(() => {
+    setIsPaywallModalOpen(true);
+  }, []);
+
+  const closePaywallModal = useCallback(() => {
+    setIsPaywallModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenPaywallModal = () => {
+      openPaywallModal();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openPaywallModal', handleOpenPaywallModal);
+      
+      return () => {
+        window.removeEventListener('openPaywallModal', handleOpenPaywallModal);
+      };
+    }
+  }, [openPaywallModal]);
+
   // Function to track preview usage in backend
   const trackPreviewUsage = useCallback(async (source: 'countdown_ended' | 'manual_unlock' | 'other'): Promise<boolean> => {
     try {
@@ -77,11 +98,6 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
         body: JSON.stringify({ 
           userId,
           source,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            previewDuration: PREVIEW_DURATION,
-            timeLeftWhenUsed: previewTimeLeft,
-          }
         }),
       });
 
@@ -96,15 +112,13 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Error tracking preview usage:', error);
       return false;
     }
-  }, [getUserId, previewTimeLeft]);
+  }, [getUserId]);
 
   // Function to mark preview as used (frontend only)
   const markPreviewAsUsedFrontend = useCallback(() => {
     console.log('🔒 Marking preview as used in frontend');
     localStorage.setItem(PREVIEW_USED_KEY, 'true');
     setHasUsedPreview(true);
-    setIsPreview(false);
-    setPreviewTimeLeft(0);
     setShowPaywall(true);
   }, []);
 
@@ -161,8 +175,6 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (isActive) {
         console.log('✅ User has PAID access - clearing preview flags');
         setHasAccess(true);
-        setIsPreview(false);
-        setPreviewTimeLeft(0);
         setShowPaywall(false);
         localStorage.setItem('hasAccess', 'true');
         if (data.expiry) {
@@ -180,6 +192,11 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (previewUsed && localStorage.getItem(PREVIEW_USED_KEY) !== 'true') {
           console.log('🔄 Backend says preview used, updating local storage');
           localStorage.setItem(PREVIEW_USED_KEY, 'true');
+        }
+        
+        // Show paywall if preview has been used
+        if (previewUsed) {
+          setShowPaywall(true);
         }
       }
       
@@ -228,7 +245,7 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  // Initial mount effect - check access before allowing preview
+  // Initial mount effect - check access
   useEffect(() => {
     syncUserId();
 
@@ -257,14 +274,12 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (storedHasAccess && storedExpiry) {
         const expiryDate = new Date(storedExpiry);
         if (expiryDate > new Date()) {
-          console.log('✅ Valid cached PAID access found - NO preview needed');
+          console.log('✅ Valid cached PAID access found - NO paywall needed');
           setHasAccess(true);
-          setIsPreview(false);
-          setPreviewTimeLeft(0);
           setShowPaywall(false);
           initialCheckDone.current = true;
           
-          // STILL verify with server to ensure sync
+          // Still verify with server to ensure sync
           await checkAccess();
           return;
         } else {
@@ -281,8 +296,7 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
       initialCheckDone.current = true;
       
       if (hasServerAccess) {
-        console.log('✅ Server confirmed PAID access - NO preview needed');
-        setIsPreview(false);
+        console.log('✅ Server confirmed PAID access - NO paywall needed');
         setShowPaywall(false);
       } else {
         // Check if user has already used their preview (from localStorage)
@@ -290,62 +304,16 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
         
         if (previewUsed) {
           console.log('🚫 Preview already used - showing paywall immediately');
-          setIsPreview(false);
           setShowPaywall(true);
-          setPreviewTimeLeft(0);
         } else {
-          console.log('⏱️ No access - starting ONE-TIME preview countdown');
-          setIsPreview(true);
-          // DO NOT mark preview as used here - only when it actually ends or user clicks unlock
+          console.log('⏱️ No access - user can use preview');
+          setShowPaywall(false);
         }
       }
     };
 
     initializeAccess();
   }, [checkAccess, syncUserId]);
-
-  // Countdown effect
-  useEffect(() => {
-    // Don't run countdown if:
-    // 1. Initial check not done
-    // 2. User has paid access
-    // 3. Not in preview mode
-    // 4. No time left
-    if (!initialCheckDone.current || hasAccess || !isPreview || previewTimeLeft <= 0) {
-      return;
-    }
-
-    console.log('⏱️ Countdown running:', previewTimeLeft, 'seconds left');
-
-    const timer = setInterval(() => {
-      setPreviewTimeLeft((prev) => {
-        if (prev <= 1) {
-          console.log('⏰ Preview ended - tracking usage and showing paywall');
-          clearInterval(timer);
-          
-          // Mark preview as used when countdown ends
-          markPreviewAsUsed('countdown_ended');
-          
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [isPreview, hasAccess, previewTimeLeft, initialCheckDone.current, markPreviewAsUsed]);
-
-  // Watch for access changes and stop everything immediately
-  useEffect(() => {
-    if (hasAccess) {
-      console.log('🛑 Paid access detected - stopping preview/paywall');
-      setIsPreview(false);
-      setPreviewTimeLeft(0);
-      setShowPaywall(false);
-    }
-  }, [hasAccess]);
 
   const unlockAccess = () => {
     console.log('🔓 User clicked unlock - tracking usage and showing paywall');
@@ -358,14 +326,15 @@ export const PaywallProvider: React.FC<{ children: ReactNode }> = ({ children })
     <PaywallContext.Provider
       value={{
         hasAccess,
-        isPreview,
-        previewTimeLeft,
         showPaywall,
         unlockAccess,
         checkAccess,
         refreshAccess,
         resetInitialCheck,
         hasUsedPreview,
+        isPaywallModalOpen,
+        openPaywallModal,
+        closePaywallModal,
       }}
     >
       {children}
