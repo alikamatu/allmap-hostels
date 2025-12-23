@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HostelCard } from '@/types/hostels';
@@ -10,10 +12,10 @@ interface HostelListProps {
 }
 
 export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
-  const { hasAccess, isPreview, unlockAccess } = usePaywall();
+  const { hasAccess, unlockAccess } = usePaywall();
   const router = useRouter()
   
-  const canView = hasAccess || isPreview;
+  const canView = hasAccess;
 
   if (hostels.length === 0) {
     return (
@@ -30,7 +32,7 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
         <motion.div
           key={hostel.id}
           onClick={ ()=> router.push(`/dashboard/hostels/${hostel.id}`) }
-          className="block overflow-hidden hover:scale-101 transition-all duration-800 cursor-pointer"
+          className={"block overflow-hidden hover:scale-101 transition-all duration-800 cursor-pointer relative"}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
@@ -57,23 +59,6 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
                 <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                   Listed
                 </span>
-              )}
-              
-              {/* Paywall Overlay */}
-              {!canView && (
-                <div className="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center p-4">
-                  <Lock size={48} className="text-white mb-4" />
-                  <div className="text-white text-2xl font-bold mb-2">LOCKED</div>
-                  <div className="text-white text-center mb-6">
-                    Unlock all hostels with 30-day access
-                  </div>
-                  <button
-                    onClick={unlockAccess}
-                    className="bg-white text-black px-6 py-2 font-bold hover:bg-gray-100"
-                  >
-                    Unlock Access
-                  </button>
-                </div>
               )}
             </div>
             

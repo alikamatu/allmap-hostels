@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiAlertTriangle } from 'react-icons/fi';
 import { FaWifi, FaParking, FaUtensils, FaShieldAlt, FaTshirt, FaBed } from 'react-icons/fa';
@@ -14,7 +14,8 @@ import { useImageGallery } from '@/hooks/useImageGallery';
 import { RoomType } from '@/types/hostels';
 import { MapModal } from '@/_components/hostels/MapModal';
 import { BookingModal } from '@/_components/bookings/BookingModal';
-import { ContactModal } from '@/_components/hostelid/ContactModal'; // Add this import
+import { ContactModal } from '@/_components/hostelid/ContactModal';
+import { PaywallModal } from '@/_components/dashboard/paywall-modal'; // Add this import
 import { HostelHeader } from '@/_components/hostelid/HostelHeader';
 import { ImageGallery } from '@/_components/hostelid/ImageGallery';
 import { HostelInformation } from '@/_components/hostelid/HostelInformation';
@@ -37,7 +38,8 @@ export default function HostelDetailPage() {
   const [showMap, setShowMap] = useState(false);
   const [sortBy, setSortBy] = useState<'price' | 'availability'>('price');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [contactModalOpen, setContactModalOpen] = useState(false); // Add this state
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [paywallModalOpen, setPaywallModalOpen] = useState(false); // Add paywall modal state
   const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
 
   const handleViewRoom = useCallback((roomTypeId: string) => {
@@ -55,6 +57,21 @@ export default function HostelDetailPage() {
   const handleCheckAvailability = useCallback((roomType: RoomType) => {
     setSelectedRoomType(roomType);
     setContactModalOpen(true);
+  }, []);
+
+  // Add effect to listen for openPaywallModal event
+  React.useEffect(() => {
+    const handleOpenPaywallModal = () => {
+      setPaywallModalOpen(true);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openPaywallModal', handleOpenPaywallModal);
+      
+      return () => {
+        window.removeEventListener('openPaywallModal', handleOpenPaywallModal);
+      };
+    }
   }, []);
 
   // Sort room types
@@ -135,7 +152,7 @@ export default function HostelDetailPage() {
         />
       )}
 
-      {/* Add Contact Modal */}
+      {/* Contact Modal */}
       <ContactModal
         isOpen={contactModalOpen}
         onClose={() => {
@@ -145,6 +162,12 @@ export default function HostelDetailPage() {
         hostelName={hostel.name}
         roomTypeName={selectedRoomType?.name}
         contactInfo={hostel.contact}
+      />
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        isOpen={paywallModalOpen}
+        onClose={() => setPaywallModalOpen(false)}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -260,7 +283,7 @@ export default function HostelDetailPage() {
                   roomType={roomType} 
                   onBook={handleBookRoom}
                   onViewRoom={handleViewRoom}
-                  onCheckAvailability={handleCheckAvailability} // Add this prop
+                  onCheckAvailability={handleCheckAvailability}
                   IsVerified={hostel.is_verified}
                   acceptingBookings={hostel.accepting_bookings}
                 />

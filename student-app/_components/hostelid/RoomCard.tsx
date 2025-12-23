@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { RoomType } from '@/types/hostels';
 import { formatPrice } from '@/utils/formatters';
+import { usePaywall } from '@/context/paywall-context'; // Import the paywall context
 
 interface RoomCardProps {
   roomType: RoomType;
@@ -22,6 +23,9 @@ export const RoomCard = memo(({
   IsVerified,
   acceptingBookings 
 }: RoomCardProps) => {
+  // Get paywall state - check if user has paid access
+  const { hasAccess, showPaywall } = usePaywall();
+
   // Format allowed genders array into a readable string
   const formatAllowedGenders = (genders: string[]): string => {
     if (!genders || genders.length === 0) return 'Mixed';
@@ -50,6 +54,43 @@ export const RoomCard = memo(({
     return 'bg-green-100 text-green-800';
   };
 
+  // Handle paywall button click
+  const handlePayForAccess = () => {
+    // Dispatch event to open paywall modal
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('openPaywallModal'));
+    }
+  };
+
+  // Determine which button to show for unverified hostels
+  const getUnverifiedButton = () => {
+    // If user has paid access OR is in preview mode, show "Check Availability"
+    if (hasAccess || !showPaywall) {
+      return (
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onCheckAvailability(roomType)}
+          className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
+        >
+          Check Availability
+        </motion.button>
+      );
+    }
+    
+    // Otherwise, show "Pay for access"
+    return (
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handlePayForAccess}
+        className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
+      >
+        Pay to Book
+      </motion.button>
+    );
+  };
+
   return (
     <motion.div
       className="bg-white border border-gray-200 overflow-hidden shadow-sm"
@@ -59,22 +100,21 @@ export const RoomCard = memo(({
       transition={{ duration: 0.3 }}
     >
       <div className="p-6">
-
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-xl font-bold text-black">{roomType.name}</h3>
-        {IsVerified && (
-          <span
-            className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
-              roomType.availableRooms > 3 
-                ? 'bg-green-100 text-green-800' 
-                : roomType.availableRooms > 0 
-                ? 'bg-yellow-100 text-yellow-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {roomType.availableRooms > 0 ? `${roomType.availableRooms} available` : 'Fully booked'}
-          </span>
-        )}
+          {IsVerified && (
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
+                roomType.availableRooms > 3 
+                  ? 'bg-green-100 text-green-800' 
+                  : roomType.availableRooms > 0 
+                  ? 'bg-yellow-100 text-yellow-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {roomType.availableRooms > 0 ? `${roomType.availableRooms} available` : 'Fully booked'}
+            </span>
+          )}
         </div>
         
         <p className="text-gray-800 text-sm mb-6 line-clamp-2 leading-relaxed">
@@ -126,16 +166,7 @@ export const RoomCard = memo(({
           </div>
         </div>
 
-        {!IsVerified && (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onCheckAvailability(roomType)}
-            className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
-          >
-            Check Availability
-          </motion.button>
-        )}
+        {!IsVerified && getUnverifiedButton()}
 
         {IsVerified && (
           <div className="flex gap-3">

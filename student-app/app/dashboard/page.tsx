@@ -10,8 +10,9 @@ import { FilterPanel } from '@/_components/hostels/FilterPanel';
 import { HostelList } from '@/_components/hostels/HostelList';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMap, FiList, FiAlertTriangle, FiFilter } from 'react-icons/fi';
+import { usePaywall } from '@/context/paywall-context';
+import { Lock } from 'lucide-react';
 
-// Dynamically import MapView
 const MapView = dynamic(() => import('@/_components/hostels/MapView'), {
   ssr: false,
   loading: () => (
@@ -44,6 +45,9 @@ export default function HostelsPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const schoolCoords = useDistanceFilter();
   const schoolName = useUserSchoolName();
+  const { hasAccess, unlockAccess } = usePaywall();
+
+  const canView = hasAccess;
   
 
   // Initialize filters from localStorage
@@ -207,16 +211,28 @@ export default function HostelsPage() {
               transition={{ duration: 0.3 }}
               className="flex justify-end mb-6"
             >
-              <motion.button
+              {canView && (              
+                <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowMap(!showMap)}
                 className="fixed bottom-4 right-4 sm:static bg-black text-white px-6 py-3 font-medium transition hover:bg-gray-800 flex items-center gap-2 z-10"
                 aria-label={showMap ? 'Show list view' : 'Show map view'}
               >
-                {showMap ? <FiList /> : <FiMap />}
-                {showMap ? 'List View' : 'Map View'}
-              </motion.button>
+                {showMap ? <p className='flex items-center justify-center gap-2'><FiList /> List View</p> : <p className='flex items-center justify-center gap-2'><FiMap /> Map View</p>}
+              </motion.button>)}
+
+              {!canView && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={unlockAccess}
+                  className="fixed bottom-4 right-4 sm:static bg-black text-white px-6 py-3 font-medium transition hover:bg-gray-800 flex items-center gap-2 z-10"
+                  aria-label="Unlock access"
+                >
+                  <Lock size={18} />  Unlock for Map View
+                </motion.button>
+              )}
             </motion.div>
 
             <motion.h1
