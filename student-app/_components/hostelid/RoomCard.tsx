@@ -90,7 +90,7 @@ export const RoomCard = memo(({
         onClick={handlePayForAccess}
         className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
       >
-        Pay to Book
+        Pay to Unlock
       </motion.button>
     );
   };
