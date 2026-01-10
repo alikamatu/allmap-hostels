@@ -196,15 +196,27 @@ export const RoomCard = memo(({
 
         {IsVerified && (
           <div className="flex gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
-              onClick={() => onViewRoom(roomType.id)}
-              disabled={!acceptingBookings}
-            >
-              View Details
-            </motion.button>
+            {hasAccess || !showPaywall ? (
+          <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onCheckAvailability(roomType)}
+          className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
+        >
+          Check Availability
+        </motion.button>
+            ) : (
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
+                onClick={() => onViewRoom(roomType.id)}
+                disabled={!acceptingBookings}
+              >
+                View Details
+              </motion.button>
+        )}
 
             {!acceptingBookings ? (
               <motion.button
