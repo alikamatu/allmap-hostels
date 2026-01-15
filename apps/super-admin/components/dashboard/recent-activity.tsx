@@ -21,7 +21,7 @@ interface RecentActivityProps {
   isLoading?: boolean;
 }
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   User,
   Calendar,
   Building,
@@ -97,7 +97,7 @@ export default function RecentActivity({ activities, isLoading }: RecentActivity
             >
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex-shrink-0 mr-3">
-                  <Icon size={14} className={colorClass} />
+                  <Icon className={colorClass} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col">

@@ -3,7 +3,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Settings, Trash2, X } from 'lucide-react';
-import { RoomStatus } from '@/types/room';
 
 const QuickActionsBar = ({ 
   selectedCount, 

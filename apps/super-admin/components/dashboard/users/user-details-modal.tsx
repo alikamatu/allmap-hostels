@@ -15,7 +15,6 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  MapPin,
   PhoneCall,
   UserCheck
 } from 'lucide-react';

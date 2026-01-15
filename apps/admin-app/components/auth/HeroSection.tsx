@@ -1,4 +1,5 @@
 import { AuthTab } from '@/types/auth';
+import Image from 'next/image';
 
 interface HeroSectionProps {
   activeTab: AuthTab;
@@ -29,7 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ activeTab, onSwitchTab
     <div className="w-full md:w-1/2 bg-[#1a1a1a] p-8 md:p-12 hidden lg:flex flex-col justify-between relative overflow-hidden">
       <div className="flex justify-between items-center">
         <div className="flex items-end">
-          <img src="/logo/logo.png" className='w-12' alt="" />
+          <Image src="/logo/logo.png" className='w-12' alt="" />
           <span className="text-white font-bold text-xl">AllmapHostels</span>
         </div>
         <div className="text-white text-sm">

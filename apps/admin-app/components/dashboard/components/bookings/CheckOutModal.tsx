@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LogOut, AlertCircle, User, Calendar, MapPin, Clock, DollarSign, Loader2, CheckCircle } from 'lucide-react';
 import { Booking, BookingStatus } from '@/types/booking';
-import { formatDate, formatDateTime } from '@/utils/date';
 import { formatCurrency } from '@/utils/currency';
 
 interface CheckOutModalProps {
@@ -15,7 +14,7 @@ interface CheckOutModalProps {
   loading: boolean;
 }
 
-interface CheckOutFormData {
+export interface CheckOutFormData {
   notes?: string;
   actualCheckOutTime?: string;
   roomCondition?: 'excellent' | 'good' | 'fair' | 'poor';
@@ -30,6 +29,7 @@ interface CheckOutFormData {
     damagesNoted: boolean;
     forwardingAddressObtained: boolean;
   };
+  [key: string]: unknown;
 }
 
 const CheckOutModal: React.FC<CheckOutModalProps> = ({

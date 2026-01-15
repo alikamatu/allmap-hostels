@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   CreditCard,
   DollarSign,
@@ -18,7 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useAccess } from '@/hooks/useAccess';
-import { AccessFilters, AccessStatus } from '@/types/access.types';
+import { AccessFilters } from '@/types/access.types';
 import AccessStats from '@/components/dashboard/payments/access-stats';
 import AccessTable from '@/components/dashboard/payments/access-table';
 import AccessFiltersPanel from '@/components/dashboard/payments/access-filters-panel';

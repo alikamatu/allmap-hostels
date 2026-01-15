@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { X, Loader2, Plus } from 'lucide-react';
 import { AllowedGender } from '@/types/room';
 import Swal from 'sweetalert2';
 
@@ -174,7 +174,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
       await onSubmit(data);
       showAlert('Success', 'Room type created successfully!', 'success');
       onClose();
-    } catch (error) {
+    } catch {
       showAlert('Error', 'Failed to create room type. Please try again.', 'error');
     }
   };

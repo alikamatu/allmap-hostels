@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User } from "@/types/user.types";
-import { CalendarDays, Mail, Phone, MapPin, GraduationCap, Shield } from "lucide-react";
+import { CalendarDays, Mail, Phone, GraduationCap, Shield } from "lucide-react";
 
 interface UserDetailsDialogProps {
   user: User | null;

@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, Edit, Trash2, MapPin, Mail, Phone, Wifi, Shirt, 
-  Coffee, Car, Shield, RefreshCw, Info, Hotel,
-  Star, MoreVertical, Check, X, Users, Bed, Calendar, CalendarOff, Crown,
+  Plus, Edit, MapPin, Mail, Phone, Wifi, Shirt, 
+  Coffee, Car, Shield, RefreshCw, Hotel,
+  Star, MoreVertical, Check, X,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
+import Image from 'next/image';
 
 interface Hostel {
   id: string;
@@ -18,7 +19,10 @@ interface Hostel {
   email: string;
   phone: string;
   SecondaryNumber: string;
-  location: any;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
   images: string[];
   amenities: {
     wifi: boolean;
@@ -233,7 +237,7 @@ export default function HostelManagementPage() {
             <select
               className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150 appearance-none"
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
+              onChange={(e) => setFilter(e.target.value as 'all' | 'accepting' | 'not-accepting' | 'wifi' | 'parking' | 'security')}
             >
               <option value="all">All Hostels</option>
               <option value="accepting">Accepting Bookings</option>
@@ -285,7 +289,6 @@ const HostelCard = ({
   index,
   onEdit,
   onToggleBooking,
-  userProfile,
 }: {
   hostel: Hostel;
   index: number;
@@ -343,7 +346,9 @@ const HostelCard = ({
       <div className="relative h-[30vh] bg-gray-900 overflow-hidden">
         {hasImages && !imageError ? (
           <>
-            <img
+            <Image
+              width={200}
+              height={200}
               src={hostel.images[currentImageIndex]}
               alt={`${hostel.name} - image ${currentImageIndex + 1}`}
               className="w-full h-full object-cover"

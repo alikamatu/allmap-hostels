@@ -18,6 +18,7 @@ import BookingStats from '@/components/dashboard/bookings/booking-stats';
 import BookingTable from '@/components/dashboard/bookings/booking-table';
 import BookingsFiltersPanel from '@/components/dashboard/bookings/bookings-filters-panel';
 import BookingDetailsModal from '@/components/dashboard/bookings/booking-details-modal';
+import { BookingRecord } from '@/types/booking.types';
 
 export default function BookingsPage() {
   const [filters, setFilters] = useState<BookingFilters>({
@@ -26,7 +27,7 @@ export default function BookingsPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'overdue'>('all');
 
@@ -80,7 +81,7 @@ export default function BookingsPage() {
     await updateStatus(id, status);
   };
 
-  const handleViewDetails = (booking: any) => {
+  const handleViewDetails = (booking: BookingRecord) => {
     setSelectedBooking(booking);
     setShowBookingDetails(true);
   };
@@ -321,7 +322,7 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Booking Details Modal */}
+      {/* BookingRecord Details Modal */}
       <BookingDetailsModal
         isOpen={showBookingDetails}
         onClose={() => {

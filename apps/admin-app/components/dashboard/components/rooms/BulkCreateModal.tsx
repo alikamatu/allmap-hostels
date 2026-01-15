@@ -23,7 +23,7 @@ interface BulkCreateModalProps {
   hostels: Hostel[];
   roomTypes: RoomType[];
   formData: BulkCreateFormData;
-  setFormData: (data: BulkCreateFormData) => void;
+  setFormData: React.Dispatch<React.SetStateAction<BulkCreateFormData>>;
   onSubmit: (formData: BulkCreateFormData) => Promise<void>;
   loading: boolean;
   onHostelSelect?: (hostelId: string) => void;
@@ -53,7 +53,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
         (type) => type.id === formData.roomTypeId
       );
       if (!isRoomTypeValid) {
-        setFormData({ ...formData, roomTypeId: '' });
+        setFormData(prev => ({ ...prev, roomTypeId: '' }));
       }
     }
   }, [formData.hostelId, formData.roomTypeId, filteredRoomTypes, setFormData]);
@@ -109,7 +109,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
       await onSubmit(formData);
       showAlert('Success', 'Rooms created successfully!', 'success');
       onClose();
-    } catch (error) {
+    } catch {
       showAlert('Error', 'Failed to create rooms. Please try again.', 'error');
     }
   };
@@ -132,7 +132,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
     if (isOpen && !formData.hostelId) {
       // Don't reset if hostel is already selected from parent component
     }
-  }, [isOpen]);
+  }, [isOpen, formData.hostelId]);
 
   return (
     <AnimatePresence>

@@ -9,9 +9,7 @@ import {
   Building, 
   GraduationCap,
   TrendingUp,
-  Home,
-  School,
-  Clock
+  School
 } from 'lucide-react';
 import { UserStats as UserStatsType } from '@/types/user.types';
 import { formatNumber, formatPercentage } from '@/lib/formatters';

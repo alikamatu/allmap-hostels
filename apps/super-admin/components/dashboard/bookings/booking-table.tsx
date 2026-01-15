@@ -6,22 +6,16 @@ import {
   User,
   Mail,
   Phone,
-  Calendar,
-  Clock,
   Home,
   Bed,
-  DollarSign,
   CheckCircle,
   XCircle,
   AlertCircle,
   MoreVertical,
   Eye,
-  Edit,
-  Download,
-  RefreshCw,
 } from 'lucide-react';
 import { BookingRecord, BookingStatus, PaymentStatus } from '@/types/booking.types';
-import { formatDate, formatCurrency } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 
 interface BookingTableProps {
   bookings: BookingRecord[];

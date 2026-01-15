@@ -1,11 +1,12 @@
 import { Search, X } from "lucide-react";
+import { ReviewFiltersProps, ReviewFilterDto } from "@/types/review";
 import React from "react";
 
-function ReviewFilters({ filters, onFiltersChange, hostels }: { filters: any; onFiltersChange: (filters: any) => void; hostels: any[]; }) {
+function ReviewFilters({ filters, onFiltersChange, hostels }: ReviewFiltersProps) {
   const resetFilters = () => {
     onFiltersChange({
       hostelId: "",
-      rating: "",
+      rating: undefined,
       sortBy: "createdAt",
       sortOrder: "DESC",
       search: ""
@@ -73,7 +74,7 @@ function ReviewFilters({ filters, onFiltersChange, hostels }: { filters: any; on
           </label>
           <select
             value={filters.sortBy}
-            onChange={(e) => onFiltersChange({ ...filters, sortBy: e.target.value })}
+            onChange={(e) => onFiltersChange({ ...filters, sortBy: e.target.value as ReviewFilterDto["sortBy"] })}
             className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
           >
             <option value="createdAt">Date</option>
@@ -89,7 +90,7 @@ function ReviewFilters({ filters, onFiltersChange, hostels }: { filters: any; on
           </label>
           <select
             value={filters.sortOrder}
-            onChange={(e) => onFiltersChange({ ...filters, sortOrder: e.target.value })}
+            onChange={(e) => onFiltersChange({ ...filters, sortOrder: e.target.value as ReviewFilterDto["sortOrder"] })}
             className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
           >
             <option value="DESC">Newest First</option>

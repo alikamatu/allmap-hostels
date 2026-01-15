@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Download, Plus, MapPin
 } from 'lucide-react';
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 // Types
 import { Booking, BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
@@ -14,9 +14,9 @@ import { Hostel } from '@/types/hostel';
 import BookingFilters from '@/components/dashboard/components/bookings/BookingFilters';
 import BookingsList from '@/components/dashboard/components/bookings/BookingsList';
 import BookingDetailsModal from '@/components/dashboard/components/bookings/BookingDetailsModal';
-import PaymentModal from '@/components/dashboard/components/bookings/PaymentModal';
-import CheckInModal from '@/components/dashboard/components/bookings/CheckInModal';
-import CheckOutModal from '@/components/dashboard/components/bookings/CheckOutModal';
+import PaymentModal, { PaymentFormData } from '@/components/dashboard/components/bookings/PaymentModal';
+import CheckInModal, { CheckInFormData } from '@/components/dashboard/components/bookings/CheckInModal';
+import CheckOutModal, { CheckOutFormData } from '@/components/dashboard/components/bookings/CheckOutModal';
 import BookingStatsCards from '@/components/dashboard/components/bookings/BookingStatsCards';
 import BulkActionsBar from '@/components/dashboard/components/bookings/BulkActionsBar';
 import CreateBookingModal from '@/components/dashboard/components/bookings/CreateBookingModal';
@@ -84,7 +84,6 @@ const BookingManagementPage: React.FC = () => {
     cancelBooking,
     checkInBooking,
     checkOutBooking,
-    getBookingById,
     fetchStats
   } = useBookings();
 
@@ -205,14 +204,9 @@ const BookingManagementPage: React.FC = () => {
     if (modalType === 'details') setSelectedBooking(null);
   }, []);
 
-  const handlePayment = async (bookingId: string, paymentData: any) => {
+  const handlePayment = async (bookingId: string, paymentData: PaymentFormData) => {
     try {
-      const formattedPaymentData = {
-        ...paymentData,
-        transactionRef: paymentData.transactionRef || null
-      };
-      
-      const result = await recordPayment(bookingId, formattedPaymentData);
+      const result = await recordPayment(bookingId, paymentData);
       
       if (result.booking) {
         setSelectedBooking(prev => prev ? {
@@ -240,7 +234,7 @@ const BookingManagementPage: React.FC = () => {
     }
   };
 
-  const handleCheckIn = async (bookingId: string, checkInData: any) => {
+  const handleCheckIn = async (bookingId: string, checkInData: CheckInFormData) => {
     try {
       const updatedBooking = await checkInBooking(bookingId, checkInData);
       setSelectedBooking(updatedBooking);
@@ -261,11 +255,10 @@ const BookingManagementPage: React.FC = () => {
     }
   };
 
-  const handleCheckOut = async (bookingId: string, checkOutData: any) => {
+  const handleCheckOut = async (bookingId: string, checkOutData: CheckOutFormData) => {
     try {
       const updatedBooking = await checkOutBooking(bookingId, checkOutData);
-      setSelectedBookings(prev => prev.filter(id => id !== bookingId));
-      closeModal('checkOut');
+      setSelectedBooking(updatedBooking);
       
       const filterParams = {
         page: currentPage,
@@ -436,7 +429,7 @@ const BookingManagementPage: React.FC = () => {
             onCheckIn={(booking) => openModal('checkIn', booking)}
             onCheckOut={(booking) => openModal('checkOut', booking)}
             onConfirm={confirmBooking}
-            onCancel={async (bookingId: string, data: any) => {
+            onCancel={async (bookingId: string, data: { reason: string; notes?: string }) => {
               await cancelBooking(bookingId, data);
               setSelectedBookings(prev => prev.filter(id => id !== bookingId));
             }}
@@ -488,7 +481,7 @@ const BookingManagementPage: React.FC = () => {
           isOpen={modals.create}
           onClose={() => closeModal('create')}
           hostels={hostels}
-          onSubmit={async (data) => {
+          onSubmit={async () => {
             const filterParams = {
               page: currentPage,
               limit: pageSize,

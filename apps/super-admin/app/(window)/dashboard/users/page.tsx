@@ -8,7 +8,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
-import { UserFilters, UserRole, UserStatus } from '@/types/user.types';
+import { CreateUserData, UpdateUserData, User, UserFilters, UserRole } from '@/types/user.types';
 import UserTable from '@/components/dashboard/users/user-table';
 import UserFiltersPanel from '@/components/dashboard/users/user-filters-panel';
 import CreateUserModal from '@/components/dashboard/users/create-user-modal';
@@ -26,7 +26,7 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -36,7 +36,6 @@ export default function UsersPage() {
     pagination,
     loading,
     error,
-    refetch,
     createUser,
     updateUser,
     verifyUser,
@@ -55,14 +54,14 @@ export default function UsersPage() {
     handleFilterChange({ search: searchTerm || undefined });
   };
 
-  const handleCreateUser = async (data: any) => {
+  const handleCreateUser = async (data: CreateUserData) => {
     const result = await createUser(data);
     if (result) {
       setShowCreateModal(false);
     }
   };
 
-  const handleUpdateUser = async (data: any) => {
+  const handleUpdateUser = async (data: UpdateUserData) => {
     if (selectedUser) {
       const result = await updateUser(selectedUser.id, data);
       if (result) {

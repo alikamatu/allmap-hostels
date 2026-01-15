@@ -103,7 +103,7 @@ export interface ReviewFilterDto {
   hostelId?: string;
   studentId?: string;
   status?: ReviewStatus;
-  rating?: number;
+  rating?: number | string;
   minRating?: number;
   maxRating?: number;
   page?: number;

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Booking } from '@/types/booking';
+import { Room } from '@/types/room';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -26,7 +27,7 @@ interface ApiCallOptions extends RequestInit {
     headers?: Record<string, string>;
 }
 
-const apiCall = async <T = any>(endpoint: string, options: ApiCallOptions = {}): Promise<T> => {
+async function apiCall<TResponse>(endpoint: string, options: ApiCallOptions = {}): Promise<TResponse> {
     const token = localStorage.getItem('access_token');
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
@@ -42,7 +43,7 @@ const apiCall = async <T = any>(endpoint: string, options: ApiCallOptions = {}):
     }
 
     return response.json();
-};
+}
 
 // Dashboard Components
 interface StatCardProps {
@@ -297,7 +298,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        const hostelsResponse = await apiCall('/hostels/fetch');
+        const hostelsResponse = await apiCall<Hostel[]>('/hostels/fetch');
         const hostels = hostelsResponse || [];
         
         if (hostels.length === 0) {
@@ -324,7 +325,7 @@ const Dashboard = () => {
 
         for (const hostel of hostels) {
           try {
-            const bookingsResponse = await apiCall(`/bookings/hostel/${hostel.id}`);
+            const bookingsResponse = await apiCall<Booking[]>(`/bookings/hostel/${hostel.id}`);
             const hostelBookings = bookingsResponse || [];
             
             totalBookings += hostelBookings.length;
@@ -354,7 +355,7 @@ const Dashboard = () => {
 
         for (const hostel of hostels) {
           try {
-            const roomsResponse = await apiCall(`/rooms/hostel/${hostel.id}`);
+            const roomsResponse = await apiCall<Room[]>(`/rooms/hostel/${hostel.id}`);
             const hostelRooms = roomsResponse || [];
             
             totalRooms += hostelRooms.length;
@@ -448,7 +449,7 @@ const Dashboard = () => {
 
         {/* Navigation Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 w-full">
-          {navigationItems.map((item, index) => {
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavigationCard
@@ -528,7 +529,7 @@ const Dashboard = () => {
               </div>
               <div className="p-4">
                 <div className="space-y-3">
-                  {quickActions.map((action, index) => (
+                  {quickActions.map((action) => (
                     <QuickActionCard
                       key={action.title}
                       title={action.title}

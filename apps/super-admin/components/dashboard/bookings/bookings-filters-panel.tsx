@@ -51,7 +51,7 @@ export default function BookingsFiltersPanel({
     overdueOnly: filters.overdueOnly,
   });
 
-  const handleChange = (key: keyof BookingFilters, value: any) => {
+  const handleChange = (key: keyof BookingFilters, value: BookingFilters[keyof BookingFilters]) => {
     setLocalFilters(prev => ({ ...prev, [key]: value }));
   };
 

@@ -1,11 +1,20 @@
 'use client';
 
 import { RevenueStats } from '@/types/access.types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
 
 interface RevenueChartProps {
   data: RevenueStats;
 }
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+  }>;
+  label?: string;
+};
+
 
 export default function RevenueChart({ data }: RevenueChartProps) {
   // Transform monthly data for chart
@@ -14,19 +23,22 @@ export default function RevenueChart({ data }: RevenueChartProps) {
     revenue,
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-2 border border-gray-200 shadow-sm rounded">
-          <p className="text-11 font-medium text-gray-900">{label}</p>
-          <p className="text-11 text-gray-600">
-            Revenue: <span className="font-semibold">${payload[0].value.toLocaleString()}</span>
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-2 border border-gray-200 shadow-sm rounded">
+        <p className="text-11 font-medium text-gray-900">{label}</p>
+        <p className="text-11 text-gray-600">
+          Revenue:{' '}
+          <span className="font-semibold">
+            ${payload[0].value.toLocaleString()}
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
   return (
     <div className="bg-white p-4">

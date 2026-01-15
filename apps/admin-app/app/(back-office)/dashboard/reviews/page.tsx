@@ -1,7 +1,7 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-import { useState, useEffect, JSX } from "react";
+import { useState, useEffect, useCallback, JSX } from "react";
 import RatingDistribution from "@/components/dashboard/components/review/RatingDistribution";
 import ReviewCard from "@/components/dashboard/components/review/ReviewCard";
 import ReviewFilters from "@/components/dashboard/components/review/ReviewFilters";
@@ -48,25 +48,7 @@ export default function ReviewsPage(): JSX.Element {
     }
   });
 
-  useEffect(() => {
-    loadHostels();
-  }, []);
-
-  useEffect(() => {
-    if (state.hostels.length > 0) {
-      loadReviews();
-    }
-  }, [state.filters, state.hostels]);
-
-  useEffect(() => {
-    if (state.filters.hostelId) {
-      loadStats();
-    } else if (state.hostels.length > 0) {
-      loadCombinedStats();
-    }
-  }, [state.filters.hostelId, state.hostels]);
-
-  const loadHostels = async (): Promise<void> => {
+  const loadHostels = useCallback(async (): Promise<void> => {
     try {
       const data = await reviewsAPI.getHostels();
       setState(prev => ({
@@ -78,9 +60,9 @@ export default function ReviewsPage(): JSX.Element {
       console.error('Failed to load hostels:', error);
       setState(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, []);
 
-  const loadReviews = async (): Promise<void> => {
+  const loadReviews = useCallback(async (): Promise<void> => {
     setState(prev => ({ ...prev, loading: true }));
     try {
       let allReviews: Review[] = [];
@@ -148,9 +130,9 @@ export default function ReviewsPage(): JSX.Element {
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [state.filters, state.hostels]);
 
-  const loadStats = async (): Promise<void> => {
+  const loadStats = useCallback(async (): Promise<void> => {
     if (!state.filters.hostelId) return;
     try {
       const data = await reviewsAPI.getHostelReviewStats(state.filters.hostelId);
@@ -158,9 +140,9 @@ export default function ReviewsPage(): JSX.Element {
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
-  };
+  }, [state.filters.hostelId]);
 
-  const loadCombinedStats = async (): Promise<void> => {
+  const loadCombinedStats = useCallback(async (): Promise<void> => {
     try {
       const results = await Promise.allSettled(
         state.hostels.map(hostel => reviewsAPI.getHostelReviewStats(hostel.id))
@@ -204,7 +186,25 @@ export default function ReviewsPage(): JSX.Element {
     } catch (error) {
       console.error('Failed to load combined stats:', error);
     }
-  };
+  }, [state.hostels]);
+
+  useEffect(() => {
+    loadHostels();
+  }, [loadHostels]);
+
+  useEffect(() => {
+    if (state.hostels.length > 0) {
+      loadReviews();
+    }
+  }, [loadReviews, state.hostels]);
+
+  useEffect(() => {
+    if (state.filters.hostelId) {
+      loadStats();
+    } else if (state.hostels.length > 0) {
+      loadCombinedStats();
+    }
+  }, [state.filters.hostelId, state.hostels, loadStats, loadCombinedStats]);
 
   const handleRespond = (review: Review): void => {
     setState(prev => ({

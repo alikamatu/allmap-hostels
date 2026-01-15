@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FiClock, FiXCircle, FiCheckCircle, FiAlertCircle, FiArrowRight, FiHome } from 'react-icons/fi';
+import { FiClock, FiXCircle, FiAlertCircle, FiArrowRight, FiHome } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 
 interface VerificationStatus {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Mail, Phone, Lock, User, School } from 'lucide-react';
+import { X, Mail, Phone, Lock, User } from 'lucide-react';
 import { CreateUserData } from '@/types/user.types';
 
 interface CreateUserModalProps {
@@ -72,7 +72,7 @@ export default function CreateUserModal({ isOpen, onClose, onCreate }: CreateUse
     }
   };
 
-  const handleChange = (field: keyof CreateUserData, value: any) => {
+  const handleChange = (field: keyof CreateUserData, value: CreateUserData[keyof CreateUserData]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -80,7 +80,7 @@ export default function CreateUserModal({ isOpen, onClose, onCreate }: CreateUse
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

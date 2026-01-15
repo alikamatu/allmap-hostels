@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, Clock, CheckCircle, 
-  DollarSign, CreditCard, AlertTriangle, TrendingUp 
+  DollarSign, AlertTriangle, TrendingUp 
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currency';
 

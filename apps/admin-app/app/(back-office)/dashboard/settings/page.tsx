@@ -9,31 +9,15 @@ import {
   Eye, 
   EyeOff, 
   AlertCircle, 
-  CheckCircle,
-  Home,
-  Calendar,
-  MapPin,
-  CreditCard,
-  MessageSquare,
-  Settings,
-  Bell,
-  Filter,
-  Search
+  CheckCircle
 } from 'lucide-react';
 
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' }
-];
+
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState('settings');
 
   // Profile state
   type School = {
@@ -98,7 +82,7 @@ export default function SettingsPage() {
       } else {
         setMessage({ type: 'error', text: 'Failed to load user profile' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Error loading profile data' });
     }
   };
@@ -132,7 +116,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         setMessage({ type: 'error', text: errorData.message || 'Failed to update profile' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Error updating profile' });
     } finally {
       setLoading(false);
@@ -183,7 +167,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         setMessage({ type: 'error', text: errorData.message || 'Failed to change password' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Error changing password' });
     } finally {
       setLoading(false);

@@ -22,7 +22,7 @@ interface CreateRoomModalProps {
   hostels: Hostel[];
   roomTypes: RoomType[];
   formData: CreateRoomFormData;
-  setFormData: (data: CreateRoomFormData) => void;
+  setFormData: React.Dispatch<React.SetStateAction<CreateRoomFormData>>;
   onSubmit: (data: CreateRoomFormData) => Promise<void>;
   loading: boolean;
   onHostelSelect?: (hostelId: string) => void;
@@ -50,7 +50,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
         (type) => type.id === formData.roomTypeId
       );
       if (!isRoomTypeValid) {
-        setFormData({ ...formData, roomTypeId: '' });
+        setFormData(prev => ({ ...prev, roomTypeId: '' }));
       }
     }
   }, [formData.hostelId, formData.roomTypeId, filteredRoomTypes, setFormData]);
@@ -107,7 +107,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       await onSubmit(submitData);
       showAlert('Success', 'Room created successfully!', 'success');
       onClose();
-    } catch (error) {
+    } catch {
       showAlert('Error', 'Failed to create room. Please try again.', 'error');
     }
   };

@@ -3,15 +3,17 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
+import { ReviewCardProps } from "@/types/review";
 import React from "react";
 
-function ReviewCard({ review, onRespond }: { review: any; onRespond: (review: any) => void; }) {
+function ReviewCard({ review, onRespond }: ReviewCardProps) {
   const [showFullText, setShowFullText] = useState(false);
   const reviewText = review.reviewText || '';
   const isLongText = reviewText.length > 200;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: string | Date | undefined) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

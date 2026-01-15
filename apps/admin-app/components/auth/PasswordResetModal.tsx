@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FiX, FiCheckCircle, FiMail } from 'react-icons/fi';
+import { FiX, FiCheckCircle } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 import { InputField } from '@/components/ui/InputField';
 import { ResetStatus } from '@/types/auth';

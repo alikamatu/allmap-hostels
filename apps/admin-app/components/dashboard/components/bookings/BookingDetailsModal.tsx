@@ -24,6 +24,8 @@ interface BookingDetailsModalProps {
   isHistorical?: boolean;
 }
 
+type TabType = 'details' | 'payments' | 'timeline';
+
 const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   isOpen,
   onClose,
@@ -33,7 +35,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   onCheckOut,
   isHistorical,
 }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'payments' | 'timeline'>('details');
+  const [activeTab, setActiveTab] = useState<TabType>('details');
   const { fetchBookingPayments, payments, loading: paymentsLoading } = usePayments();
 
   useEffect(() => {
@@ -219,7 +221,7 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as TabType)}
                     disabled={paymentsLoading}
                     className={`flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                       activeTab === tab.id

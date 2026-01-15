@@ -4,71 +4,135 @@ import { motion } from 'framer-motion';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
-import { FiCheck, FiUpload, FiFile, FiHome, FiArrowRight } from 'react-icons/fi';
+import { FiCheck, FiUpload, FiFile, FiHome } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';
 import { adminVerificationSchema, AdminVerificationFormData } from '@/lib/validationSchemas';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FieldValues, Path } from 'react-hook-form';
+import type { InputHTMLAttributes, SelectHTMLAttributes } from 'react';
 
-// Fixed FormInput component using useFormContext
-const FormInput = ({ name, label, placeholder, required = false, type = 'text', ...props }: any) => {
-  const { register, formState: { errors } } = useFormContext();
-  
+type FormInputProps<T extends FieldValues> = {
+  name: Path<T>;
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  type?: string;
+} & InputHTMLAttributes<HTMLInputElement>;
+
+function FormInput<T extends FieldValues>({
+  name,
+  label,
+  placeholder,
+  required = false,
+  type = 'text',
+  ...props
+}: FormInputProps<T>) {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<T>();
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
+
       <input
         type={type}
         {...register(name)}
         {...props}
         placeholder={placeholder}
-        className="w-full py-3 px-4 bg-white border border-gray-300  focus:outline-none focus:ring-2 focus:ring-[#FF6A00] focus:border-transparent"
+        className="w-full py-3 px-4 bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
       />
+
       {errors[name] && (
-        <p className="mt-1 text-sm text-red-600">{errors[name]?.message as string}</p>
+        <p className="mt-1 text-sm text-red-600">
+          {String(errors[name]?.message)}
+        </p>
       )}
     </div>
   );
+}
+
+
+type SelectOption = {
+  value: string;
+  label: string;
 };
 
-// Fixed FormSelect component using useFormContext
-const FormSelect = ({ name, label, options, required = false }: any) => {
-  const { register, formState: { errors } } = useFormContext();
-  
+type FormSelectProps<T extends FieldValues> = {
+  name: Path<T>;
+  label: string;
+  options: SelectOption[];
+  required?: boolean;
+} & SelectHTMLAttributes<HTMLSelectElement>;
+
+function FormSelect<T extends FieldValues>({
+  name,
+  label,
+  options,
+  required = false,
+}: FormSelectProps<T>) {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<T>();
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
+
       <select
         {...register(name)}
-        className="w-full py-3 px-4 bg-white border border-gray-300  focus:outline-none focus:ring-2 focus:ring-[#FF6A00] focus:border-transparent"
+        className="w-full py-3 px-4 bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
       >
         <option value="">Select {label}</option>
-        {options.map((option: any) => (
+        {options.map(option => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
+
       {errors[name] && (
-        <p className="mt-1 text-sm text-red-600">{errors[name]?.message as string}</p>
+        <p className="mt-1 text-sm text-red-600">
+          {String(errors[name]?.message)}
+        </p>
       )}
     </div>
   );
-};
+}
 
-// FileUploader component (keep as is)
-const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesChange }: any) => {
+
+type AcceptMap = Record<string, string[]>;
+
+interface FileUploaderProps {
+  label: string;
+  description: string;
+  accept: AcceptMap;
+  maxFiles: number;
+  maxSize?: number;
+  onFilesChange: (files: File[]) => void;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({
+  label,
+  description,
+  accept,
+  maxFiles,
+  onFilesChange,
+}) => {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
 
   const handleFiles = (newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
     const validFiles = fileArray.slice(0, maxFiles - files.length);
-    
+
     setFiles(prev => {
       const updated = [...prev, ...validFiles];
       onFilesChange(updated);
@@ -76,21 +140,23 @@ const FileUploader = ({ label, description, accept, maxFiles, maxSize, onFilesCh
     });
   };
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else {
       setDragActive(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+
+    if (e.dataTransfer.files?.length) {
       handleFiles(e.dataTransfer.files);
     }
   };

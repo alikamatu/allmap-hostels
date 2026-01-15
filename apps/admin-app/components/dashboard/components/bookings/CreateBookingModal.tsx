@@ -1,12 +1,42 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Calendar, CreditCard, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
+interface PaystackResponse {
+  reference: string;
+  status?: string;
+  message?: string;
+  transaction?: string;
+}
+
+interface PaystackOptions {
+  key: string;
+  email: string;
+  amount: number;
+  currency: string;
+  ref: string;
+  metadata?: {
+    custom_fields: Array<{
+      display_name: string;
+      variable_name: string;
+      value: string;
+    }>;
+  };
+  callback: (response: PaystackResponse) => void;
+  onClose: () => void;
+}
+
+interface PaystackPop {
+  setup: (options: PaystackOptions) => {
+    openIframe: () => void;
+  };
+}
+
 declare global {
   interface Window {
-    PaystackPop: any;
+    PaystackPop?: PaystackPop;
   }
 }
 
@@ -49,27 +79,27 @@ interface CreateBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   hostels: Hostel[];
-  onSubmit: (bookingData: any) => Promise<void>;
+  onSubmit: (result: unknown) => Promise<void>;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_your_key_here';
 const BOOKING_FEE = 70;
 
-const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+const CreateBookingModal = ({
   isOpen,
   onClose,
   hostels,
   onSubmit,
-}) => {
-  // Generate UUID function
-  const generateUUID = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  };
+}: CreateBookingModalProps) => {
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -97,52 +127,32 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [paystackLoaded, setPaystackLoaded] = useState(false);
 
-  // Load Paystack script
-  useEffect(() => {
-    if (!paystackLoaded) {
-      const existingScript = document.getElementById('paystack-script');
-      if (existingScript) {
-        setPaystackLoaded(true);
-        return;
-      }
+  const resetForm = useCallback(() => {
+    setFormData({
+      studentName: '',
+      studentEmail: '',
+      studentPhone: '',
+      studentId: generateUUID(), // Generate new UUID on reset
+      hostelId: '',
+      roomId: '',
+      checkInDate: '',
+      checkOutDate: '',
+      bookingType: BookingType.SEMESTER,
+      specialRequests: '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
+      emergencyContactRelationship: ''
+    });
+    setPaymentStatus(PaymentStatus.IDLE);
+    setPaymentReference('');
+    setError('');
+    setValidationErrors({});
+    setCalculatedAmount(0);
+    setAvailableRooms([]);
+    setRoomTypes(new Map());
+  }, []);
 
-      const script = document.createElement('script');
-      script.id = 'paystack-script';
-      script.src = 'https://js.paystack.co/v1/inline.js';
-      script.async = true;
-      script.onload = () => setPaystackLoaded(true);
-      script.onerror = () => setError('Failed to load payment processor. Please refresh the page.');
-      document.head.appendChild(script);
-    }
-  }, [paystackLoaded]);
-
-  // Reset form when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      resetForm();
-    }
-  }, [isOpen]);
-
-  // Fetch available rooms
-  useEffect(() => {
-    if (formData.hostelId && formData.checkInDate && formData.checkOutDate) {
-      fetchAvailableRooms();
-    } else {
-      setAvailableRooms([]);
-      setRoomTypes(new Map());
-    }
-  }, [formData.hostelId, formData.checkInDate, formData.checkOutDate]);
-
-  // Calculate booking amount
-  useEffect(() => {
-    if (formData.roomId && formData.bookingType && formData.checkInDate && formData.checkOutDate) {
-      calculateBookingAmount();
-    } else {
-      setCalculatedAmount(0);
-    }
-  }, [formData.roomId, formData.bookingType, formData.checkInDate, formData.checkOutDate]);
-
-  const fetchAvailableRooms = async () => {
+  const fetchAvailableRooms = useCallback(async () => {
     setLoadingRooms(true);
     setError('');
     
@@ -172,23 +182,23 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
       
       const typesMap = new Map<string, RoomType>();
       if (data.rooms) {
-        data.rooms.forEach((room: any) => {
+        data.rooms.forEach((room: Room) => {
           if (room.roomType) {
             typesMap.set(room.roomType.id, room.roomType);
           }
         });
       }
       setRoomTypes(typesMap);
-    } catch (error: any) {
-      setError(`Failed to fetch available rooms: ${error.message}`);
+    } catch (error: unknown) {
+      setError(`Failed to fetch available rooms: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setAvailableRooms([]);
       setRoomTypes(new Map());
     } finally {
       setLoadingRooms(false);
     }
-  };
+  }, [formData.hostelId, formData.checkInDate, formData.checkOutDate]);
 
-  const calculateBookingAmount = () => {
+  const calculateBookingAmount = useCallback(() => {
     const room = availableRooms.find(r => r.id === formData.roomId);
     if (!room?.roomType) {
       setCalculatedAmount(0);
@@ -217,7 +227,54 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     }
     
     setCalculatedAmount(Math.max(0, amount));
-  };
+  }, [availableRooms, formData.roomId, formData.bookingType, formData.checkInDate, formData.checkOutDate]);
+
+  // Load Paystack script
+  useEffect(() => {
+    if (!paystackLoaded) {
+      const existingScript = document.getElementById('paystack-script');
+      if (existingScript) {
+        setPaystackLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'paystack-script';
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      script.onload = () => setPaystackLoaded(true);
+      script.onerror = () => setError('Failed to load payment processor. Please refresh the page.');
+      document.head.appendChild(script);
+    }
+  }, [paystackLoaded]);
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  // Fetch available rooms
+  useEffect(() => {
+    if (formData.hostelId && formData.checkInDate && formData.checkOutDate) {
+      fetchAvailableRooms();
+    } else {
+      setAvailableRooms([]);
+      setRoomTypes(new Map());
+    }
+  }, [fetchAvailableRooms, formData.hostelId, formData.checkInDate, formData.checkOutDate]);
+
+  // Calculate booking amount
+  useEffect(() => {
+    if (formData.roomId && formData.bookingType && formData.checkInDate && formData.checkOutDate) {
+      calculateBookingAmount();
+    } else {
+      setCalculatedAmount(0);
+    }
+  }, [calculateBookingAmount, formData.roomId, formData.bookingType, formData.checkInDate, formData.checkOutDate]);
+
+
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -323,7 +380,7 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             }
           ]
         },
-        callback: function(response: any) {
+        callback: function(response: PaystackResponse) {
           handlePaymentSuccess(response.reference);
         },
         onClose: function() {
@@ -335,9 +392,9 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
       });
 
       handler.openIframe();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setPaymentStatus(PaymentStatus.FAILED);
-      setError(`Payment initialization failed: ${error.message}`);
+      setError(`Payment initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -395,36 +452,13 @@ const handlePaymentSuccess = async (reference: string) => {
       onClose();
     }, 2000);
     
-  } catch (error: any) {
-    setError(`Failed to create booking: ${error.message}`);
+  } catch (error: unknown) {
+    setError(`Failed to create booking: ${error instanceof Error ? error.message : 'Unknown error'}`);
     setPaymentStatus(PaymentStatus.FAILED);
   }
 };
 
-  const resetForm = () => {
-    setFormData({
-      studentName: '',
-      studentEmail: '',
-      studentPhone: '',
-      studentId: generateUUID(), // Generate new UUID on reset
-      hostelId: '',
-      roomId: '',
-      checkInDate: '',
-      checkOutDate: '',
-      bookingType: BookingType.SEMESTER,
-      specialRequests: '',
-      emergencyContactName: '',
-      emergencyContactPhone: '',
-      emergencyContactRelationship: ''
-    });
-    setPaymentStatus(PaymentStatus.IDLE);
-    setPaymentReference('');
-    setError('');
-    setValidationErrors({});
-    setCalculatedAmount(0);
-    setAvailableRooms([]);
-    setRoomTypes(new Map());
-  };
+
 
   const handleClose = () => {
     if (paymentStatus !== PaymentStatus.PROCESSING) {

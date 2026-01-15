@@ -9,7 +9,7 @@ interface NavbarProps {
   isCollapsed?: boolean;
 }
 
-export default function Navbar({ toggleSidenav }: NavbarProps) {
+export default function Navbar({}: NavbarProps) {
   const { logout, user } = useAuth();
   
   return (

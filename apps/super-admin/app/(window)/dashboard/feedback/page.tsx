@@ -131,7 +131,7 @@ export default function AdminFeedbackDashboard() {
       const data = await response.json();
       
       // Add type to each feedback item
-      const typedData = data.data.map((item: any) => ({
+      const typedData = data.data.map((item: FeedbackItem) => ({
         ...item,
         type: activeTab
       }));

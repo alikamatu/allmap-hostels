@@ -1,7 +1,20 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 
-interface HostelData {
+export interface BankDetails {
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  branch: string;
+}
+
+export interface MomoDetails {
+  provider: string;
+  number: string;
+  name: string;
+}
+
+export interface HostelData {
   name: string;
   description: string;
   email: string;
@@ -9,17 +22,8 @@ interface HostelData {
   SecondaryNumber: string;
   base_price: number;
   payment_method: 'bank' | 'momo' | 'both';
-  bank_details?: {
-    bank_name: string;
-    account_name: string;
-    account_number: string;
-    branch: string;
-  };
-  momo_details?: {
-    provider: string;
-    number: string;
-    name: string;
-  };
+  bank_details?: BankDetails;
+  momo_details?: MomoDetails;
   max_occupancy: number;
   house_rules: string;
   check_in_time: string;
@@ -35,8 +39,8 @@ interface HostelFormProps {
   handleSecondaryPhoneChange: (SecondaryNumber: string) => void;
   handleBasePriceChange: (price: number) => void;
   handlePaymentMethodChange: (method: 'bank' | 'momo' | 'both') => void;
-  handleBankDetailsChange: (details: any) => void;
-  handleMomoDetailsChange: (details: any) => void;
+  handleBankDetailsChange: (details: BankDetails) => void;
+  handleMomoDetailsChange: (details: MomoDetails) => void;
   handleMaxOccupancyChange: (occupancy: number) => void;
   handleNearbyFacilitiesChange: (facilities: string[]) => void;
 }
@@ -278,7 +282,7 @@ export default function HostelForm({
                   name="payment_method"
                   value={method}
                   checked={hostelData.payment_method === method}
-                  onChange={(e) => handlePaymentMethodChange(e.target.value as any)}
+                  onChange={(e) => handlePaymentMethodChange(e.target.value as 'bank' | 'momo' | 'both')}
                   className="sr-only"
                 />
                 <motion.label
@@ -317,6 +321,9 @@ export default function HostelForm({
                 <select
                   value={hostelData.bank_details?.bank_name || ''}
                   onChange={(e) => handleBankDetailsChange({
+                    account_name: '',
+                    account_number: '',
+                    branch: '',
                     ...hostelData.bank_details,
                     bank_name: e.target.value
                   })}
@@ -337,6 +344,9 @@ export default function HostelForm({
                   type="text"
                   value={hostelData.bank_details?.account_name || ''}
                   onChange={(e) => handleBankDetailsChange({
+                    bank_name: '',
+                    account_number: '',
+                    branch: '',
                     ...hostelData.bank_details,
                     account_name: e.target.value
                   })}
@@ -353,6 +363,9 @@ export default function HostelForm({
                   type="text"
                   value={hostelData.bank_details?.account_number || ''}
                   onChange={(e) => handleBankDetailsChange({
+                    bank_name: '',
+                    account_name: '',
+                    branch: '',
                     ...hostelData.bank_details,
                     account_number: e.target.value
                   })}
@@ -369,6 +382,9 @@ export default function HostelForm({
                   type="text"
                   value={hostelData.bank_details?.branch || ''}
                   onChange={(e) => handleBankDetailsChange({
+                    bank_name: '',
+                    account_name: '',
+                    account_number: '',
                     ...hostelData.bank_details,
                     branch: e.target.value
                   })}
@@ -397,6 +413,8 @@ export default function HostelForm({
                 <select
                   value={hostelData.momo_details?.provider || ''}
                   onChange={(e) => handleMomoDetailsChange({
+                    number: '',
+                    name: '',
                     ...hostelData.momo_details,
                     provider: e.target.value
                   })}
@@ -417,6 +435,8 @@ export default function HostelForm({
                   type="tel"
                   value={hostelData.momo_details?.number || ''}
                   onChange={(e) => handleMomoDetailsChange({
+                    provider: '',
+                    name: '',
                     ...hostelData.momo_details,
                     number: e.target.value
                   })}
@@ -433,6 +453,8 @@ export default function HostelForm({
                   type="text"
                   value={hostelData.momo_details?.name || ''}
                   onChange={(e) => handleMomoDetailsChange({
+                    provider: '',
+                    number: '',
                     ...hostelData.momo_details,
                     name: e.target.value
                   })}

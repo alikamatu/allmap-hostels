@@ -46,7 +46,7 @@ export default function UserFiltersPanel({ filters, onFilterChange, onClose }: U
             value={localFilters.role || ''}
             onChange={(e) => setLocalFilters(prev => ({ 
               ...prev, 
-              role: e.target.value as any || undefined 
+              role: (e.target.value || undefined) as UserFilters['role']
             }))}
             className="w-full px-3 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00]"
           >
@@ -64,7 +64,7 @@ export default function UserFiltersPanel({ filters, onFilterChange, onClose }: U
             value={localFilters.status || ''}
             onChange={(e) => setLocalFilters(prev => ({ 
               ...prev, 
-              status: e.target.value as any || undefined 
+              status: (e.target.value || undefined) as UserFilters['status']
             }))}
             className="w-full px-3 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00]"
           >

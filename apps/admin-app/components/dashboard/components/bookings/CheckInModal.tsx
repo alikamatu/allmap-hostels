@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, User, Calendar, MapPin, Clock, Loader2 } from 'lucide-react';
 import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
-import { formatDate, formatDateTime } from '@/utils/date';
+import { formatDate } from '@/utils/date';
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -14,7 +14,7 @@ interface CheckInModalProps {
   loading: boolean;
 }
 
-interface CheckInFormData {
+export interface CheckInFormData {
   notes?: string;
   actualCheckInTime?: string;
   checklist?: {
@@ -24,6 +24,7 @@ interface CheckInFormData {
     roomInspected: boolean;
     contactUpdated: boolean;
   };
+  [key: string]: unknown;
 }
 
 const CheckInModal: React.FC<CheckInModalProps> = ({

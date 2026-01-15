@@ -7,11 +7,10 @@ import {
   Clock,
   DollarSign,
   TrendingUp,
-  AlertCircle,
   Shield,
 } from 'lucide-react';
 import { AccessStats as AccessStatsType } from '@/types/access.types';
-import { formatNumber, formatCurrency } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 
 interface AccessStatsProps {
   stats: AccessStatsType;

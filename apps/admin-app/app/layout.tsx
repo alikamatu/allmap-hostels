@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import Head from "next/head";
+
 
 const fontMont = Montserrat({
   variable: "--font-montserrat",
@@ -61,7 +61,11 @@ export const metadata: Metadata = {
     follow: false,
     nocache: true
   },
-  manifest: "/site.webmanifest"
+  manifest: "/site.webmanifest",
+  other: {
+    'http-equiv': 'Content-Security-Policy',
+    content: "default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; connect-src *"
+  }
 };
 
 export default function RootLayout({
@@ -71,15 +75,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Head>
-        <meta
-          httpEquiv="Content-Security-Policy"
-          content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; 
-          style-src 'self' 'unsafe-inline'; 
-          media-src *; 
-          connect-src *"
-        />
-      </Head>
+
       <body
         className={`${fontMont.variable} ${interFont.variable} antialiased`}
       >

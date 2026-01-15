@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Search, Navigation } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -15,6 +15,11 @@ interface LocationPickerProps {
   onLocationChange: (loc: Location) => void;
   onAddressChange: (addr: string) => void;
 }
+
+// Check if Google Maps is already loaded
+const isGoogleMapsLoaded = () => {
+  return typeof window !== 'undefined' && window.google && window.google.maps;
+};
 
 export default function LocationPicker({ 
   location, 
@@ -32,15 +37,21 @@ export default function LocationPicker({
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  // Check if Google Maps is already loaded
-  const isGoogleMapsLoaded = () => {
-    return typeof window !== 'undefined' && window.google && window.google.maps;
-  };
+  // Reverse geocoding function
+  const reverseGeocode = useCallback((loc: Location) => {
+    if (!isGoogleMapsLoaded()) return;
+    
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: loc }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        onAddressChange(results[0].formatted_address);
+      }
+    });
+  }, [onAddressChange]);
 
   // Initialize the map
-  const initializeMap = () => {
-    if (!mapRef.current || !isGoogleMapsLoaded()) {
-      console.log('Map container or Google Maps not ready');
+  const initializeMap = useCallback(() => {
+    if (!mapRef.current || !isGoogleMapsLoaded() || map) {
       return;
     }
 
@@ -109,19 +120,7 @@ export default function LocationPicker({
       setError('Failed to initialize map');
       setLoading(false);
     }
-  };
-
-  // Reverse geocoding function
-  const reverseGeocode = (loc: Location) => {
-    if (!isGoogleMapsLoaded()) return;
-    
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: loc }, (results, status) => {
-      if (status === 'OK' && results && results[0]) {
-        onAddressChange(results[0].formatted_address);
-      }
-    });
-  };
+  }, [location.lat, location.lng, map, onLocationChange, reverseGeocode]);
 
   // Load Google Maps script
   useEffect(() => {
@@ -133,37 +132,25 @@ export default function LocationPicker({
 
     // Check if already loaded
     if (isGoogleMapsLoaded()) {
-      console.log('Google Maps already loaded');
       setScriptLoaded(true);
-      initializeMap();
       return;
     }
 
     // Check if script is already in DOM
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      console.log('Google Maps script already exists, waiting for load...');
-      existingScript.addEventListener('load', () => {
-        setScriptLoaded(true);
-        setTimeout(initializeMap, 100);
-      });
-      return;
+      const handleLoad = () => setScriptLoaded(true);
+      existingScript.addEventListener('load', handleLoad);
+      return () => existingScript.removeEventListener('load', handleLoad);
     }
 
-    console.log('Loading Google Maps script...');
-    
     // Create and load the script
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
     
-    script.onload = () => {
-      console.log('Google Maps script loaded successfully');
-      setScriptLoaded(true);
-      setTimeout(initializeMap, 100);
-    };
-    
+    script.onload = () => setScriptLoaded(true);
     script.onerror = (err) => {
       console.error('Failed to load Google Maps script:', err);
       setError('Failed to load Google Maps. Please check your API key and internet connection.');
@@ -172,14 +159,19 @@ export default function LocationPicker({
 
     document.head.appendChild(script);
 
-    // Cleanup function
     return () => {
-      const scriptToRemove = document.querySelector('script[src*="maps.googleapis.com"]');
-      if (scriptToRemove && scriptToRemove.parentNode) {
-        scriptToRemove.parentNode.removeChild(scriptToRemove);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     };
   }, [apiKey]);
+
+  // Handle map initialization when script is loaded
+  useEffect(() => {
+    if (scriptLoaded && !map) {
+      initializeMap();
+    }
+  }, [scriptLoaded, map, initializeMap]);
 
   // Update map when location changes externally
   useEffect(() => {

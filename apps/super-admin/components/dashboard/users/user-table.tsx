@@ -54,7 +54,7 @@ export default function UserTable({
   onUpdateRole,
   onDeleteUser,
 }: UserTableProps) {
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [expandedUser] = useState<string | null>(null);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
 
   // Default pagination values

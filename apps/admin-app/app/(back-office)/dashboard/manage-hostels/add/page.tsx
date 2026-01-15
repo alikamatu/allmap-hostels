@@ -7,7 +7,7 @@ import { Plus, ArrowLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
-import HostelForm from '@/components/dashboard/components/_addhostels/HostelForm';
+import HostelForm, { BankDetails, MomoDetails } from '@/components/dashboard/components/_addhostels/HostelForm';
 import LocationPicker from '@/components/dashboard/components/_addhostels/LocationPicker';
 import AmenitiesSelector from '@/components/dashboard/components/_addhostels/AmenitiesSelector';
 import ImageUploader from '@/components/dashboard/components/_addhostels/ImageUploader';
@@ -82,11 +82,11 @@ export default function AddHostelPage() {
     setHostelData(prev => ({ ...prev, payment_method }));
   };
 
-  const handleBankDetailsChange = (bank_details: any) => {
+  const handleBankDetailsChange = (bank_details: BankDetails) => {
     setHostelData(prev => ({ ...prev, bank_details }));
   };
 
-  const handleMomoDetailsChange = (momo_details: any) => {
+  const handleMomoDetailsChange = (momo_details: MomoDetails) => {
     setHostelData(prev => ({ ...prev, momo_details }));
   };
 

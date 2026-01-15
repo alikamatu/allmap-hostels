@@ -9,18 +9,12 @@ import {
   Phone,
   Home,
   Bed,
-  Calendar,
-  Clock,
-  DollarSign,
   CreditCard,
   MapPin,
   Users,
   FileText,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
-import { formatDate, formatCurrency } from '@/lib/formatters';
+import { formatCurrency } from '@/lib/formatters';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;

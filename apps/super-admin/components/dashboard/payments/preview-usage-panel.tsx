@@ -10,8 +10,6 @@ import {
   User,
   Calendar,
   Globe,
-  Smartphone,
-  ExternalLink,
 } from 'lucide-react';
 import { PreviewUsageRecord, PreviewUsageStats } from '@/types/access.types';
 import { formatDate } from '@/lib/formatters';
@@ -32,7 +30,6 @@ export default function PreviewUsagePanel({
   onRefresh,
 }: PreviewUsagePanelProps) {
   const [activeTab, setActiveTab] = useState<'records' | 'analytics'>('records');
-  const [selectedRecord, setSelectedRecord] = useState<PreviewUsageRecord | null>(null);
 
   const handleExport = () => {
     const csvContent = [
@@ -167,7 +164,7 @@ export default function PreviewUsagePanel({
                       <div
                         key={record.id}
                         className="p-4 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => setSelectedRecord(record)}
+                        onClick={() => {}}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3">

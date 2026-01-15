@@ -7,13 +7,11 @@ import {
   Bed, 
   Calendar, 
   Star, 
-  Bell, 
   Settings,
   ChevronLeft,
   LucideTimer,
-  Wallet,
-  MessageSquare
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -54,7 +52,7 @@ export default function Sidenav({ isCollapsed, toggleSidenav }: SidenavProps) {
               exit={{ opacity: 0, scale: 0.8 }}
               className="flex items-center gap-2"
             >
-              <img src="/logo/logo.png" className='w-6 h-6 object-contain' alt="" />
+              <Image width={24} height={24} src="/logo/logo.png" className='w-6 h-6 object-contain' alt="" />
               <span className="text-sm font-semibold text-gray-900">Allmap Hostels</span>
             </motion.div>
           )}

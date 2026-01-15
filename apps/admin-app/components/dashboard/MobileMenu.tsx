@@ -7,7 +7,6 @@ import {
   Bed, 
   Calendar, 
   Star, 
-  Bell, 
   Settings,
   X,
   LucideTimer,

@@ -1,7 +1,7 @@
 'use client';
 
 import { AccessFilters } from '@/types/access.types';
-import { X, Filter, Calendar } from 'lucide-react';
+import { X, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface AccessFiltersPanelProps {

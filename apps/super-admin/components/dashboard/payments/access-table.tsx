@@ -14,11 +14,10 @@ import {
   XCircle,
   CheckCircle,
   AlertCircle,
-  TrendingUp,
   TrendingDown,
 } from 'lucide-react';
 import { AccessRecord, AccessStatus } from '@/types/access.types';
-import { formatDate, formatCurrency } from '@/lib/formatters';
+import { formatDate } from '@/lib/formatters';
 
 interface AccessTableProps {
   records: AccessRecord[];

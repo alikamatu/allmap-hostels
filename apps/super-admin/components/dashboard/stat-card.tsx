@@ -25,7 +25,7 @@ interface StatCardProps {
   format?: 'currency' | 'number' | 'text';
 }
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Users,
   Building,
   Calendar,
@@ -89,7 +89,7 @@ export default function StatCard({
           </div>
         </div>
         <div className={`p-2 ${getBackgroundColor(title)}`}>
-          <Icon size={16} className={getIconColor(title)} />
+          <Icon className={getIconColor(title)} />
         </div>
       </div>
       <p className="text-10 text-gray-400">{description}</p>

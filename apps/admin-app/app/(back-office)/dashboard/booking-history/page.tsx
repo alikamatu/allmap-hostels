@@ -12,12 +12,6 @@ import {
   Archive,
   ChevronRight,
   ChevronLeft,
-  Home,
-  MapPin,
-  CreditCard,
-  MessageSquare,
-  Settings,
-  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
@@ -96,8 +90,6 @@ export default function BookingHistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState('history');
 
   const pageSize = 20;
 

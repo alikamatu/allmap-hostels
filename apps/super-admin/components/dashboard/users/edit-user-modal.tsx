@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Mail, Phone, User, School } from 'lucide-react';
+import { X, Mail, Phone, User } from 'lucide-react';
 import { User as UserType, UpdateUserData } from '@/types/user.types';
 
 interface EditUserModalProps {
@@ -62,7 +62,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }: EditU
     }
   };
 
-  const handleChange = (field: keyof UpdateUserData, value: any) => {
+  const handleChange = (field: keyof UpdateUserData, value: UpdateUserData[keyof UpdateUserData]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -70,7 +70,7 @@ export default function EditUserModal({ isOpen, onClose, user, onUpdate }: EditU
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

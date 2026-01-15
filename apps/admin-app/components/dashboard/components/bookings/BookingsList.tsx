@@ -11,6 +11,15 @@ import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
 import { formatCurrency } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
 
+interface ConfirmBookingData {
+  notes?: string;
+}
+
+interface CancelBookingData {
+  reason: string;
+  notes?: string;
+}
+
 interface BookingsListProps {
   bookings: Booking[];
   loading: boolean;
@@ -21,8 +30,8 @@ interface BookingsListProps {
   onPayment: (booking: Booking) => void;
   onCheckIn: (booking: Booking) => void;
   onCheckOut: (booking: Booking) => void;
-  onConfirm: (bookingId: string, data: any) => Promise<unknown>;
-  onCancel: (bookingId: string, data: any) => Promise<unknown>;
+  onConfirm: (bookingId: string, data: ConfirmBookingData) => Promise<unknown>;
+  onCancel: (bookingId: string, data: CancelBookingData) => Promise<unknown>;
   pagination?: {
     page: number;
     totalPages: number;

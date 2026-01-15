@@ -1,5 +1,5 @@
 {
-  "name": ".ap",
+  "name": "allmap-hostels",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -20,5 +20,12 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "eslint": "^9.39.2"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
 }

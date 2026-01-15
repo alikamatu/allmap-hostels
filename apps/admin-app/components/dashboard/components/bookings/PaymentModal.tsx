@@ -15,7 +15,7 @@ interface PaymentModalProps {
   loading: boolean;
 }
 
-interface PaymentFormData {
+export interface PaymentFormData {
   amount: number;
   paymentMethod: PaymentMethod;
   transactionRef?: string;

@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Shield,
   Settings,
-  Bell,
   LogOut,
   ChevronRight
 } from 'lucide-react';

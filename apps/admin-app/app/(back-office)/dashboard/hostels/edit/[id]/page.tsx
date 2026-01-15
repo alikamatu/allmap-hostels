@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, X, Upload, Trash2, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, MapPin } from 'lucide-react';
 import Swal from 'sweetalert2';
 import axios, { AxiosError } from 'axios';
 
@@ -11,6 +11,7 @@ import axios, { AxiosError } from 'axios';
 import LocationPicker from '@/components/dashboard/components/_addhostels/LocationPicker';
 import AmenitiesSelector from '@/components/dashboard/components/_addhostels/AmenitiesSelector';
 import ImageUploader from '@/components/dashboard/components/_addhostels/ImageUploader';
+import Image from 'next/image';
 
 interface HostelData {
   id: string;
@@ -248,11 +249,20 @@ export default function EditHostelPage() {
     setHostelData(prev => prev ? { ...prev, payment_method } : null);
   };
 
-  const handleBankDetailsChange = (bank_details: any) => {
+  const handleBankDetailsChange = (bank_details: {
+    bank_name: string;
+    account_name: string;
+    account_number: string;
+    branch: string;
+  }) => {
     setHostelData(prev => prev ? { ...prev, bank_details } : null);
   };
 
-  const handleMomoDetailsChange = (momo_details: any) => {
+  const handleMomoDetailsChange = (momo_details: {
+    provider: string;
+    number: string;
+    name: string;
+  }) => {
     setHostelData(prev => prev ? { ...prev, momo_details } : null);
   };
 
@@ -644,7 +654,7 @@ export default function EditHostelPage() {
                       name="payment_method"
                       value={method}
                       checked={hostelData.payment_method === method}
-                      onChange={(e) => handlePaymentMethodChange(e.target.value as any)}
+                      onChange={(e) => handlePaymentMethodChange(e.target.value as 'bank' | 'momo' | 'both')}
                       className="sr-only"
                     />
                     <motion.label
@@ -997,7 +1007,7 @@ export default function EditHostelPage() {
                   {hostelData.images.map((imageUrl, index) => (
                     <div key={index} className="relative group bg-gray-50">
                       <div className="aspect-square overflow-hidden">
-                        <img
+                        <Image
                           src={imageUrl}
                           alt={`Hostel image ${index + 1}`}
                           width={200}

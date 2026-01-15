@@ -57,13 +57,14 @@ export const Authentication: React.FC = () => {
     try {
       await login(formData.email, formData.password, true);
       router.push('/verification-status');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as Error;
       // Check if it's an unverified email error
-      if (err.message?.includes('verify your email')) {
+      if (e.message?.includes('verify your email')) {
         setError('Please verify your email before logging in. Check your inbox for verification instructions.');
         setVerificationMessage(`A verification email has been sent to ${formData.email}. Please check your inbox and spam folder.`);
       } else {
-        setError(err.message || 'Login failed. Please try again.');
+        setError(e.message || 'Login failed. Please try again.');
         setVerificationMessage('');
       }
     } finally {
@@ -121,8 +122,9 @@ export const Authentication: React.FC = () => {
       });
       prevStep(); // Go back to step 1
       
-    } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError(e.message || 'Registration failed. Please try again.');
       setVerificationMessage('');
     } finally {
       setLoading(false);

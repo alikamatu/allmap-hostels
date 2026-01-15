@@ -1,7 +1,8 @@
 import { Award, MessageCircle, Star, TrendingUp, Users } from "lucide-react";
 import React from "react";
+import { StatsCardsProps } from "@/types/review";
 
-function StatsCards({ stats, loading }: { loading: boolean, stats: any }) {
+function StatsCards({ stats, loading }: StatsCardsProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
