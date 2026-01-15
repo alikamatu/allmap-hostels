@@ -1,0 +1,250 @@
+"use client";
+
+import { memo } from 'react';
+import { motion } from 'framer-motion';
+import { RoomType } from '@/types/hostels';
+import { formatPrice } from '@/utils/formatters';
+import { usePaywall } from '@/context/paywall-context';
+import { Lock } from 'lucide-react';
+
+interface RoomCardProps {
+  roomType: RoomType;
+  onBook: (roomType: RoomType) => void;
+  onViewRoom: (roomTypeId: string) => void;
+  onCheckAvailability: (roomType: RoomType) => void;
+  acceptingBookings: boolean;
+  IsVerified: boolean;
+}
+
+export const RoomCard = memo(({ 
+  roomType, 
+  onBook, 
+  onViewRoom,
+  onCheckAvailability,
+  IsVerified,
+  acceptingBookings 
+}: RoomCardProps) => {
+  // Get paywall state - check if user has paid access
+  const { hasAccess, showPaywall } = usePaywall();
+
+  // Format allowed genders array into a readable string
+  const formatAllowedGenders = (genders: string[]): string => {
+    if (!genders || genders.length === 0) return 'Mixed';
+    if (genders.length === 1) return genders[0];
+    if (genders.length === 2) return `${genders[0]} & ${genders[1]}`;
+    return genders.join(', ');
+  };
+
+  // Check if room is mixed gender
+  const isMixedGender = () => {
+    if (!roomType.allowedGenders || roomType.allowedGenders.length === 0) return true;
+    return roomType.allowedGenders.length > 1;
+  };
+
+  // Get gender badge color
+  const getGenderBadgeColor = () => {
+    if (!roomType.allowedGenders || roomType.allowedGenders.length === 0) {
+      return 'bg-purple-100 text-purple-800';
+    }
+    if (roomType.allowedGenders.length === 1) {
+      const gender = roomType.allowedGenders[0].toLowerCase();
+      if (gender.includes('male')) return 'bg-blue-100 text-blue-800';
+      if (gender.includes('female')) return 'bg-pink-100 text-pink-800';
+      return 'bg-gray-100 text-gray-800';
+    }
+    return 'bg-green-100 text-green-800';
+  };
+
+  // Check if price should be locked (for unverified hostels when user doesn't have access)
+  const shouldLockPrice = !IsVerified && !hasAccess && showPaywall;
+
+  // Handle paywall button click
+  const handlePayForAccess = () => {
+    // Dispatch event to open paywall modal
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('openPaywallModal'));
+    }
+  };
+
+  // Determine which button to show for unverified hostels
+  const getUnverifiedButton = () => {
+    // If user has paid access OR is in preview mode, show "Check Availability"
+    if (hasAccess || !showPaywall) {
+      return (
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onCheckAvailability(roomType)}
+          className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
+        >
+          Check Availability
+        </motion.button>
+      );
+    }
+    
+    // Otherwise, show "Pay for access"
+    return (
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handlePayForAccess}
+        className="w-full py-3 px-4 font-medium rounded-lg transition bg-black text-white hover:bg-gray-800"
+      >
+        Pay to Unlock
+      </motion.button>
+    );
+  };
+
+  return (
+    <motion.div
+      className="bg-white border border-gray-200 overflow-hidden shadow-sm"
+      whileHover={{ y: -5, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-xl font-bold text-black">{roomType.name}</h3>
+          {IsVerified && (
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
+                roomType.availableRooms > 3 
+                  ? 'bg-green-100 text-green-800' 
+                  : roomType.availableRooms > 0 
+                  ? 'bg-yellow-100 text-yellow-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {roomType.availableRooms > 0 ? `${roomType.availableRooms} available` : 'Fully booked'}
+            </span>
+          )}
+        </div>
+        
+        <p className="text-gray-800 text-sm mb-6 line-clamp-2 leading-relaxed">
+          {roomType.description || 'Comfortable living space with essential amenities'}
+        </p>
+        
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            {/* Price Display - Locked for unverified hostels when no access */}
+            <div className="flex items-center gap-2">
+              {shouldLockPrice ? (
+                <div className="flex items-center gap-2">
+                  <Lock size={16} className="text-gray-400" />
+                  <p className="text-lg font-bold text-gray-400">Price locked</p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-black">
+                  {formatPrice(roomType.pricePerSemester)}
+                </p>
+              )}
+            </div>
+            <p className="text-xs text-gray-800">per semester</p>
+            <div className="mt-2">
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${getGenderBadgeColor()}`}>
+                {isMixedGender() && '• For Both '}
+                {formatAllowedGenders(roomType.allowedGenders || [])}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-800 mb-3">
+            <span>Capacity</span>
+            <span className="font-medium">{roomType.capacity} person(s)</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-black rounded-full" 
+              style={{ width: `${Math.min((roomType.capacity / 6) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+        
+        <div className="pt-4 border-t border-gray-200 mb-6">
+          <h4 className="font-medium text-black mb-3">Room Features</h4>
+          <div className="flex flex-wrap gap-2">
+            {roomType.amenities?.slice(0, 4).map((amenity, idx) => (
+              <span 
+                key={idx} 
+                className="text-gray-800 text-xs px-3 py-1.5 bg-gray-100 rounded-full"
+              >
+                {amenity}
+              </span>
+            ))}
+            {roomType.amenities && roomType.amenities.length > 4 && (
+              <span className="text-gray-800 text-xs px-3 py-1.5 bg-gray-100 rounded-full">
+                +{roomType.amenities.length - 4} more
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Lock info message for unverified hostels when price is locked */}
+        {shouldLockPrice && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800 text-sm flex items-center gap-2">
+              <Lock size={14} />
+              Subscribe to see prices and check availability
+            </p>
+          </div>
+        )}
+
+        {!IsVerified && getUnverifiedButton()}
+
+        {IsVerified && (
+          <div className="flex gap-3">
+            {hasAccess || !showPaywall ? (
+          <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => onCheckAvailability(roomType)}
+          className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
+        >
+          Check Availability
+        </motion.button>
+            ) : (
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex-1 bg-gray-100 text-black py-3 px-4 font-medium rounded-lg transition hover:bg-gray-200"
+                onClick={() => onViewRoom(roomType.id)}
+                disabled={!acceptingBookings}
+              >
+                View Details
+              </motion.button>
+        )}
+
+            {!acceptingBookings ? (
+              <motion.button
+                className="flex-1 bg-red-100 text-red-800 py-3 px-4 font-medium rounded-lg transition cursor-not-allowed"
+                disabled={true}
+              >
+                Unavailable
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`flex-1 py-3 px-4 font-medium rounded-lg transition ${
+                  roomType.availableRooms > 0
+                    ? 'bg-black text-white hover:bg-gray-800'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                onClick={() => roomType.availableRooms > 0 && onBook(roomType)}
+                disabled={roomType.availableRooms === 0}
+              >
+                {roomType.availableRooms > 0 ? 'Book Now' : 'Fully Booked'}
+              </motion.button>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
+RoomCard.displayName = "RoomCard";
