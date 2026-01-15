@@ -1,7 +1,7 @@
 'use client';
 
 import { RevenueStats } from '@/types/access.types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface RevenueChartProps {
   data: RevenueStats;

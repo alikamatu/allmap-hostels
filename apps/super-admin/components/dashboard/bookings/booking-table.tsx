@@ -36,7 +36,6 @@ export default function BookingTable({
   loading,
   pagination,
   onPageChange,
-  onStatusUpdate,
   onViewDetails,
 }: BookingTableProps) {
   const [actionMenu, setActionMenu] = useState<string | null>(null);

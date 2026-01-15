@@ -73,13 +73,6 @@ export function DataTable<TData, TValue>({
                 getIsVisible: () => boolean;
                 toggleVisibility: (value: boolean) => void;
               }) => {
-                interface DropdownMenuCheckboxItemProps {
-                  key: string;
-                  className: string;
-                  checked: boolean;
-                  onCheckedChange: (value: boolean) => void;
-                  children: React.ReactNode;
-                }
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
