@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
-import OnboardingGuard from "./sign-up/OnboardingGuard";
-import Script from "next/script";
+import HeadScripts from "./head";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +17,13 @@ const geistMono = Geist_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
 const ogImageUrl = `${siteUrl}/og-image.jpg`;
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -122,8 +128,14 @@ export const metadata: Metadata = {
     ],
     other: [
       { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" }
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
     ]
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-title": "AllMap",
+    "x-ua-compatible": "ie=edge"
   }
 };
 
@@ -132,138 +144,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
-
-  // Organization structured data
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "AllMap Hostels",
-    "url": siteUrl,
-    "logo": `${siteUrl}/logo.png`,
-    "description": "Student hostel booking platform",
-    "foundingDate": "2024",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "contactType": "Customer Support",
-      "email": "support@allmap-hostels.com",
-      "url": siteUrl
-    },
-    "sameAs": [
-      "https://www.facebook.com/allmaphostels",
-      "https://www.instagram.com/allmaphostels",
-      "https://twitter.com/AllMapHostels"
-    ]
-  };
-
-  // Website structured data for search
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "AllMap Hostels",
-    "url": siteUrl,
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": `${siteUrl}/dashboard?search={search_term_string}`
-      },
-      "query-input": "required name=search_term_string"
-    }
-  };
-
-  // Breadcrumb schema
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": siteUrl
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Browse Hostels",
-        "item": `${siteUrl}/dashboard`
-      }
-    ]
-  };
-
   return (
     <html lang="en">
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-        <meta name="theme-color" content="#ffffff" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        
-        {/* Additional Performance & SEO Meta Tags */}
-        <meta httpEquiv="x-ua-compatible" content="ie=edge" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="AllMap" />
-        
-        {/* Preconnect to external domains for better performance */}
+        <HeadScripts />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.mapbox.com" />
-        
-        {/* Structured Data */}
-        <Script
-          id="organization-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema)
-          }}
-        />
-        <Script
-          id="website-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema)
-          }}
-        />
-        <Script
-          id="breadcrumb-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(breadcrumbSchema)
-          }}
-        />
-
-        {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <>
-            <Script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-            />
-            <Script
-              id="google-analytics"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
-                `
-              }}
-            />
-          </>
-        )}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <OnboardingGuard>
-            <ThemeProvider>
-              {children}
-            </ThemeProvider>
-          </OnboardingGuard>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
