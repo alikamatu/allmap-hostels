@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/oxide-linux-x64-gnu": "^4.1.18",
     "@tailwindcss/postcss": "^4",
     "@types/google.maps": "^3.58.1",
     "@types/jest": "^30.0.0",
@@ -55,7 +54,6 @@
     "eslint-config-next": "15.5.9",
     "jest": "^30.0.5",
     "lightningcss": "^1.30.2",
-    "lightningcss-linux-x64-gnu": "^1.31.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.1",
     "typescript": "^5"
