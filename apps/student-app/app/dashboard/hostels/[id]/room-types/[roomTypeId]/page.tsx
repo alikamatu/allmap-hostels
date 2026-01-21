@@ -1,18 +1,30 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { FaBed, FaBath, FaRulerCombined, FaUsers, FaArrowLeft, FaCalendarAlt, FaCheck } from 'react-icons/fa';
 import { FiAlertTriangle } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { Room, RoomType } from '@/types/booking';
+import { RoomType, ApiRoom, BookingType } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { BookingModal } from '@/_components/bookings/BookingModal';
 
-interface RoomTypeWithAvailability extends RoomType {
-  availableRooms: number;
+interface RoomTypeWithAvailability {
+  id: string;
+  hostelId: string;
+  name: string;
+  description: string;
+  pricePerSemester: number;
+  pricePerMonth: number;
+  pricePerWeek?: number;
+  capacity: number;
+  amenities: string[];
   totalRooms: number;
-  sampleRooms?: Room[];
+  availableRooms: number;
+  createdAt: string;
+  updatedAt: string;
+  allowedGenders?: string[];
+  sampleRooms?: ApiRoom[];
 }
 
 export default function RoomDetailPage() {
@@ -24,13 +36,51 @@ export default function RoomDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [availabilityData, setAvailabilityData] = useState<any>(null);
   const [selectedDates, setSelectedDates] = useState({
     checkIn: new Date().toISOString().split('T')[0],
     checkOut: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
   });
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+
+  const checkAvailabilityForDates = useCallback(async (roomTypeData?: RoomType) => {
+    try {
+      setCheckingAvailability(true);
+      const availability = await bookingService.checkRoomAvailability(
+        id as string,
+        selectedDates.checkIn,
+        selectedDates.checkOut,
+        roomTypeId as string
+      );
+
+      const roomsOfType = availability.rooms.filter(room => 
+        room.roomType.id === roomTypeId
+      );
+
+      const base = (roomTypeData || roomType) as RoomType;
+
+      const updatedRoomType: RoomTypeWithAvailability = {
+        ...base,
+        availableRooms: roomsOfType.length,
+        totalRooms: roomsOfType.length + availability.bookedRooms,
+        sampleRooms: roomsOfType.slice(0, 3)
+      };
+
+      setRoomType(updatedRoomType);
+    } catch (error) {
+      console.error('Failed to check availability:', error);
+      // Set roomType without availability data if API call fails
+      if (roomTypeData) {
+        setRoomType({
+          ...roomTypeData,
+          availableRooms: 0,
+          totalRooms: 0
+        });
+      }
+    } finally {
+      setCheckingAvailability(false);
+    }
+  }, [id, selectedDates.checkIn, selectedDates.checkOut, roomTypeId, roomType]);
 
   useEffect(() => {
     async function fetchRoomDetails() {
@@ -56,7 +106,7 @@ export default function RoomDetailPage() {
         // Check current availability
         await checkAvailabilityForDates(roomTypeData);
         
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error:', err);
         setError('Unable to fetch room details. Please try again.');
       } finally {
@@ -67,48 +117,7 @@ export default function RoomDetailPage() {
     if (id && roomTypeId) {
       fetchRoomDetails();
     }
-  }, [id, roomTypeId, apiUrl]);
-
-  const checkAvailabilityForDates = async (roomTypeData?: any) => {
-    try {
-      setCheckingAvailability(true);
-      const availability = await bookingService.checkRoomAvailability(
-        id as string,
-        selectedDates.checkIn,
-        selectedDates.checkOut,
-        roomTypeId as string
-      );
-
-      const roomsOfType = availability.rooms.filter(room => 
-        room.roomType.id === roomTypeId
-      );
-
-      const updatedRoomType = {
-        ...(roomTypeData || roomType),
-        availableRooms: roomsOfType.length,
-        totalRooms: roomsOfType.length + availability.bookedRooms,
-        sampleRooms: roomsOfType.slice(0, 3) // Show first 3 available rooms
-      };
-
-      setRoomType(updatedRoomType);
-      setAvailabilityData({
-        ...availability,
-        roomsOfType
-      });
-    } catch (error) {
-      console.error('Failed to check availability:', error);
-      // Set roomType without availability data if API call fails
-      if (roomTypeData) {
-        setRoomType({
-          ...roomTypeData,
-          availableRooms: 0,
-          totalRooms: 0
-        });
-      }
-    } finally {
-      setCheckingAvailability(false);
-    }
-  };
+  }, [id, roomTypeId, apiUrl, checkAvailabilityForDates]);
 
   const handleDateChange = (field: 'checkIn' | 'checkOut', value: string) => {
     setSelectedDates(prev => ({ ...prev, [field]: value }));
@@ -133,7 +142,7 @@ export default function RoomDetailPage() {
       roomType.pricePerSemester,
       roomType.pricePerMonth,
       roomType.pricePerWeek,
-      'monthly' as any, // Default to monthly for calculation
+      BookingType.MONTHLY, // Default to monthly for calculation
       checkIn,
       checkOut
     );

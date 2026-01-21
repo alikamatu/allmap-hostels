@@ -15,13 +15,6 @@ interface School {
   location: string;
 }
 
-interface EmergencyContact {
-  name: string;
-  phone: string;
-  relationship: string;
-  email?: string;
-}
-
 interface UserProfile {
   id: string;
   name: string;

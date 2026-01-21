@@ -13,6 +13,25 @@ import { FiMap, FiList, FiAlertTriangle, FiFilter } from 'react-icons/fi';
 import { usePaywall } from '@/context/paywall-context';
 import { Lock } from 'lucide-react';
 
+interface ApiHostel {
+  id: string;
+  name: string;
+  images?: string[];
+  description: string;
+  address?: string;
+  location: string;
+  roomTypes?: ApiRoomType[];
+  base_price?: number;
+  accepting_bookings: boolean;
+  is_verified: boolean;
+}
+
+interface ApiRoomType {
+  pricePerSemester: number;
+  pricePerMonth: number;
+  pricePerWeek?: number;
+}
+
 const MapView = dynamic(() => import('@/_components/hostels/MapView'), {
   ssr: false,
   loading: () => (
@@ -99,9 +118,9 @@ export default function HostelsPage() {
 
         const data = await res.json();
         
-        const formatted: HostelCard[] = data.map((hostel: any) => {
+        const formatted: HostelCard[] = data.map((hostel: ApiHostel) => {
           const coords = parseLocation(hostel.location);
-          const prices = hostel.roomTypes?.map((rt: any) => rt.pricePerSemester) || [];
+          const prices = hostel.roomTypes?.map((rt: ApiRoomType) => rt.pricePerSemester) || [];
           const lowestPrice = prices.length ? Math.min(...prices) : 0;
           const highestPrice = prices.length ? Math.max(...prices) : 0;
           
@@ -133,9 +152,9 @@ export default function HostelsPage() {
         });
 
         setHostels(formatted);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching hostels:', error);
-        setError(error.message || 'Failed to load hostels. Please try again.');
+        setError(error instanceof Error ? error.message : 'Failed to load hostels. Please try again.');
       } finally {
         setIsLoading(false);
       }

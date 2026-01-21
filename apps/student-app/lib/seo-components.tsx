@@ -3,21 +3,12 @@
  * Helper functions for adding SEO-friendly features to React components
  */
 
-import Head from 'next/head';
 import Script from 'next/script';
-
-interface SeoHeadProps {
-  title?: string;
-  description?: string;
-  image?: string;
-  url?: string;
-  schemaMarkup?: Record<string, any>;
-}
 
 /**
  * Generate JSON-LD script tag for structured data
  */
-export function generateSchemaScript(schema: Record<string, any>, id: string) {
+export function generateSchemaScript(schema: Record<string, unknown>, id: string) {
   return (
     <Script
       id={id}

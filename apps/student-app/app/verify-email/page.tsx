@@ -59,7 +59,7 @@ function VerifyEmailContent() {
         message: 'No verification token provided, check your Junk/Spam folder if you can not find the email'
       });
     }
-  }, []); // Remove searchParams from dependencies to prevent re-runs
+  }, [ searchParams ]);
 
   const handleStatusResponse = (status: string, message: string | null) => {
     if (status === 'success') {

@@ -75,7 +75,7 @@ export default function UserBookingsPage() {
             setReviewBooking(null);
           }}
           booking={reviewBooking}
-          onSubmit={async (reviewData) => {
+          onSubmit={async () => {
             // Handle review submission
             await fetchUserBookings();
           }}

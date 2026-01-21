@@ -57,7 +57,7 @@ useEffect(() => {
         setStatus('error');
         setMessage(data.message || 'Payment verification failed');
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
       setMessage('An error occurred during payment verification');
     }

@@ -28,7 +28,7 @@ export const useBookings = () => {
               ...booking,
               hasReview: !!existingReview
             };
-          } catch (error) {
+          } catch {
             return {
               ...booking,
               hasReview: false
@@ -54,8 +54,8 @@ export const useBookings = () => {
     try {
       await bookingService.cancelBooking(bookingId, reason);
       await fetchUserBookings();
-    } catch (error: any) {
-      throw new Error(`Failed to cancel booking: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to cancel booking: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [fetchUserBookings]);
 
@@ -63,8 +63,8 @@ export const useBookings = () => {
     try {
       await bookingService.extendBooking(bookingId, newCheckOut);
       await fetchUserBookings();
-    } catch (error: any) {
-      throw new Error(`Failed to extend booking: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to extend booking: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [fetchUserBookings]);
 
