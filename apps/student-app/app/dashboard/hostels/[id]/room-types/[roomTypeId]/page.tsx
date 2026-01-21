@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { RoomType, ApiRoom, BookingType } from '@/types/booking';
 import { bookingService } from '@/service/bookingService';
 import { BookingModal } from '@/_components/bookings/BookingModal';
+import { Hostel } from '@/types/hostels';
 
 interface RoomTypeWithAvailability {
   id: string;
@@ -31,7 +32,7 @@ export default function RoomDetailPage() {
   const { id, roomTypeId } = useParams();
   const router = useRouter();
   const [roomType, setRoomType] = useState<RoomTypeWithAvailability | null>(null);
-  const [hostel, setHostel] = useState<any>(null);
+  const [hostel, setHostel] = useState<Hostel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
