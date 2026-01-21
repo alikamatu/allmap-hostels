@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-sider: var(--sider);
+  --color-icon: var(--icon);
+}
 
 /* Add these CSS variables to your globals.css */
 :root {
