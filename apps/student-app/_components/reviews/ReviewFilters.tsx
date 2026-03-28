@@ -1,4 +1,4 @@
-import { ReviewFilters as ReviewFiltersType } from '@/hooks/useReviewFilters';
+import { ReviewFilterDto as ReviewFiltersType } from '@repo/types';
 
 interface ReviewFiltersProps {
   filters: ReviewFiltersType;

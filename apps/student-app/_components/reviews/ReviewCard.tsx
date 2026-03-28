@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaStar, FaThumbsUp, FaReply, FaFlag } from 'react-icons/fa';
 import { FiUser, FiCalendar } from 'react-icons/fi';
-import { Review } from '@/service/reviewService';
+import { Review, DetailedRatings } from '@repo/types';
 
 interface ReviewCardProps {
   review: Review;
@@ -45,7 +45,7 @@ export const ReviewCard = ({
     </div>
   );
 
-  const renderDetailedRatings = (detailedRatings?: Record<string, number>) => {
+  const renderDetailedRatings = (detailedRatings?: DetailedRatings) => {
     if (!detailedRatings || Object.keys(detailedRatings).length === 0) return null;
 
     const ratingLabels: Record<string, string> = {
@@ -62,7 +62,7 @@ export const ReviewCard = ({
         {Object.entries(detailedRatings).map(([key, rating]) => (
           <div key={key} className="flex justify-between items-center">
             <span className="text-sm text-gray-600">{ratingLabels[key] || key}</span>
-            {renderStars(rating)}
+            {renderStars(rating || 0)}
           </div>
         ))}
       </div>

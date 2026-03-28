@@ -1,16 +1,15 @@
 'use client';
 
+import { useUserProfile, useDepositBalance } from '@repo/shared/hooks';
+import { bookingService } from '@repo/shared/service';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCalendarAlt, FaSync, FaSpinner, FaWallet } from 'react-icons/fa';
 import { FiAlertTriangle, FiCheck } from 'react-icons/fi';
-import { BookingType, Room, BookingFormData, BookingFormErrors, EmergencyContact } from '@/types/booking';
-import { bookingService } from '@/service/bookingService';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { BookingType, Room, BookingFormData, BookingFormErrors, EmergencyContact } from '@repo/types';
 import { useRouter } from 'next/navigation';
-import { RoomType } from '@/types/hostels';
+import { RoomType } from '@repo/types';
 import { DepositModal } from '../payment/DepositModal';
-import { useDepositBalance } from '@/hooks/useDepositBalance';
 
 interface BookingModalProps {
   isOpen: boolean;

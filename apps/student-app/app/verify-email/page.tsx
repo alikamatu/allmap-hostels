@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiXCircle, FiMail, FiArrowRight, FiUserPlus } from 'react-icons/fi';
@@ -27,6 +27,68 @@ function VerifyEmailContent() {
   // Use ref to track if verification has been attempted
   const hasVerified = useRef(false);
 
+  const handleStatusResponse = useCallback((status: string, message: string | null) => {
+    if (status === 'success') {
+      setVerification({
+        status: 'success',
+        message: message || 'Your email has been verified successfully! You can now log in.'
+      });
+    } else {
+      const errorMessage = message ? decodeURIComponent(message) : 'Verification failed';
+      setVerification({
+        status: 'error',
+        message: errorMessage
+      });
+    }
+  }, []);
+
+  const verifyToken = useCallback(async (token: string) => {
+    try {
+      console.log('Verifying token:', token);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+      const response = await fetch(`${apiUrl}/auth/verify-email/${token}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error('Invalid response from server');
+      }
+
+      if (response.ok) {
+        setVerification({
+          status: 'success',
+          message: data.message || 'Your email has been verified successfully!',
+        });
+        
+        setTimeout(() => {
+          router.push('/?verified=true');
+        }, 3000);
+      } else {
+        const errorMessage = data.message || 'Verification failed';
+        const isExpired = errorMessage.toLowerCase().includes('expired');
+
+        setVerification({
+          status: isExpired ? 'expired' : 'error',
+          message: errorMessage,
+        });
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerification({
+        status: 'error',
+        message: 'Could not connect to the server. Please try again later.',
+      });
+    }
+  }, [router]);
+
   useEffect(() => {
     // Prevent multiple verification attempts
     if (hasVerified.current) {
@@ -38,7 +100,6 @@ function VerifyEmailContent() {
     const token = searchParams.get('token');
     const email = searchParams.get('email');
 
-    // If email is in URL params, store it
     if (email) {
       setEmailInput(email);
     }
@@ -59,80 +120,7 @@ function VerifyEmailContent() {
         message: 'No verification token provided, check your Junk/Spam folder if you can not find the email'
       });
     }
-  });
-
-  const handleStatusResponse = (status: string, message: string | null) => {
-    if (status === 'success') {
-      setVerification({
-        status: 'success',
-        message: message || 'Your email has been verified successfully! You can now log in.'
-      });
-    } else {
-      const errorMessage = message ? decodeURIComponent(message) : 'Verification failed';
-      setVerification({
-        status: 'error',
-        message: errorMessage
-      });
-    }
-  };
-
-  const verifyToken = async (token: string) => {
-    try {
-      console.log('Verifying token:', token);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
-      const response = await fetch(`${apiUrl}/auth/verify-email/${token}`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('Parsed response data:', data);
-      } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError);
-        throw new Error('Invalid response from server');
-      }
-
-      if (response.ok) {
-        // Set success and don't allow any further verification attempts
-        setVerification({
-          status: 'success',
-          message: data.message || 'Your email has been verified successfully!',
-        });
-        
-        // Optional: Redirect to login after a delay
-        setTimeout(() => {
-          router.push('/?verified=true');
-        }, 3000);
-      } else {
-        const errorMessage = data.message || 'Verification failed';
-        const isExpired = errorMessage.toLowerCase().includes('expired');
-
-        console.log('Error message:', errorMessage);
-        console.log('Is expired:', isExpired);
-
-        setVerification({
-          status: isExpired ? 'expired' : 'error',
-          message: errorMessage,
-        });
-      }
-    } catch (error) {
-      console.error('Verification error:', error);
-      setVerification({
-        status: 'error',
-        message: 'Could not connect to the server. Please try again later.',
-      });
-    }
-  };
+  }, [searchParams, verifyToken, handleStatusResponse]);
 
   const handleResendEmail = async (email?: string) => {
     const emailToUse = email || emailInput || searchParams.get('email');
@@ -181,7 +169,6 @@ function VerifyEmailContent() {
 
   return (
     <div className="min-h-screen flex bg-white font-sans">
-      {/* Left Panel - Verification Content */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -218,6 +205,12 @@ function VerifyEmailContent() {
                 {verification.message}
               </>
             )}
+            {verification.status === 'expired' && (
+              <>
+                <FiXCircle className="h-4 w-4 mr-2 text-black" />
+                {verification.message}
+              </>
+            )}
           </motion.div>
 
           <AnimatePresence>
@@ -247,7 +240,7 @@ function VerifyEmailContent() {
                 <form onSubmit={handleEmailSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Enter your email address
+                       Enter your email address
                     </label>
                     <input
                       type="email"
@@ -309,7 +302,7 @@ function VerifyEmailContent() {
               </motion.button>
             )}
 
-            {verification.status === 'error' && (
+            {(verification.status === 'error' || verification.status === 'expired') && (
               <>
                 {!showEmailInput && (
                   <motion.button
@@ -356,7 +349,6 @@ function VerifyEmailContent() {
         </motion.div>
       </div>
 
-      {/* Right Panel - Image with Overlay */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <img
           src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"

@@ -1,8 +1,8 @@
 'use client';
 
+import { useAuth } from '@repo/shared/context';
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiCheckCircle, FiXCircle, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { FaSpinner } from 'react-icons/fa';

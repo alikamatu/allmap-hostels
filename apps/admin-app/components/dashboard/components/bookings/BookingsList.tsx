@@ -62,7 +62,7 @@ const getStatusBadge = (status: BookingStatus) => {
 };
 
 const getPaymentStatusBadge = (status: PaymentStatus) => {
-  const variants = {
+  const variants: Partial<Record<PaymentStatus, string>> = {
     [PaymentStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
     [PaymentStatus.PARTIAL]: 'bg-orange-100 text-orange-800',
     [PaymentStatus.PAID]: 'bg-green-100 text-green-800',

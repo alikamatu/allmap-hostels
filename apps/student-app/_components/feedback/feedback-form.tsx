@@ -1,7 +1,7 @@
 "use client";
 
+import { useAuth } from '@repo/shared/context';
 import { useState, FormEvent } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 

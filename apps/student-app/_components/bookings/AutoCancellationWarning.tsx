@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { Booking, BookingStatus } from '@/types/booking';
+import { Booking, BookingStatus } from '@repo/types';
 import { FiAlertTriangle, FiX } from 'react-icons/fi';
 import { formatDate, formatPrice } from '@/utils/bookingHelpers';
 import { FaCreditCard, FaMobileAlt } from 'react-icons/fa';

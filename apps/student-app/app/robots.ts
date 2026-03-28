@@ -9,13 +9,12 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         disallow: [
+          '/dashboard/',
           '/api/',
           '/verify-email',
           '/reset-password',
           '/_next/',
           '/__next/',
-          '/dashboard/profile',
-          '/dashboard/bookings',
         ],
       },
       {

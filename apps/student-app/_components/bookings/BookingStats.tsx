@@ -1,4 +1,4 @@
-import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
+import { Booking, BookingStatus, PaymentStatus } from '@repo/types';
 import { FaHome, FaCalendarAlt, FaMoneyBillWave, FaStar } from 'react-icons/fa';
 import { canWriteReview } from '@/utils/bookingHelpers';
 

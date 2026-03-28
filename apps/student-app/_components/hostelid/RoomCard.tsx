@@ -1,10 +1,10 @@
 "use client";
 
+import { usePaywall } from '@repo/shared/context';
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { RoomType } from '@/types/hostels';
+import { RoomType } from '@repo/types';
 import { formatPrice } from '@/utils/formatters';
-import { usePaywall } from '@/context/paywall-context';
 import { Lock } from 'lucide-react';
 
 interface RoomCardProps {

@@ -1,9 +1,9 @@
+import { useReviews } from '@repo/shared/hooks';
 import Link from 'next/link';
 import { FaStar } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { Hostel } from '@/types/hostels';
+import { Hostel } from '@repo/types';
 import { formatPrice } from '@/utils/formatters';
-import { useReviews } from '@/hooks/useReviews';
 
 interface HostelHeaderProps {
   hostel: Hostel;

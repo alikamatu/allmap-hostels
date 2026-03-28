@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Hostel } from '@/types/hostels';
+import { Hostel } from '@repo/types';
 import { formatPrice } from '@/utils/formatters';
 
 interface HostelInformationProps {

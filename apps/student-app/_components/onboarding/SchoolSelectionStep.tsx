@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { 
   BuildingOffice2Icon, 
   ChevronRightIcon, 
-  CheckCircleIcon 
+  CheckCircleIcon, 
+  ArrowLeftIcon 
 } from '@heroicons/react/24/outline';
-import { School } from '@/types/onboarding';
+import { School } from '@repo/types';
 
 /**
  * Helper: Safely formats school.location values
@@ -32,6 +33,7 @@ interface SchoolSelectionStepProps {
   onSearchChange: (query: string) => void;
   onSchoolSelect: (schoolId: string) => void;
   onNext: () => void;
+  onBack: () => void;
   error?: string;
 }
 
@@ -43,6 +45,7 @@ export const SchoolSelectionStep: React.FC<SchoolSelectionStepProps> = ({
   onSearchChange,
   onSchoolSelect,
   onNext,
+  onBack,
   error,
 }) => {
   return (
@@ -80,15 +83,25 @@ export const SchoolSelectionStep: React.FC<SchoolSelectionStepProps> = ({
           searchQuery={searchQuery}
         />
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex justify-between items-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onBack}
+            className="px-8 py-3 border-2 border-black font-semibold hover:bg-gray-100 transition flex items-center text-black"
+          >
+            <ArrowLeftIcon className="w-5 h-5 mr-2" />
+            Back
+          </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onNext}
             disabled={!selectedSchool}
-            className={`px-8 py-3 font-semibold flex items-center transition ${
+            className={`px-8 py-3 font-semibold flex items-center transition border-2 border-black ${
               selectedSchool
-                ? 'bg-black text-white hover:bg-gray-800'
+                ? 'bg-black text-white hover:bg-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >

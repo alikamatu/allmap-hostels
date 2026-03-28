@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import { useGoogleMaps } from '@repo/shared/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaSpinner } from 'react-icons/fa';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';

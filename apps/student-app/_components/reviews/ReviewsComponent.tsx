@@ -1,15 +1,15 @@
 'use client';
 
+import { useReviews } from '@repo/shared/hooks';
+import { useReviewFilters } from '@repo/shared/hooks';
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { FiMessageSquare } from 'react-icons/fi';
 
 // Hooks
-import { useReviews } from '@/hooks/useReviews';
-import { useReviewFilters } from '@/hooks/useReviewFilters';
 
 // Components
-import { ReviewStats } from './ReviewStats';
+import { HostelReviewStats } from './ReviewStats';
 import { ReviewFilters } from './ReviewFilters';
 import { ReviewCard } from './ReviewCard';
 
@@ -95,7 +95,7 @@ export const ReviewsComponent = ({ hostelId, hostelName }: ReviewsComponentProps
     <div className="space-y-8 mt-12">
       {/* Review Summary */}
       {stats && stats.totalReviews > 0 && (
-        <ReviewStats stats={stats} hostelName={hostelName} />
+        <HostelReviewStats stats={stats} />
       )}
 
       {/* Filters and Sort */}

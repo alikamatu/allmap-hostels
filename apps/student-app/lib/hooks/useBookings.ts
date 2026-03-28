@@ -1,8 +1,7 @@
+import { useAuth } from '@repo/shared/context';
+import { bookingService, reviewService } from '@repo/shared/service';
 import { useState, useCallback } from 'react';
-import { Booking } from '@/types/booking';
-import { useAuth } from '@/context/AuthContext';
-import { bookingService } from '@/service/bookingService';
-import { reviewService } from '@/service/reviewService';
+import { Booking } from '@repo/types';
 
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);

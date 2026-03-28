@@ -57,12 +57,13 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
   };
 
   const getPaymentStatusColor = (status: PaymentStatus) => {
-    const colors = {
+    const colors: Partial<Record<PaymentStatus, string>> = {
       [PaymentStatus.PENDING]: 'bg-yellow-50 text-yellow-700',
       [PaymentStatus.PARTIAL]: 'bg-orange-50 text-orange-700',
       [PaymentStatus.PAID]: 'bg-green-50 text-green-700',
       [PaymentStatus.OVERDUE]: 'bg-red-50 text-red-700',
       [PaymentStatus.REFUNDED]: 'bg-gray-50 text-gray-700',
+      [PaymentStatus.CANCELLED]: 'bg-red-50 text-red-700',
     };
     return colors[status] || 'bg-gray-50 text-gray-700';
   };

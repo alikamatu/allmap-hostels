@@ -1,9 +1,9 @@
 "use client";
 
+import { usePaywall } from '@repo/shared/context';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, X, Check, Shield, AlertCircle } from 'lucide-react';
-import { usePaywall } from '@/context/paywall-context';
 
 interface PaywallModalProps {
   isOpen: boolean;

@@ -1,12 +1,11 @@
-import { ReviewStats as ReviewStatsType } from '@/service/reviewService';
+import { ReviewStats } from '@repo/types';
 import { FaStar } from 'react-icons/fa';
 
 interface ReviewStatsProps {
-  stats: ReviewStatsType;
-  hostelName: string;
+  stats: ReviewStats;
 }
 
-export const ReviewStats = ({ stats, hostelName }: ReviewStatsProps) => {
+export function HostelReviewStats({ stats }: ReviewStatsProps) {
   const renderRatingDistribution = () => {
     const { ratingDistribution, totalReviews } = stats;
     

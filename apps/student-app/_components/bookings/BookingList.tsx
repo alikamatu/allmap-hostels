@@ -1,4 +1,4 @@
-import { Booking } from '@/types/booking';
+import { Booking } from '@repo/types';
 import { BookingCard } from './BookingCard';
 
 interface BookingListProps {

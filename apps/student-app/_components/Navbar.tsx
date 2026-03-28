@@ -1,13 +1,14 @@
 'use client';
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from '@repo/shared/context';
+import { useDepositBalance } from '@repo/shared/hooks';
+import { depositService } from '@repo/shared/service';
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiHelpCircle, FiSun, FiMoon, FiCreditCard, FiDollarSign } from "react-icons/fi";
 import { DepositModal } from "./payment/DepositModal";
-import { useDepositBalance } from '@/hooks/useDepositBalance';
-import { depositService } from "@/service/depositService";
+import { BrandLogo } from "./brand";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -71,11 +72,8 @@ export default function Navbar() {
         <div className="container mx-auto px-4 py-3 max-w-7xl">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Allmap Hostels Logo" className="w-8 h-8" />
-              <span className="text-xl font-bold text-black">
-                Allmap<span className="font-light">Hostels</span>
-              </span>
+            <Link href="/dashboard" className="flex items-center">
+              <BrandLogo size={32} />
             </Link>
 
             {/* Desktop Navigation */}
@@ -143,7 +141,7 @@ export default function Navbar() {
                     Login
                   </Link>
                   <Link
-                    href="/sign-up"
+                    href="/login?tab=signup"
                     className="px-4 py-2 bg-black text-white hover:bg-gray-800 transition rounded-lg"
                   >
                     Sign Up
@@ -290,7 +288,7 @@ export default function Navbar() {
                       transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
                     >
                       <Link
-                        href="/sign-up"
+                        href="/login?tab=signup"
                         className="flex items-center px-4 py-3 bg-black text-white hover:bg-gray-800 rounded-lg transition"
                         onClick={() => setIsOpen(false)}
                       >

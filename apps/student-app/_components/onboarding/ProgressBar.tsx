@@ -39,7 +39,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep, steps }) 
           </React.Fragment>
         ))}
       </div>
-      <div className="flex justify-center mt-4 space-x-32">
+      <div className="flex justify-between mt-4 px-2">
         {steps.map((step) => (
           <span
             key={step.number}

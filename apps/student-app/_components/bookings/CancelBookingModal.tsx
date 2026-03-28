@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
-import { Booking } from '@/types/booking';
+import { Booking } from '@repo/types';
 import { formatDate } from '@/utils/bookingHelpers';
 import { useState } from 'react';
 

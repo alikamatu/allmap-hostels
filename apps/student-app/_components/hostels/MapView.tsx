@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { HostelCard } from '@/types/hostels';
-import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { useUserSchoolName } from '@/hooks/useDistanceFilter';
+import { HostelCard } from '@repo/types';
+import { useGoogleMaps } from '@repo/shared/hooks';
+import { useUserSchoolName } from '@repo/shared/hooks';
 import { useRouter } from 'next/navigation';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Bed, School } from 'lucide-react';

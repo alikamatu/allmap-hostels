@@ -20,12 +20,12 @@ interface WriteReviewModalProps {
   booking: {
     id: string;
     hostel?: {
-      name: string;
+      name?: string;
     };
     room?: {
-      roomNumber: string;
+      roomNumber?: string;
       roomType?: {
-        name: string;
+        name?: string;
       };
     };
   };

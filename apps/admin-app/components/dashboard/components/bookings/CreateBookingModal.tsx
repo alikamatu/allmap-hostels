@@ -4,76 +4,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Calendar, CreditCard, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
-interface PaystackResponse {
-  reference: string;
-  status?: string;
-  message?: string;
-  transaction?: string;
-}
-
-interface PaystackOptions {
-  key: string;
-  email: string;
-  amount: number;
-  currency: string;
-  ref: string;
-  metadata?: {
-    custom_fields: Array<{
-      display_name: string;
-      variable_name: string;
-      value: string;
-    }>;
-  };
-  callback: (response: PaystackResponse) => void;
-  onClose: () => void;
-}
-
-interface PaystackPop {
-  setup: (options: PaystackOptions) => {
-    openIframe: () => void;
-  };
-}
-
-declare global {
-  interface Window {
-    PaystackPop?: PaystackPop;
-  }
-}
-
-interface Hostel {
-  id: string;
-  name: string;
-}
-
-interface Room {
-  id: string;
-  roomNumber: string;
-  roomTypeId: string;
-  maxOccupancy: number;
-  currentOccupancy: number;
-  roomType: RoomType;
-}
-
-interface RoomType {
-  id: string;
-  name: string;
-  pricePerSemester: number;
-  pricePerMonth: number;
-  pricePerWeek?: number;
-}
-
-enum BookingType {
-  SEMESTER = 'semester',
-  MONTHLY = 'monthly',
-  WEEKLY = 'weekly'
-}
-
-enum PaymentStatus {
-  IDLE = 'idle',
-  PROCESSING = 'processing',
-  SUCCESS = 'success',
-  FAILED = 'failed'
-}
+import { 
+  Hostel, 
+  Room, 
+  RoomType, 
+  BookingType, 
+  PaymentStatus,
+  PaystackResponse,
+} from '@repo/types';
 
 interface CreateBookingModalProps {
   isOpen: boolean;

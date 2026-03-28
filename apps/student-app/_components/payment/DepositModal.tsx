@@ -1,13 +1,13 @@
 'use client';
 
+import { useAuth } from '@repo/shared/context';
+import { useDepositBalance, usePaystack } from '@repo/shared/hooks';
+import { depositService } from '@repo/shared/service';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCreditCard, FaLock, FaSpinner, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 import { FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
-import { useAuth } from '@/context/AuthContext';
-import { useDepositBalance } from '@/hooks/useDepositBalance';
-import { usePaystack } from '@/hooks/usePaystack';
-import { depositService } from '@/service/depositService';
+import { Deposit } from '@repo/types';
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -83,8 +83,8 @@ export function DepositModal({ isOpen, onClose, onDepositSuccess }: DepositModal
       // First create the deposit record
       const deposit = await depositService.createDeposit({
         amount: parseFloat(amount),
-        paymentReference: reference,
-        notes: 'Account deposit via Paystack',
+        transactionRef: reference,
+        paymentMethod: 'PAYSTACK'
       });
 
       setCreatedDepositId(deposit.id);
@@ -157,8 +157,8 @@ export function DepositModal({ isOpen, onClose, onDepositSuccess }: DepositModal
     try {
       console.log('Verifying deposit payment...', reference);
       const verification = await depositService.verifyDeposit({
-        reference: reference,
-        expectedAmount: amount
+        transactionRef: reference,
+        paymentReference: reference // Paystack reference is often used as both here or they differ, adjusting to match interface
       });
 
       console.log('Deposit verified:', verification);

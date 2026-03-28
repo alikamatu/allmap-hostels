@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
   // Main routes
   const mainRoutes: MetadataRoute.Sitemap = [
@@ -12,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${baseUrl}/sign-up`,
+      url: `${baseUrl}/login?tab=signup`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
@@ -31,6 +32,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Exclude protected dashboard routes from sitemap
-  return [...mainRoutes];
+  // Fetch dynamic hostel routes
+  try {
+    const res = await fetch(`${apiUrl}/public/hostels`, { 
+      next: { revalidate: 3600 } // Cache for 1 hour
+    });
+    
+    if (res.ok) {
+      const hostels = (await res.json()) as Array<{ id: string; updated_at?: string }>;
+      const hostelRoutes = hostels.map((hostel) => ({
+        url: `${baseUrl}/hostels/${hostel.id}`,
+        lastModified: new Date(hostel.updated_at || new Date()),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }));
+      
+      return [...mainRoutes, ...hostelRoutes];
+    }
+  } catch (error) {
+    console.error('Error fetching hostels for sitemap:', error);
+  }
+
+  return mainRoutes;
 }

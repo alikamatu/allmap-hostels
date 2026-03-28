@@ -1,10 +1,10 @@
 "use client";
 
+import { usePaywall } from '@repo/shared/context';
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HostelCard } from '@/types/hostels';
+import { HostelCard } from '@repo/types';
 import { Lock, Eye } from 'lucide-react';
-import { usePaywall } from '@/context/paywall-context';
 import { useRouter } from 'next/navigation';
 
 interface HostelListProps {

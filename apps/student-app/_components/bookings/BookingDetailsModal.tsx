@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaHome, FaCalendarAlt, FaPhone, FaEnvelope, FaMapMarkerAlt, FaCreditCard, FaMobileAlt, FaPen } from 'react-icons/fa';
-import { Booking } from '@/types/booking';
+import { Booking } from '@repo/types';
 import { formatDate, formatPrice, getStatusColor, getPaymentStatusColor, canWriteReview } from '@/utils/bookingHelpers';
 import Link from 'next/link';
 import { PaymentDetailsSection } from './PaymentDetailsSection';

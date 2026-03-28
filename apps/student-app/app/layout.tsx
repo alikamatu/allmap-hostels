@@ -1,9 +1,10 @@
+import { AuthProvider, ThemeProvider } from '@repo/shared/context';
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeProvider";
 import HeadScripts from "./head";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-host
 const ogImageUrl = `${siteUrl}/og-image.jpg`;
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -129,7 +130,6 @@ export const metadata: Metadata = {
     other: [
       { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
-      { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
     ]
   },
   other: {
@@ -160,6 +160,8 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

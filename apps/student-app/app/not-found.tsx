@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Home, Search, ArrowLeft, Building, Navigation, Compass, Globe, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { BrandMark, BRAND } from '@/_components/brand';
 
 export default function NotFound() {
   const router = useRouter();
@@ -244,8 +245,9 @@ export default function NotFound() {
             transition={{ delay: 1.2, duration: 0.6 }}
             className="mt-12 pt-8 border-t border-gray-100"
           >
-            <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">
-              ALLMAP HOSTELS
+            <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest mb-2">
+              <BrandMark size={16} />
+              <span>{BRAND.name}</span>
             </div>
             <div className="text-[9px] text-gray-400">
               Coordinates not found • Error 404 • Return to known territory

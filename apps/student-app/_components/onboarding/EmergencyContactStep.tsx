@@ -8,7 +8,7 @@ import {
   CheckCircleIcon,
   ArrowLeftIcon 
 } from '@heroicons/react/24/outline';
-import { School, EmergencyContact } from '@/types/onboarding';
+import { School, EmergencyContact } from '@repo/types';
 
 const formatLocation = (location: unknown): string => {
   if (!location) return 'Unknown location';

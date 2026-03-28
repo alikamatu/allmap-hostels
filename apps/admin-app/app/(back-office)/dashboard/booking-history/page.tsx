@@ -36,7 +36,7 @@ interface HistoryFilters {
 }
 
 const getStatusBadge = (status: BookingStatus) => {
-  const variants: Record<BookingStatus, string> = {
+  const variants: Partial<Record<BookingStatus, string>> = {
     [BookingStatus.CHECKED_OUT]: 'bg-gray-100 text-gray-800 border-gray-200',
     [BookingStatus.CANCELLED]: 'bg-red-100 text-red-800 border-red-200',
     [BookingStatus.NO_SHOW]: 'bg-orange-100 text-orange-800 border-orange-200',
@@ -53,12 +53,13 @@ const getStatusBadge = (status: BookingStatus) => {
 };
 
 const getPaymentStatusBadge = (status: PaymentStatus) => {
-  const variants = {
+  const variants: Partial<Record<PaymentStatus, string>> = {
     [PaymentStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
     [PaymentStatus.PARTIAL]: 'bg-orange-100 text-orange-800',
     [PaymentStatus.PAID]: 'bg-green-100 text-green-800',
     [PaymentStatus.OVERDUE]: 'bg-red-100 text-red-800',
     [PaymentStatus.REFUNDED]: 'bg-gray-100 text-gray-800',
+    [PaymentStatus.CANCELLED]: 'bg-red-100 text-red-800',
   };
 
   return (

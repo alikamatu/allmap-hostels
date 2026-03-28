@@ -1,4 +1,4 @@
-import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
+import { Booking, BookingStatus, PaymentStatus } from '@repo/types';
 
 export const getStatusColor = (status: BookingStatus): string => {
   switch (status) {

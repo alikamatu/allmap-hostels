@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FaStar } from 'react-icons/fa';
-import { Booking } from '@/types/booking';
+import { Booking } from '@repo/types';
 import { canWriteReview } from '@/utils/bookingHelpers';
 
 interface QuickActionsProps {

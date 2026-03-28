@@ -1,0 +1,31 @@
+{
+  "name": "@repo/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./context": "./src/context/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./service": "./src/service/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/react": "^19",
+    "typescript": "5.9.2"
+  },
+  "dependencies": {
+    "zod": "^4.0.17",
+    "framer-motion": "^12.23.12",
+    "react": "19.2.3",
+    "lucide-react": "^0.540.0",
+    "react-icons": "^5.5.0",
+    "next": "15.5.9",
+    "@repo/types": "*"
+  }
+}
