@@ -5,4 +5,5 @@ export * from "./loader";
 export * from "./loading-page";
 export * from "./text";
 export * from "./input";
+export * from "./select";
 export * from "./lib/utils";

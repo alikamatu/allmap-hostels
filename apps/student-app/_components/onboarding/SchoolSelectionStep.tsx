@@ -1,17 +1,17 @@
-// filepath: components/onboarding/SchoolSelectionStep.tsx
+"use client"
 
 import { motion } from 'framer-motion';
 import { 
-  BuildingOffice2Icon, 
-  ChevronRightIcon, 
-  CheckCircleIcon, 
-  ArrowLeftIcon 
-} from '@heroicons/react/24/outline';
+  Building2, 
+  ChevronRight, 
+  CheckCircle2, 
+  ArrowLeft,
+  Search
+} from 'lucide-react';
 import { School } from '@repo/types';
+import { Button, Input, Card } from '@repo/ui';
+import React from 'react';
 
-/**
- * Helper: Safely formats school.location values
- */
 const formatLocation = (location: unknown): string => {
   if (!location) return 'Unknown location';
   if (typeof location === 'string') return location;
@@ -50,139 +50,104 @@ export const SchoolSelectionStep: React.FC<SchoolSelectionStepProps> = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-8"
     >
-      <div className="bg-white -2 p-8">
-        <div className="flex items-center mb-6">
-          <BuildingOffice2Icon className="w-8 h-8 mr-3" />
-          <h2 className="text-2xl font-bold text-black">Select Your School</h2>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-black rounded-lg">
+            <Building2 className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight uppercase">Select School</h2>
         </div>
-
-        <p className="text-gray-600 mb-6">
-          Choose your institution to connect with relevant hostels and accommodation options.
+        <p className="text-gray-500 font-medium">
+          Choose your institution to connect with relevant hostels.
         </p>
+      </div>
 
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search schools by name or location..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full px-4 py-3 -b-2 -gray-200 focus:-black outline-none text-black transition"
-          />
-        </div>
-
-        <SchoolList
-          schools={schools}
-          loading={loadingSchools}
-          selectedSchool={selectedSchool}
-          onSchoolSelect={onSchoolSelect}
-          searchQuery={searchQuery}
+      <div className="space-y-6">
+        <Input
+          icon={Search}
+          placeholder="Search schools by name or location..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="bg-gray-50 border-none rounded-2xl h-14 px-12"
         />
 
-        <div className="mt-8 flex justify-between items-center">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onBack}
-            className="px-8 py-3 border-2 border-black font-semibold hover:bg-gray-100 transition flex items-center text-black"
-          >
-            <ArrowLeftIcon className="w-5 h-5 mr-2" />
-            Back
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onNext}
-            disabled={!selectedSchool}
-            className={`px-8 py-3 font-semibold flex items-center transition border-2 border-black ${
-              selectedSchool
-                ? 'bg-black text-white hover:bg-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Continue
-            <ChevronRightIcon className="w-5 h-5 ml-2" />
-          </motion.button>
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          {loadingSchools ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-8 h-8 border-2 border-black border-t-transparent rounded-full"
+              />
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading schools...</p>
+            </div>
+          ) : schools.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-400 font-medium italic">
+                {searchQuery ? 'No schools found matching your search.' : 'No schools available.'}
+              </p>
+            </div>
+          ) : (
+            schools.map((school) => {
+              const isSelected = selectedSchool === school.id;
+              return (
+                <motion.button
+                  key={school.id}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => onSchoolSelect(school.id)}
+                  className={`w-full text-left transition-all duration-300 rounded-3xl p-6 border ${
+                    isSelected 
+                      ? 'bg-black border-black shadow-xl shadow-black/10' 
+                      : 'bg-white border-gray-100 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className={`font-bold text-lg ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                        {school.name}
+                      </h3>
+                      <p className={`text-xs font-medium uppercase tracking-wider ${isSelected ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {formatLocation(school.location)} • {school.domain ?? 'General'}
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <div className="bg-white/20 p-2 rounded-full">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })
+          )}
         </div>
+      </div>
 
-        {error && (
-          <p className="text-red-500 mt-4 text-sm text-center">{error}</p>
-        )}
+      <div className="pt-6 flex flex-col sm:flex-row gap-4">
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="h-14 px-8 rounded-2xl border-gray-200 font-bold flex items-center justify-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+        <Button
+          onClick={onNext}
+          disabled={!selectedSchool}
+          className="flex-1 h-14 rounded-2xl bg-black text-white font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          Continue
+          <ChevronRight className="w-4 h-4" />
+        </Button>
       </div>
     </motion.div>
   );
 };
-
-const SchoolList: React.FC<{
-  schools: School[];
-  loading: boolean;
-  selectedSchool: string;
-  onSchoolSelect: (id: string) => void;
-  searchQuery: string;
-}> = ({ schools, loading, selectedSchool, onSchoolSelect, searchQuery }) => {
-  if (loading) {
-    return (
-      <div className="text-center py-8">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 -2 -black -t-transparent rounded-full mx-auto mb-2"
-        />
-        <p className="text-gray-600">Loading schools...</p>
-      </div>
-    );
-  }
-
-  if (schools.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        {searchQuery ? 'No schools found matching your search.' : 'No schools available.'}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3 max-h-96 overflow-y-auto">
-      {schools.map((school) => (
-        <SchoolCard
-          key={school.id}
-          school={school}
-          isSelected={selectedSchool === school.id}
-          onSelect={onSchoolSelect}
-        />
-      ))}
-    </div>
-  );
-};
-
-const SchoolCard: React.FC<{
-  school: School;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-}> = ({ school, isSelected, onSelect }) => (
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => onSelect(school.id)}
-    className={`w-full -2 text-left transition ${
-      isSelected
-        ? '-black bg-gray-300 text-white'
-        : '-gray-200 hover:-gray-400'
-    }`}
-  >
-    <div className="flex items-center justify-between hover:bg-gray-200 duration-300 p-4">
-      <div>
-        <h3 className="font-semibold text-gray-900 text-lg">{school.name}</h3>
-        <p className={`text-sm ${isSelected ? 'text-gray-500' : 'text-gray-700'}`}>
-          {formatLocation(school.location)} • {school.domain ?? 'No domain'}
-        </p>
-      </div>
-      {isSelected && <CheckCircleIcon className="w-6 h-6" />}
-    </div>
-  </motion.button>
-);

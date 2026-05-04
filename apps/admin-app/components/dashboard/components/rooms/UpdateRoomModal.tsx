@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Room, RoomStatus } from '@/types/room';
+import { Button, Select, Input } from '@repo/ui';
 
 type UpdateRoomFormData = {
   roomNumber: string;
@@ -52,7 +53,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+          <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 sticky top-0 z-10 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">UPDATE ROOM</h3>
@@ -73,7 +74,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
               e.preventDefault();
               onSubmit();
             }}
-            className="p-4 space-y-4"
+            className="p-4 space-y-4 overflow-y-auto"
           >
             {/* Room Number and Floor */}
             <div className="grid grid-cols-2 gap-3">
@@ -81,13 +82,13 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   ROOM NUMBER
                 </label>
-                <input
+                <Input
                   type="text"
                   value={formData.roomNumber}
                   onChange={(e) =>
                     setFormData({ ...formData, roomNumber: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                   placeholder="A101"
                 />
               </div>
@@ -96,13 +97,13 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   FLOOR
                 </label>
-                <input
+                <Input
                   type="number"
                   value={formData.floor}
                   onChange={(e) =>
                     setFormData({ ...formData, floor: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                   placeholder="1"
                 />
               </div>
@@ -113,7 +114,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 STATUS
               </label>
-              <select
+              <Select
                 value={formData.status}
                 onChange={(e) =>
                   setFormData({
@@ -121,13 +122,13 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                     status: e.target.value as RoomStatus
                   })
                 }
-                className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                className="bg-gray-50 focus:bg-white"
               >
                 <option value={RoomStatus.AVAILABLE}>Available</option>
                 <option value={RoomStatus.OCCUPIED}>Occupied</option>
                 <option value={RoomStatus.MAINTENANCE}>Maintenance</option>
                 <option value={RoomStatus.RESERVED}>Reserved</option>
-              </select>
+              </Select>
             </div>
 
             {/* Occupancy */}
@@ -136,7 +137,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   MAX OCCUPANCY
                 </label>
-                <input
+                <Input
                   type="number"
                   value={formData.maxOccupancy}
                   onChange={(e) =>
@@ -146,7 +147,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                     })
                   }
                   min={1}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                 />
               </div>
 
@@ -154,7 +155,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   CURRENT OCCUPANCY
                 </label>
-                <input
+                <Input
                   type="number"
                   value={formData.currentOccupancy}
                   onChange={(e) =>
@@ -165,7 +166,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                   }
                   min={0}
                   max={formData.maxOccupancy}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                 />
               </div>
             </div>
@@ -181,7 +182,7 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
                   setFormData({ ...formData, notes: e.target.value })
                 }
                 rows={3}
-                className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150 border border-input rounded-md"
                 placeholder="Optional notes..."
               />
             </div>
@@ -198,29 +199,25 @@ const UpdateRoomModal: React.FC<UpdateRoomModalProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t border-gray-100">
-              <button
+            <div className="flex gap-2 pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                loading={loading}
+                loadingText="Updating..."
                 disabled={loading}
-                className="flex-1 px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="flex-1 bg-[#FF6A00] hover:bg-[#E55E00] text-white border-none"
               >
-                {loading ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin mr-1" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update Room'
-                )}
-              </button>
+                Update Room
+              </Button>
             </div>
           </form>
         </motion.div>

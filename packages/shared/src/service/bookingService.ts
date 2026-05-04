@@ -29,6 +29,7 @@ class BookingService {
     const url = `${this.baseURL}${endpoint}`;
     
     const config: RequestInit = {
+      cache: 'no-store',
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -135,6 +136,7 @@ async createBookingWithDeposit(bookingData: any): Promise<BookingResponse> {
       checkIn,
       checkOut,
       ...(roomTypeId && { roomTypeId }),
+      t: Date.now().toString(),
     });
 
     try {

@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Download, Plus, MapPin
-} from 'lucide-react';
+import { Download, Plus, MapPin } from 'lucide-react';
 import { motion } from "framer-motion"
+import { Button } from '@repo/ui';
 
 // Types
 import { Booking, BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
@@ -366,23 +365,25 @@ const BookingManagementPage: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExport}
               disabled={!filters.hostelId}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 text-xs font-medium border border-gray-300 hover:bg-gray-50 transition-colors duration-150 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              <Download className="h-3 w-3" />
+              <Download className="h-3 w-3 mr-2" />
               Export
-            </button>
+            </Button>
             
-            <button
+            <Button
+              size="sm"
               onClick={() => openModal('create')}
               disabled={!filters.hostelId}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="bg-[#FF6A00] hover:bg-[#E55E00] text-white"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 mr-2" />
               New Booking
-            </button>
+            </Button>
           </div>
         </div>
 

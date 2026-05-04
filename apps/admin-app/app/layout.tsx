@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     follow: false,
     nocache: true
   },
-  manifest: "/site.webmanifest",
+
   other: {
     'http-equiv': 'Content-Security-Policy',
     content: "default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; connect-src *"

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FiMapPin, FiArrowRight } from 'react-icons/fi';
+import { FiMapPin } from 'react-icons/fi';
 import { BrandLogo } from '@/_components/brand';
 
 interface PublicHostel {
@@ -17,7 +17,7 @@ async function getHostels(): Promise<PublicHostel[]> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
   try {
     const res = await fetch(`${apiUrl}/public/hostels`, {
-      next: { revalidate: 3600 }
+      next: { revalidate: 0 }
     });
     if (!res.ok) return [];
     return res.json() as Promise<PublicHostel[]>;
@@ -58,23 +58,22 @@ export default async function HostelsListPage() {
 
         {hostels.length === 0 ? (
           <div className="bg-white rounded-3xl p-20 text-center border border-dashed border-gray-200">
-             <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No hostels found at the moment</p>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No hostels found at the moment</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {hostels.map((hostel) => (
-              <Link 
-                key={hostel.id} 
-                href={`/hostels/${hostel.id}`}
-                className="group bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
+              <div
+                key={hostel.id}
+                className="group bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-2xl hover:shadow-black/5 transition-all duration-500 relative"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   {hostel.images?.[0] ? (
-                    <Image 
-                      src={hostel.images[0]} 
-                      alt={hostel.name} 
-                      fill 
-                      className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                    <Image
+                      src={hostel.images[0]}
+                      alt={hostel.name}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                   ) : (
                     <div className="absolute inset-0 bg-gray-100 flex items-center justify-center text-gray-300 italic">No image</div>
@@ -85,25 +84,29 @@ export default async function HostelsListPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
-                  <h2 className="text-xl font-bold mb-2 group-hover:text-gray-600 transition-colors">{hostel.name}</h2>
+                  <h2 className="text-xl font-bold mb-2 group-hover:text-gray-600 transition-colors">
+                    <Link href={`/login`} className="after:absolute after:inset-0">
+                      {hostel.name}
+                    </Link>
+                  </h2>
                   <div className="flex items-center text-gray-400 text-sm mb-4">
                     <FiMapPin className="mr-1" />
                     <span className="truncate">{hostel.address || 'Location Verified'}</span>
                   </div>
-                  
+
                   <div className="flex items-end justify-between pt-4 border-t border-gray-50">
                     <div>
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Starting from</p>
                       <p className="text-2xl font-black italic">¢{hostel.base_price || '---'}</p>
                     </div>
-                    <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white transform group-hover:rotate-12 transition-transform">
-                      <FiArrowRight />
-                    </div>
+                    <Link href='/login' className="relative z-10 w-10 h-10 bg-black font-semibold px-8 rounded-xl flex items-center justify-center text-white transform transition-transform">
+                      View
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

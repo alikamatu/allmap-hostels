@@ -108,7 +108,14 @@ export const useBookings = () => {
         const params = new URLSearchParams();
 
         Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+          // Skip object values (e.g. dateRange) — only serialize primitives
+          if (
+            value !== undefined &&
+            value !== null &&
+            value !== '' &&
+            value !== 'all' &&
+            typeof value !== 'object'
+          ) {
             params.append(key, value.toString());
           }
         });

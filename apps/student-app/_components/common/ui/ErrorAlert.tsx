@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { AlertCircle, X } from 'lucide-react';
+import { Alert, AlertDescription } from '@repo/ui';
+import React from 'react';
 
 interface ErrorAlertProps {
   error: string;
@@ -11,21 +13,25 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({ error, onDismiss }) => {
     <AnimatePresence>
       {error && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="mb-6 bg-red-50 border border-red-200 p-4 flex items-start"
+          initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+          animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+          exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+          className="overflow-hidden"
         >
-          <XMarkIcon className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
-          <span className="text-sm text-red-800 flex-1">{error}</span>
-          {onDismiss && (
-            <button
-              onClick={onDismiss}
-              className="text-red-600 hover:text-red-800 ml-2"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          )}
+          <Alert variant="destructive" className="rounded-3xl border-none bg-red-50 text-red-900 shadow-lg shadow-red-900/5">
+            <AlertCircle className="w-5 h-5" />
+            <AlertDescription className="flex items-center justify-between font-bold text-xs uppercase tracking-wider">
+              <span className="flex-1">{error}</span>
+              {onDismiss && (
+                <button
+                  onClick={onDismiss}
+                  className="p-1 hover:bg-red-100 rounded-full transition-colors ml-4"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </AlertDescription>
+          </Alert>
         </motion.div>
       )}
     </AnimatePresence>

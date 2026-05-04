@@ -20,7 +20,7 @@ export default function FormInput({
 
   return (
     <div className="space-y-1">
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+      <label htmlFor={name} className="block text-sm font-medium text-black">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
@@ -28,12 +28,11 @@ export default function FormInput({
         type={type}
         placeholder={placeholder}
         {...register(name)}
-        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-          errors[name] ? 'border-red-500' : 'border-gray-300'
-        }`}
+        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors[name] ? 'border-red-500' : 'border-gray-300'
+          }`}
       />
       {errors[name] && (
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="text-sm text-red-500"

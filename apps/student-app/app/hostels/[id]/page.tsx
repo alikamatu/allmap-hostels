@@ -24,7 +24,7 @@ async function getHostel(id: string): Promise<PublicHostel | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
   try {
     const res = await fetch(`${apiUrl}/public/hostels/${id}`, {
-      next: { revalidate: 3600 }
+      next: { revalidate: 0 }
     });
     if (!res.ok) return null;
     return res.json() as Promise<PublicHostel>;

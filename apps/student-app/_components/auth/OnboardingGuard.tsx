@@ -47,7 +47,12 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
         }
 
         // If user hasn't completed onboarding or is missing school_id or gender
-        const isProfileIncomplete = !user.onboarding_completed || !user.school_id || !user.gender;
+        // Check both snake_case (standardized) and camelCase (from Prisma)
+        const onboardingCompleted = user.onboarding_completed ?? user.onboardingCompleted;
+        const schoolId = user.school_id ?? user.schoolId;
+        const gender = user.gender;
+
+        const isProfileIncomplete = !onboardingCompleted || !schoolId || !gender;
 
         if (isProfileIncomplete && pathname !== '/onboarding') {
           router.push('/onboarding');
@@ -55,7 +60,7 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
         }
 
         // If user has completed onboarding and is on onboarding page, redirect to dashboard
-        if (user.onboarding_completed && pathname === '/onboarding') {
+        if (onboardingCompleted && pathname === '/onboarding') {
           router.push('/dashboard');
           return;
         }

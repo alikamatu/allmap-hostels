@@ -42,6 +42,7 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
       return;
     }
 
+    const form = e.currentTarget as HTMLFormElement;
     try {
       setLoading(true);
       await login(email, password, rememberMe);
@@ -56,7 +57,6 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
       }
       onError(errorMessage);
       
-      const form = e.currentTarget as HTMLFormElement;
       form.classList.add('animate-shake');
       setTimeout(() => {
         form.classList.remove('animate-shake');

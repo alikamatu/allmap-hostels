@@ -73,12 +73,12 @@ export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
               <p className="text-md font-thin text-gray-800 truncate">{hostel.address}</p>
               <div className="flex justify-between mt-1">
                 <span className="text-sm font-medium text-red-600">
-                  {hostel.base_price !== null ? `GHC${hostel.base_price.toLocaleString()}` : 'Price not available'}
+                  {hostel.base_price ? `GHC${Number(hostel.base_price).toLocaleString()}` : 'Price not available'}
                 </span>
                 {/* Always show distance if available */}
-                {hostel.distance !== null && (
+                {hostel.distance != null && (
                   <span className="text-xs bg-gray-100 px-2 py-1 text-red-600 rounded-full">
-                    {hostel.distance.toFixed(1)} km
+                    {Number(hostel.distance).toFixed(1)} km
                   </span>
                 )}
               </div>

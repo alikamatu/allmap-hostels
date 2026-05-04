@@ -57,11 +57,11 @@ export enum ReviewStatus {
 export { RoomGender as AllowedGender };
 
 export enum PaymentMethod {
-  CASH = 'CASH',
-  MOBILE_MONEY = 'MOBILE_MONEY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  CARD = 'CARD',
-  CHEQUE = 'CHEQUE',
+  CASH = 'cash',
+  MOBILE_MONEY = 'mobile_money',
+  BANK_TRANSFER = 'bank_transfer',
+  CARD = 'card',
+  CHEQUE = 'cheque',
 }
 
 // --- Common Types ---
@@ -643,13 +643,14 @@ export interface DepositBalance {
 
 export interface CreateDepositRequest {
   amount: number;
-  paymentMethod: string;
-  transactionRef: string;
+  paymentReference: string;
+  depositType?: string;
+  notes?: string;
 }
 
 export interface VerifyDepositRequest {
-  transactionRef: string;
-  paymentReference: string;
+  reference: string;
+  expectedAmount: number;
 }
 
 // --- Hostel UI specific types ---

@@ -16,6 +16,7 @@ import QuickActionsBar from '@/components/dashboard/components/rooms/QuickAction
 import StatsOverview from '@/components/dashboard/components/rooms/StatsOverview';
 import CreateRoomTypeModal from '@/components/dashboard/components/rooms/room-types/CreateRoomTypeModal';
 import { LoaderFive } from '@/components/ui/loader';
+import { Button, Select, Input } from '@repo/ui';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
@@ -289,9 +290,7 @@ const RoomManagementPage = () => {
     }
   }, [fetchRooms, selectedHostel]);
 
-  useEffect(() => {
-    fetchRooms(1);
-  }, [fetchRooms]);
+
 
   useEffect(() => {
     if (showCreateModal) {
@@ -588,22 +587,28 @@ const RoomManagementPage = () => {
     
     setLoading(prev => ({ ...prev, action: true }));
     try {
-      await Promise.all(selectedRooms.map(async (roomId) => {
-        const res = await fetch(`${API_BASE_URL}/rooms/${roomId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status })
-        });
-        
-        if (!res.ok && res.status === 401) {
+      const res = await fetch(`${API_BASE_URL}/rooms/bulk/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          ids: selectedRooms,
+          status 
+        })
+      });
+      
+      if (!res.ok) {
+        if (res.status === 401) {
           throw new Error('Authentication failed. Please log in again.');
         }
-      }));
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to update room statuses');
+      }
       
       await fetchRooms();
+      setSelectedRooms([]);
     } catch (error) {
       console.error('Error updating room statuses:', error);
       alert((error as Error).message || 'Failed to update room statuses. Please try again.');
@@ -677,7 +682,7 @@ const RoomManagementPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen max-h-screen overflow-y-auto bg-white p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -686,7 +691,7 @@ const RoomManagementPage = () => {
         </div>
 
         {/* Action Bar */}
-        <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 mb-4 space-y-4">
+        <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 mb-4 space-y-4 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">
             ROOM MANAGEMENT
           </h3>
@@ -695,46 +700,47 @@ const RoomManagementPage = () => {
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-2.5 h-3 w-3 text-gray-400" />
-                <input
+                <Input
                   type="text"
                   placeholder="Search rooms..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-3 py-2 w-full bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  icon={Search}
+                  className="bg-gray-50 focus:bg-white"
                 />
               </div>
               
-              <select
+              <Select
                 value={selectedHostel}
                 onChange={(e) => setSelectedHostel(e.target.value)}
-                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                loading={loading.hostels}
+                className="bg-gray-50 focus:bg-white min-w-[200px]"
                 disabled={loading.hostels}
               >
                 <option value="">
-                  {loading.hostels ? 'Loading hostels...' : 'Select a hostel to manage rooms'}
+                  {loading.hostels ? 'Loading hostels...' : 'Select a hostel'}
                 </option>
                 {hostels.map(hostel => (
                   <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
                 ))}
-              </select>
+              </Select>
 
-              <select
+              <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                className="bg-gray-50 focus:bg-white"
               >
                 <option value="all">All Status</option>
                 <option value={RoomStatus.AVAILABLE}>Available</option>
                 <option value={RoomStatus.OCCUPIED}>Occupied</option>
                 <option value={RoomStatus.MAINTENANCE}>Maintenance</option>
                 <option value={RoomStatus.RESERVED}>Reserved</option>
-              </select>
+              </Select>
 
-              <select
+              <Select
                 value={floorFilter}
                 onChange={(e) => setFloorFilter(e.target.value)}
-                className="px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                className="bg-gray-50 focus:bg-white"
               >
                 <option value="all">All Floors</option>
                 {rooms && [...new Set(rooms.map(room => room.floor))]
@@ -743,51 +749,58 @@ const RoomManagementPage = () => {
                   .map(floor => (
                     <option key={floor} value={floor}>Floor {floor}</option>
                   ))}
-              </select>
+              </Select>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {selectedRooms.length > 0 && (
-                <button
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleBulkDelete}
-                  disabled={loading.action}
-                  className="px-3 py-2 bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors duration-150 flex items-center gap-2 disabled:opacity-50"
+                  loading={loading.action}
+                  className="flex items-center gap-2"
                 >
                   <Trash2 className="h-3 w-3" />
                   Delete ({selectedRooms.length})
-                </button>
+                </Button>
               )}
 
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowCreateRoomTypeModal(true)}
                 disabled={!selectedHostel}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!selectedHostel ? "Select a hostel first" : ""}
+                className="flex items-center gap-2"
               >
                 <Plus size={12} />
                 Add Room Type
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowBulkModal(true)}
                 disabled={!selectedHostel}
-                className="px-3 py-2 bg-gray-600 text-white text-xs font-medium hover:bg-gray-700 transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!selectedHostel ? "Select a hostel first" : ""}
+                className="flex items-center gap-2"
               >
                 <Copy className="h-3 w-3" />
                 Bulk Create
-              </button>
+              </Button>
 
-              <button
+              <Button
+                size="sm"
                 onClick={() => setShowCreateModal(true)}
                 disabled={!selectedHostel}
-                className="px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#FF6A00] hover:bg-[#E55E00] text-white flex items-center gap-2 border-none"
                 title={!selectedHostel ? "Select a hostel first" : ""}
               >
                 <Plus className="h-3 w-3" />
                 Add Room
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -881,6 +894,7 @@ const RoomManagementPage = () => {
           onMarkMaintenance={() => handleBulkStatusUpdate(RoomStatus.MAINTENANCE)}
           onDeleteAll={handleBulkDelete}
           onClearSelection={() => setSelectedRooms([])}
+          loading={loading.action}
         />
       )}
 

@@ -3,7 +3,7 @@
 import { useOnboarding } from '@repo/shared/hooks';
 import { useSchoolSearch } from '@repo/shared/hooks';
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 import { OnboardingStep, EmergencyContact, OnboardingData } from '@repo/types';
@@ -12,11 +12,12 @@ import { ErrorAlert } from '@/_components/common/ui/ErrorAlert';
 import { PersonalInfoStep } from '@/_components/onboarding/PersonalInfoStep';
 import { SchoolSelectionStep } from '@/_components/onboarding/SchoolSelectionStep';
 import { EmergencyContactStep } from '@/_components/onboarding/EmergencyContactStep';
+import { Card } from '@repo/ui';
 
 const steps = [
-  { number: 1, label: 'Personal Info' },
-  { number: 2, label: 'Select School' },
-  { number: 3, label: 'Emergency Contact' },
+  { number: 1, label: 'Profile' },
+  { number: 2, label: 'School' },
+  { number: 3, label: 'Safety' },
 ];
 
 export default function OnboardingPage() {
@@ -74,7 +75,6 @@ export default function OnboardingPage() {
           });
         }
 
-        // Determine correct step based on missing fields
         if (!profile.name || !profile.phone || !profile.gender) {
           setStep(1);
         } else if (!profile.school_id) {
@@ -142,52 +142,81 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <ProgressBar currentStep={step} steps={steps} />
+    <div className="min-h-screen bg-[#fafafa] selection:bg-black selection:text-white">
+      <div className="max-w-xl mx-auto px-6 py-12 md:py-20">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 text-center"
+        >
+          <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 bg-black/5 rounded-full">
+            <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Setup Progress</span>
+          </div>
+          <ProgressBar currentStep={step} steps={steps} />
+        </motion.div>
 
         <ErrorAlert 
           error={error} 
           onDismiss={() => setError('')} 
         />
 
-        <AnimatePresence mode="wait">
-          {step === 1 && (
-            <PersonalInfoStep
-              data={personalData}
-              onChange={setPersonalData}
-              onNext={handlePersonalInfoNext}
-              isLoading={isLoading}
-              error={error}
-            />
-          )}
+        <Card className="border-none shadow-2xl shadow-black/5 rounded-[2.5rem] p-8 md:p-12 bg-white overflow-hidden relative">
+          {/* Subtle Background Accent */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-black/[0.02] rounded-bl-[5rem] -mr-8 -mt-8" />
+          
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <PersonalInfoStep
+                key="step1"
+                data={personalData}
+                onChange={setPersonalData}
+                onNext={handlePersonalInfoNext}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
 
-          {step === 2 && (
-            <SchoolSelectionStep
-              schools={schools}
-              loadingSchools={loadingSchools}
-              searchQuery={searchQuery}
-              selectedSchool={selectedSchool}
-              onSearchChange={setSearchQuery}
-              onSchoolSelect={(id) => { setSelectedSchool(id); setError(''); }}
-              onNext={handleSchoolNext}
-              onBack={handleBack}
-              error={error}
-            />
-          )}
+            {step === 2 && (
+              <SchoolSelectionStep
+                key="step2"
+                schools={schools}
+                loadingSchools={loadingSchools}
+                searchQuery={searchQuery}
+                selectedSchool={selectedSchool}
+                onSearchChange={setSearchQuery}
+                onSchoolSelect={(id) => { setSelectedSchool(id); setError(''); }}
+                onNext={handleSchoolNext}
+                onBack={handleBack}
+                error={error}
+              />
+            )}
 
-          {step === 3 && (
-            <EmergencyContactStep
-              selectedSchool={selectedSchoolData || null}
-              contactData={contactData}
-              onContactChange={setContactData}
-              onBack={handleBack}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-              error={error}
-            />
-          )}
-        </AnimatePresence>
+            {step === 3 && (
+              <EmergencyContactStep
+                key="step3"
+                selectedSchool={selectedSchoolData || null}
+                contactData={contactData}
+                onContactChange={setContactData}
+                onBack={handleBack}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+          </AnimatePresence>
+        </Card>
+
+        {/* Footer Info */}
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 text-center text-gray-400 text-xs font-medium"
+        >
+          Your information is secure and only used for hostel matching.
+        </motion.p>
       </div>
     </div>
   );

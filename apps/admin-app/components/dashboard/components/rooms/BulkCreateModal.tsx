@@ -6,6 +6,7 @@ import { X, Loader2 } from 'lucide-react';
 import { Hostel } from '@/types/hostel';
 import { RoomType } from '@/types/room';
 import Swal from 'sweetalert2';
+import { Button, Select, Input } from '@repo/ui';
 
 // Define the form data type
 interface BulkCreateFormData {
@@ -156,7 +157,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 sticky top-0 z-10 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">BULK CREATE ROOMS</h3>
@@ -172,16 +173,16 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto">
               {/* Hostel Selection */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">HOSTEL *</label>
-                <select
+                <Select
                   value={formData.hostelId}
                   onChange={(e) => handleHostelChange(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                 >
                   <option value="">Select a hostel</option>
                   {hostels.map((hostel) => (
@@ -189,18 +190,18 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                       {hostel.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {/* Room Type Selection */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">ROOM TYPE *</label>
-                <select
+                <Select
                   value={formData.roomTypeId}
                   onChange={(e) => setFormData({ ...formData, roomTypeId: e.target.value })}
                   required
                   disabled={loading || !formData.hostelId || filteredRoomTypes.length === 0}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="bg-gray-50 focus:bg-white"
                 >
                   <option value="">
                     {!formData.hostelId
@@ -214,7 +215,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                       {type.name} (Capacity: {type.capacity})
                     </option>
                   ))}
-                </select>
+                </Select>
                 {formData.hostelId && filteredRoomTypes.length === 0 && (
                   <p className="text-xs text-amber-600 mt-1">
                     No room types found for this hostel. Create a room type first.
@@ -226,12 +227,12 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">FLOOR</label>
-                  <input
+                  <Input
                     type="number"
                     value={formData.floor}
                     onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                     disabled={loading}
-                    className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                    className="bg-gray-50 focus:bg-white"
                     placeholder="e.g., 1"
                     min="0"
                   />
@@ -239,7 +240,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">MAX OCCUPANCY *</label>
-                  <input
+                  <Input
                     type="number"
                     value={formData.maxOccupancy}
                     onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
@@ -247,7 +248,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                     min="1"
                     max="10"
                     disabled={loading}
-                    className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                    className="bg-gray-50 focus:bg-white"
                     placeholder="e.g., 2"
                   />
                 </div>
@@ -262,7 +263,7 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                   required
                   rows={3}
                   disabled={loading}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150 border border-input rounded-md"
                   placeholder="e.g., A101, A102, A103"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -278,24 +279,27 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}
                   disabled={loading}
-                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150"
+                  className="w-full px-3 py-2 bg-gray-50 text-sm focus:bg-white focus:outline-none transition-colors duration-150 border border-input rounded-md"
                   placeholder="Optional notes for all rooms..."
                   maxLength={500}
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <button
+              <div className="flex gap-2 pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onClose}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  loading={loading}
+                  loadingText="Creating..."
                   disabled={
                     loading ||
                     !formData.hostelId ||
@@ -303,17 +307,10 @@ const BulkCreateModal: React.FC<BulkCreateModalProps> = ({
                     !formData.roomNumbers.trim() ||
                     !formData.maxOccupancy
                   }
-                  className="flex-1 px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="flex-1 bg-[#FF6A00] hover:bg-[#E55E00] text-white border-none"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin mr-1" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Rooms'
-                  )}
-                </button>
+                  Create Rooms
+                </Button>
               </div>
             </form>
           </motion.div>

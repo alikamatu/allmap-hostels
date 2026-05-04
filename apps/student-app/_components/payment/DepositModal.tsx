@@ -83,8 +83,7 @@ export function DepositModal({ isOpen, onClose, onDepositSuccess }: DepositModal
       // First create the deposit record
       const deposit = await depositService.createDeposit({
         amount: parseFloat(amount),
-        transactionRef: reference,
-        paymentMethod: 'PAYSTACK'
+        paymentReference: reference,
       });
 
       setCreatedDepositId(deposit.id);
@@ -157,8 +156,8 @@ export function DepositModal({ isOpen, onClose, onDepositSuccess }: DepositModal
     try {
       console.log('Verifying deposit payment...', reference);
       const verification = await depositService.verifyDeposit({
-        transactionRef: reference,
-        paymentReference: reference // Paystack reference is often used as both here or they differ, adjusting to match interface
+        reference: reference,
+        expectedAmount: amount
       });
 
       console.log('Deposit verified:', verification);

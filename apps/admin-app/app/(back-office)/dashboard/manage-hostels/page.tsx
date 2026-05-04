@@ -399,7 +399,7 @@ const HostelCard = ({
             {hostel.rating && (
               <div className="flex items-center text-xs text-gray-600">
                 <Star className="h-3 w-3 mr-0.5 text-[#FF6A00] fill-current" />
-                {hostel.rating.toFixed(1)}
+                {Number(hostel.rating).toFixed(1)}
               </div>
             )}
             

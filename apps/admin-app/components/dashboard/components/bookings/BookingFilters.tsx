@@ -1,7 +1,12 @@
+"use client";
+
 import React from 'react';
 import { Search, Calendar, Filter, X } from 'lucide-react';
+import { Button, Input, Select } from '@repo/ui';
 import { BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
 import { Hostel } from '@/types/hostel';
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type BookingFiltersState = {
   search: string;
@@ -19,6 +24,58 @@ interface BookingFiltersProps {
   hostels: Hostel[];
   onFilterChange: (filters: Partial<BookingFiltersState>) => void;
 }
+
+// ─── Filter Options ──────────────────────────────────────────────────────────
+
+const STATUS_OPTIONS = [
+  { value: 'all',                      label: 'All Status' },
+  { value: BookingStatus.PENDING,      label: 'Pending' },
+  { value: BookingStatus.CONFIRMED,    label: 'Confirmed' },
+  { value: BookingStatus.CHECKED_IN,   label: 'Checked In' },
+  { value: BookingStatus.CHECKED_OUT,  label: 'Checked Out' },
+  { value: BookingStatus.CANCELLED,    label: 'Cancelled' },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: 'all',                    label: 'All Payments' },
+  { value: PaymentStatus.PENDING,    label: 'Pending' },
+  { value: PaymentStatus.PARTIAL,    label: 'Partial' },
+  { value: PaymentStatus.PAID,       label: 'Paid' },
+  { value: PaymentStatus.OVERDUE,    label: 'Overdue' },
+];
+
+const BOOKING_TYPE_OPTIONS = [
+  { value: 'all',                  label: 'All Types' },
+  { value: BookingType.SEMESTER,   label: 'Semester' },
+  { value: BookingType.MONTHLY,    label: 'Monthly' },
+  { value: BookingType.WEEKLY,     label: 'Weekly' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'createdAt',    label: 'Created Date' },
+  { value: 'checkInDate',  label: 'Check-in Date' },
+  { value: 'checkOutDate', label: 'Check-out Date' },
+  { value: 'totalAmount',  label: 'Total Amount' },
+  { value: 'studentName',  label: 'Student Name' },
+];
+
+const ORDER_OPTIONS = [
+  { value: 'DESC', label: 'Newest First' },
+  { value: 'ASC',  label: 'Oldest First' },
+];
+
+// ─── Filter Chip ─────────────────────────────────────────────────────────────
+
+const FilterChip: React.FC<{ label: string; value: string; onClear: () => void }> = ({
+  label, value, onClear,
+}) => (
+  <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs">
+    {label}: {value}
+    <X className="h-3 w-3 cursor-pointer hover:text-orange-950" onClick={onClear} />
+  </span>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 const BookingFilters: React.FC<BookingFiltersProps> = ({
   filters,
@@ -47,12 +104,9 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
     });
   };
 
-  const handleHostelChange = (hostelId: string) => {
-    onFilterChange({ hostelId });
-  };
-
   return (
     <div className="bg-white border border-gray-200 p-4">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-gray-600" />
@@ -60,105 +114,88 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
         </div>
         
         {hasActiveFilters && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={clearAllFilters}
-            className="flex items-center gap-2 px-2 py-1 text-xs text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 transition-colors duration-150"
+            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3 mr-1" />
             Clear All
-          </button>
+          </Button>
         )}
       </div>
 
+      {/* Primary Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {/* Search */}
         <div className="lg:col-span-2">
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Search
-          </label>
-          <div className="relative">
-            <Search className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search bookings..."
-              value={filters.search}
-              onChange={(e) => onFilterChange({ search: e.target.value })}
-              className="pl-7 pr-3 py-2 w-full border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
-            />
-          </div>
+          <Input
+            label="Search"
+            icon={Search}
+            type="text"
+            placeholder="Search bookings..."
+            value={filters.search}
+            onChange={(e) => onFilterChange({ search: e.target.value })}
+            className="h-9 text-sm"
+          />
         </div>
 
         {/* Hostel Filter */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Hostel
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Hostel</label>
+          <Select
             value={filters.hostelId}
-            onChange={(e) => handleHostelChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            onChange={(e) => onFilterChange({ hostelId: e.target.value })}
+            className="h-9 text-sm"
           >
             <option value="">Select hostel</option>
             {hostels.map(hostel => (
-              <option key={hostel.id} value={hostel.id}>
-                {hostel.name}
-              </option>
+              <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Status Filter */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Status
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Status</label>
+          <Select
             value={filters.status}
             onChange={(e) => onFilterChange({ status: e.target.value as BookingStatus | 'all' })}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            className="h-9 text-sm"
           >
-            <option value="all">All Status</option>
-            <option value={BookingStatus.PENDING}>Pending</option>
-            <option value={BookingStatus.CONFIRMED}>Confirmed</option>
-            <option value={BookingStatus.CHECKED_IN}>Checked In</option>
-            <option value={BookingStatus.CHECKED_OUT}>Checked Out</option>
-            <option value={BookingStatus.CANCELLED}>Cancelled</option>
-          </select>
+            {STATUS_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Payment Status Filter */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Payment
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Payment</label>
+          <Select
             value={filters.paymentStatus}
             onChange={(e) => onFilterChange({ paymentStatus: e.target.value as PaymentStatus | 'all' })}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            className="h-9 text-sm"
           >
-            <option value="all">All Payments</option>
-            <option value={PaymentStatus.PENDING}>Pending</option>
-            <option value={PaymentStatus.PARTIAL}>Partial</option>
-            <option value={PaymentStatus.PAID}>Paid</option>
-            <option value={PaymentStatus.OVERDUE}>Overdue</option>
-          </select>
+            {PAYMENT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Booking Type Filter */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Type
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Type</label>
+          <Select
             value={filters.bookingType}
             onChange={(e) => onFilterChange({ bookingType: e.target.value as BookingType | 'all' })}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            className="h-9 text-sm"
           >
-            <option value="all">All Types</option>
-            <option value={BookingType.SEMESTER}>Semester</option>
-            <option value={BookingType.MONTHLY}>Monthly</option>
-            <option value={BookingType.WEEKLY}>Weekly</option>
-          </select>
+            {BOOKING_TYPE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -166,67 +203,56 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
         {/* Date Range */}
         <div className="lg:col-span-2">
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Check-in Date Range
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Calendar className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
-              <input
-                type="date"
-                value={filters.dateRange.from}
-                onChange={(e) => onFilterChange({ 
-                  dateRange: { ...filters.dateRange, from: e.target.value }
-                })}
-                className="pl-7 pr-3 py-2 w-full border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
-              />
-            </div>
-            <span className="self-center text-gray-500 text-xs">to</span>
-            <div className="relative flex-1">
-              <Calendar className="absolute left-2 top-2 h-3 w-3 text-gray-400" />
-              <input
-                type="date"
-                value={filters.dateRange.to}
-                onChange={(e) => onFilterChange({ 
-                  dateRange: { ...filters.dateRange, to: e.target.value }
-                })}
-                className="pl-7 pr-3 py-2 w-full border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
-              />
-            </div>
+          <label className="text-sm font-medium leading-none mb-2 block">Check-in Date Range</label>
+          <div className="flex gap-2 items-center">
+            <Input
+              icon={Calendar}
+              type="date"
+              value={filters.dateRange.from}
+              onChange={(e) => onFilterChange({ 
+                dateRange: { ...filters.dateRange, from: e.target.value }
+              })}
+              className="h-9 text-sm"
+            />
+            <span className="text-gray-500 text-xs flex-shrink-0">to</span>
+            <Input
+              icon={Calendar}
+              type="date"
+              value={filters.dateRange.to}
+              onChange={(e) => onFilterChange({ 
+                dateRange: { ...filters.dateRange, to: e.target.value }
+              })}
+              className="h-9 text-sm"
+            />
           </div>
         </div>
 
         {/* Sort By */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Sort By
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Sort By</label>
+          <Select
             value={filters.sortBy}
             onChange={(e) => onFilterChange({ sortBy: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            className="h-9 text-sm"
           >
-            <option value="createdAt">Created Date</option>
-            <option value="checkInDate">Check-in Date</option>
-            <option value="checkOutDate">Check-out Date</option>
-            <option value="totalAmount">Total Amount</option>
-            <option value="studentName">Student Name</option>
-          </select>
+            {SORT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Sort Order */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Order
-          </label>
-          <select
+          <label className="text-sm font-medium leading-none mb-2 block">Order</label>
+          <Select
             value={filters.sortOrder}
             onChange={(e) => onFilterChange({ sortOrder: e.target.value as 'ASC' | 'DESC' })}
-            className="w-full px-3 py-2 border border-gray-300 text-sm focus:outline-none focus:border-orange-500 bg-gray-50 focus:bg-white transition-colors duration-150"
+            className="h-9 text-sm"
           >
-            <option value="DESC">Newest First</option>
-            <option value="ASC">Oldest First</option>
-          </select>
+            {ORDER_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -234,36 +260,28 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
       {hasActiveFilters && (
         <div className="mt-3 p-3 bg-orange-50 border border-orange-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-orange-800 font-medium">
-              Active filters applied
-            </span>
+            <span className="text-xs text-orange-800 font-medium">Active filters applied</span>
             <div className="flex items-center gap-1 flex-wrap justify-end">
               {filters.search && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs">
-                  Search: {filters.search}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => onFilterChange({ search: '' })}
-                  />
-                </span>
+                <FilterChip
+                  label="Search"
+                  value={filters.search}
+                  onClear={() => onFilterChange({ search: '' })}
+                />
               )}
               {filters.status !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs">
-                  Status: {filters.status}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => onFilterChange({ status: 'all' })}
-                  />
-                </span>
+                <FilterChip
+                  label="Status"
+                  value={filters.status}
+                  onClear={() => onFilterChange({ status: 'all' })}
+                />
               )}
               {filters.paymentStatus !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs">
-                  Payment: {filters.paymentStatus}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => onFilterChange({ paymentStatus: 'all' })}
-                  />
-                </span>
+                <FilterChip
+                  label="Payment"
+                  value={filters.paymentStatus}
+                  onClear={() => onFilterChange({ paymentStatus: 'all' })}
+                />
               )}
             </div>
           </div>

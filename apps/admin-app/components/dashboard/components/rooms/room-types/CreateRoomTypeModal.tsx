@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { AllowedGender } from '@/types/room';
 import Swal from 'sweetalert2';
+import { Button } from '@repo/ui';
 
 type HostelOption = {
   id: string;
@@ -222,7 +223,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4">
+            <div className="bg-white border-t-4 border-t-[#FF6A00] p-4 sticky top-0 z-10 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">CREATE ROOM TYPE</h3>
@@ -238,7 +239,7 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left Column */}
                 <div className="space-y-4">
@@ -472,29 +473,25 @@ const CreateRoomTypeModal: React.FC<CreateRoomTypeModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <button
+              <div className="flex gap-2 pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onClose}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-white text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors duration-150 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  loading={loading}
+                  loadingText="Creating..."
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-[#FF6A00] text-white text-xs font-medium hover:bg-[#E55E00] transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="flex-1 bg-[#FF6A00] hover:bg-[#E55E00] text-white border-none"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin mr-1" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Room Type'
-                  )}
-                </button>
+                  Create Room Type
+                </Button>
               </div>
             </form>
           </motion.div>

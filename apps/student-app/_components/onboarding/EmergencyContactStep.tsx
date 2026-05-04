@@ -2,13 +2,17 @@
 
 import { motion } from 'framer-motion';
 import { 
-  UserGroupIcon, 
-  PhoneIcon, 
-  EnvelopeIcon, 
-  CheckCircleIcon,
-  ArrowLeftIcon 
-} from '@heroicons/react/24/outline';
+  Users, 
+  Phone, 
+  Mail, 
+  CheckCircle2,
+  ArrowLeft,
+  ShieldCheck,
+  Heart
+} from 'lucide-react';
 import { School, EmergencyContact } from '@repo/types';
+import { Button, Input } from '@repo/ui';
+import React from 'react';
 
 const formatLocation = (location: unknown): string => {
   if (!location) return 'Unknown location';
@@ -45,10 +49,9 @@ export const EmergencyContactStep: React.FC<EmergencyContactStepProps> = ({
   error,
 }) => {
   const handleFieldChange = (field: keyof EmergencyContact, value: string) => {
-    // Restrict phone number input length and digits only
     if (field === 'phone') {
       const digitsOnly = value.replace(/\D/g, '');
-      if (digitsOnly.length > 10) return; // enforce max length 10
+      if (digitsOnly.length > 10) return;
       onContactChange({ ...contactData, [field]: digitsOnly });
       return;
     }
@@ -61,160 +64,124 @@ export const EmergencyContactStep: React.FC<EmergencyContactStepProps> = ({
     if (contactData.phone.length !== 10)
       return 'Phone number must be exactly 10 digits';
     if (!contactData.relationship)
-      return 'Please select your relationship with emergency contact';
+      return 'Please select your relationship';
     return null;
   };
 
   const handleSubmit = () => {
     const validationError = validateForm();
-    if (validationError) {
-      alert(validationError);
-      return;
-    }
+    if (validationError) return;
     onSubmit();
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-8"
     >
-      <div className="bg-white -2 -black p-8 text-black">
-        <div className="flex items-center mb-6">
-          <UserGroupIcon className="w-8 h-8 mr-3" />
-          <h2 className="text-2xl font-bold text-black">Emergency Contact</h2>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-black rounded-lg">
+            <ShieldCheck className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-black tracking-tight uppercase">Emergency Contact</h2>
         </div>
-
-        <p className="text-gray-600 mb-8">
-          Provide emergency contact information for safety and security purposes.
+        <p className="text-gray-500 font-medium">
+          Who should we reach out to in case of an emergency?
         </p>
+      </div>
 
-        {selectedSchool && (
-          <div className="mb-6 p-4 bg-gray-50  -gray-200">
-            <p className="text-sm text-gray-600 mb-1">Selected School:</p>
-            <p className="font-semibold text-black">{selectedSchool.name}</p>
-            <p className="text-sm text-gray-600">
-              {formatLocation(selectedSchool.location)}
-            </p>
-          </div>
-        )}
+      <div className="grid gap-6">
+        <Input
+          label="Contact Name"
+          icon={Users}
+          value={contactData.name}
+          onChange={(e) => handleFieldChange('name', e.target.value)}
+          placeholder="e.g. Mary Doe"
+          className="bg-transparent border-b-2 border-gray-100 focus:border-black rounded-none px-0 pl-10 h-14"
+        />
 
-        <div className="space-y-6">
-          <ContactField
-            label="Full Name *"
-            icon={UserGroupIcon}
-            type="text"
-            value={contactData.name}
-            onChange={(value) => handleFieldChange('name', value)}
-            placeholder="John Doe"
-          />
+        <Input
+          label="Phone Number"
+          icon={Phone}
+          type="tel"
+          value={contactData.phone}
+          onChange={(e) => handleFieldChange('phone', e.target.value)}
+          placeholder="054XXXXXXX"
+          className="bg-transparent border-b-2 border-gray-100 focus:border-black rounded-none px-0 pl-10 h-14"
+        />
 
-          <ContactField
-            label="Phone Number *"
-            icon={PhoneIcon}
-            type="tel"
-            value={contactData.phone}
-            onChange={(value) => handleFieldChange('phone', value)}
-            placeholder="10-digit number"
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-black mb-2">
-              Relationship *
-            </label>
-            <select
-              value={contactData.relationship}
-              onChange={(e) => handleFieldChange('relationship', e.target.value)}
-              className="w-full px-4 py-3 -b-2 -gray-200 focus:-black outline-none transition appearance-none bg-white"
-            >
-              <option value="">Select relationship</option>
-              {relationships.map((rel) => (
-                <option key={rel} value={rel.toLowerCase()}>
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+            Relationship
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {relationships.map((rel) => {
+              const value = rel.toLowerCase();
+              const isSelected = contactData.relationship === value;
+              return (
+                <button
+                  key={rel}
+                  type="button"
+                  onClick={() => handleFieldChange('relationship', value)}
+                  className={`py-3 px-2 rounded-xl text-xs font-bold transition-all duration-300 border ${
+                    isSelected 
+                      ? 'bg-black text-white border-black shadow-lg shadow-black/10' 
+                      : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                  }`}
+                >
                   {rel}
-                </option>
-              ))}
-            </select>
+                </button>
+              );
+            })}
           </div>
-
-          <ContactField
-            label="Email Address (Optional)"
-            icon={EnvelopeIcon}
-            type="email"
-            value={contactData.email || ''}
-            onChange={(value) => handleFieldChange('email', value)}
-            placeholder="contact@example.com"
-          />
         </div>
 
-        <div className="mt-8 flex justify-between">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onBack}
-            className="px-8 py-3 -2 -black font-semibold hover:bg-gray-100 transition flex items-center"
-          >
-            <ArrowLeftIcon className="w-5 h-5 mr-2" />
-            Back
-          </motion.button>
+        <Input
+          label="Email Address (Optional)"
+          icon={Mail}
+          type="email"
+          value={contactData.email || ''}
+          onChange={(e) => handleFieldChange('email', e.target.value)}
+          placeholder="contact@example.com"
+          className="bg-transparent border-b-2 border-gray-100 focus:border-black rounded-none px-0 pl-10 h-14"
+        />
+      </div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className={`px-8 py-3 font-semibold flex items-center transition ${
-              isLoading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-5 h-5 -2 -white -t-transparent rounded-full mr-2"
-                />
-                Completing...
-              </>
-            ) : (
-              <>
-                Complete Setup
-                <CheckCircleIcon className="w-5 h-5 ml-2" />
-              </>
-            )}
-          </motion.button>
-        </div>
-
-        {error && (
-          <p className="text-red-500 mt-4 text-sm text-center">{error}</p>
-        )}
+      <div className="pt-6 flex flex-col sm:flex-row gap-4">
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="h-14 px-8 rounded-2xl border-gray-200 font-bold flex items-center justify-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="flex-1 h-14 rounded-2xl bg-black text-white font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+              />
+              Completing...
+            </>
+          ) : (
+            <>
+              Complete Setup
+              <CheckCircle2 className="w-4 h-4" />
+            </>
+          )}
+        </Button>
       </div>
     </motion.div>
   );
 };
-
-const ContactField: React.FC<{
-  label: string;
-  icon: React.ComponentType<any>;
-  type: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}> = ({ label, icon: Icon, type, value, onChange, placeholder }) => (
-  <div>
-    <label className="block text-sm font-medium text-black mb-2">{label}</label>
-    <div className="relative">
-      <Icon className="w-5 h-5 text-black absolute left-3 top-3" />
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-3 -b-2 -gray-200 focus:-black outline-none transition"
-      />
-    </div>
-  </div>
-);

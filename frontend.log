@@ -1,0 +1,114 @@
+
+> dev
+> turbo run dev
+
+• turbo 2.7.5
+• Packages in scope: @repo/eslint-config, @repo/shared, @repo/types, @repo/typescript-config, @repo/ui, admin-app, student-app, super-admin
+• Running dev in 8 packages
+• Remote caching disabled
+student-app:dev: cache bypass, force executing ce1855623f9e5369
+super-admin:dev: cache bypass, force executing 282db78648115249
+admin-app:dev: cache bypass, force executing 0904f74287a9cf2d
+super-admin:dev: 
+super-admin:dev: > super-admin@0.1.0 dev
+super-admin:dev: > next dev
+super-admin:dev: 
+admin-app:dev: 
+admin-app:dev: > admin-app@0.1.0 dev
+admin-app:dev: > next dev
+admin-app:dev: 
+student-app:dev: 
+student-app:dev: > student-app@0.1.0 dev
+student-app:dev: > next dev
+student-app:dev: 
+student-app:dev:  ⚠ Port 3000 is in use by process 9273, using available port 3001 instead.
+super-admin:dev:  ⚠ Port 3000 is in use by process 9273, using available port 3002 instead.
+admin-app:dev:    ▲ Next.js 15.5.9
+admin-app:dev:    - Local:        http://localhost:3000
+admin-app:dev:    - Network:      http://20.20.2.203:3000
+admin-app:dev:    - Environments: .env.local
+admin-app:dev: 
+admin-app:dev:  ✓ Starting...
+super-admin:dev:    ▲ Next.js 15.5.9
+super-admin:dev:    - Local:        http://localhost:3002
+super-admin:dev:    - Network:      http://20.20.2.203:3002
+super-admin:dev:    - Environments: .env.local
+super-admin:dev: 
+super-admin:dev:  ✓ Starting...
+student-app:dev:    ▲ Next.js 15.5.9
+student-app:dev:    - Local:        http://localhost:3001
+student-app:dev:    - Network:      http://20.20.2.203:3001
+student-app:dev:    - Environments: .env.local
+student-app:dev:    - Experiments (use with caution):
+student-app:dev:      ⨯ useLightningcss
+student-app:dev: 
+student-app:dev:  ✓ Starting...
+student-app:dev:  ✓ Ready in 1548ms
+admin-app:dev:  ✓ Ready in 1850ms
+super-admin:dev:  ✓ Ready in 2.4s
+super-admin:dev:  ✓ Compiled /_not-found in 412ms (563 modules)
+super-admin:dev:  GET /site.webmanifest 404 in 636ms
+super-admin:dev:  GET /dashboard/hostels/dccce4f4-a0e2-46a2-98a8-f4bdf469a001 404 in 57ms
+super-admin:dev:  GET /dashboard/hostels/dccce4f4-a0e2-46a2-98a8-f4bdf469a001 404 in 75ms
+super-admin:dev:  ○ Compiling /dashboard ...
+super-admin:dev:  ✓ Compiled /dashboard in 1139ms (1696 modules)
+super-admin:dev:  GET /dashboard 200 in 1446ms
+super-admin:dev:  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+admin-app:dev:  ○ Compiling /dashboard ...
+admin-app:dev:  ✓ Compiled /dashboard in 1005ms (1533 modules)
+admin-app:dev:  GET /dashboard 200 in 1309ms
+student-app:dev:  ○ Compiling /dashboard ...
+student-app:dev:  ✓ Compiled /dashboard in 3.8s (1651 modules)
+student-app:dev:  GET /dashboard 200 in 4108ms
+student-app:dev:  ○ Compiling /login ...
+student-app:dev:  ✓ Compiled /login in 1467ms (1872 modules)
+student-app:dev:  GET /login 200 in 1550ms
+student-app:dev:  GET /login 200 in 17ms
+student-app:dev:  ○ Compiling / ...
+student-app:dev:  ✓ Compiled / in 1405ms (1972 modules)
+student-app:dev:  GET / 200 in 1684ms
+student-app:dev:  GET /login 200 in 53ms
+student-app:dev:  GET /dashboard 200 in 62ms
+student-app:dev:  ○ Compiling /dashboard/hostels/[id] ...
+student-app:dev:  ✓ Compiled /dashboard/hostels/[id] in 643ms (2017 modules)
+student-app:dev:  GET /dashboard/hostels/dccce4f4-a0e2-46a2-98a8-f4bdf469a001 200 in 1335ms
+student-app:dev:  GET /dashboard/hostels/dccce4f4-a0e2-46a2-98a8-f4bdf469a001 200 in 416ms
+student-app:dev:  ○ Compiling /dashboard/bookings ...
+student-app:dev:  ✓ Compiled /dashboard/bookings in 695ms (2062 modules)
+student-app:dev:  GET /dashboard/bookings 200 in 816ms
+admin-app:dev:  ○ Compiling /dashboard/booking-management ...
+admin-app:dev:  ✓ Compiled /dashboard/booking-management in 733ms (1630 modules)
+admin-app:dev:  GET /dashboard/booking-management 200 in 887ms
+student-app:dev:  GET /dashboard/bookings 200 in 354ms
+admin-app:dev:  ✓ Compiled in 917ms (1595 modules)
+admin-app:dev:  ✓ Compiled in 414ms (764 modules)
+admin-app:dev:  ✓ Compiled in 343ms (764 modules)
+admin-app:dev:  ✓ Compiled in 173ms (764 modules)
+admin-app:dev:  ✓ Compiled /dashboard/booking-management in 413ms (912 modules)
+admin-app:dev:  GET /dashboard/booking-management 200 in 833ms
+admin-app:dev:  ✓ Compiled /favicon.ico in 311ms (929 modules)
+admin-app:dev:  GET /favicon.ico 200 in 411ms
+admin-app:dev:  ✓ Compiled in 587ms (1676 modules)
+admin-app:dev:  ○ Compiling / ...
+admin-app:dev:  ✓ Compiled / in 590ms (1708 modules)
+admin-app:dev:  ⨯ Error: ENOENT: no such file or directory, open '/Users/osamaalikamatu/Documents/GitHub/allmap-hostels/apps/admin-app/.next/server/vendor-chunks/next.js'
+admin-app:dev:     at <unknown> (.next/server/app/page.js:454:47)
+admin-app:dev:     at Object.<anonymous> (.next/server/app/page.js:457:3) {
+admin-app:dev:   errno: -2,
+admin-app:dev:   code: 'ENOENT',
+admin-app:dev:   syscall: 'open',
+admin-app:dev:   path: '/Users/osamaalikamatu/Documents/GitHub/allmap-hostels/apps/admin-app/.next/server/vendor-chunks/next.js',
+admin-app:dev:   page: '/'
+admin-app:dev: }
+admin-app:dev:  ○ Compiling /_error ...
+admin-app:dev:  ✓ Compiled /_error in 775ms (2048 modules)
+admin-app:dev:  GET / 500 in 1892ms
+admin-app:dev: <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/osamaalikamatu/Documents/GitHub/allmap-hostels/apps/admin-app/.next/cache/webpack/server-development/29.pack.gz_' -> '/Users/osamaalikamatu/Documents/GitHub/allmap-hostels/apps/admin-app/.next/cache/webpack/server-development/29.pack.gz'
+admin-app:dev: [?25h
+super-admin:dev: [?25h
+student-app:dev: [?25h
+
+ Tasks:    3 successful, 3 total
+Cached:    0 cached, 3 total
+  Time:    1h13m19.647s 
+
