@@ -3,16 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, User, Calendar, MapPin, Phone, Mail,
+  X, User, Calendar, Phone, Mail,
   CreditCard, CheckCircle, Clock, AlertCircle,
-  FileText, Loader2, Home, BedDouble,
+  FileText, Loader2, Home,
 } from 'lucide-react';
 import { Button } from '@repo/ui';
 import { Booking, BookingStatus } from '@/types/booking';
 import { formatDate, formatDateTime } from '@/utils/date';
 import { formatCurrency } from '@/utils/currency';
 import { usePayments } from '@/hooks/usePayments';
-import { PaymentStatus } from '@/types/payment';
+import { Payment, PaymentStatus } from '@/types/payment';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -284,7 +284,7 @@ const DetailsTab: React.FC<{
 
 const PaymentsTab: React.FC<{
   booking: Booking;
-  payments: any[];
+  payments: Payment[];
   paymentsLoading: boolean;
   paymentProgress: number;
   isHistorical?: boolean;

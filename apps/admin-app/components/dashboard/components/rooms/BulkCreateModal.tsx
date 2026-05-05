@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Hostel } from '@/types/hostel';
 import { RoomType } from '@/types/room';
 import Swal from 'sweetalert2';

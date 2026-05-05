@@ -257,12 +257,12 @@ export default function AddHostelPage() {
         router.push('/dashboard');
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submission error:', error);
-      const serverMessage = error.response?.data?.message;
+      const serverMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
       const displayMessage = Array.isArray(serverMessage) 
         ? serverMessage.join(', ') 
-        : serverMessage || error.message || 'An error occurred while creating the hostel';
+        : serverMessage || (error as { message?: string }).message || 'An error occurred while creating the hostel';
 
       Swal.fire({
         icon: 'error',
