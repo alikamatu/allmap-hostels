@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useGoogleMaps } from '@repo/shared/hooks';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaSpinner } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
+import 'leaflet/dist/leaflet.css';
 
 interface MapModalProps {
   isOpen: boolean;
@@ -13,266 +12,247 @@ interface MapModalProps {
   hostelName: string;
 }
 
+function parseLocation(loc: any): [number, number] | null {
+  if (!loc) return null;
+
+  if (typeof loc === 'object' && loc.coordinates) {
+    return [loc.coordinates[0], loc.coordinates[1]];
+  }
+
+  if (typeof loc === 'string') {
+    const pointMatch = loc.match(/POINT\(([\d.-]+)\s+([\d.-]+)\)/);
+    if (pointMatch) return [parseFloat(pointMatch[1]), parseFloat(pointMatch[2])];
+
+    if (loc.startsWith('0101000020E6100000')) {
+      try {
+        const hex = loc.substring(18);
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        const view = new DataView(bytes.buffer);
+        return [view.getFloat64(0, true), view.getFloat64(8, true)];
+      } catch {
+        return null;
+      }
+    }
+
+    const coordMatch = loc.match(/(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/);
+    if (coordMatch) return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
+  }
+
+  return null;
+}
+
+function haversineKm(
+  [lng1, lat1]: [number, number],
+  [lng2, lat2]: [number, number],
+): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const { isLoaded, error: mapsError } = useGoogleMaps();
+  const mapInstance = useRef<import('leaflet').Map | null>(null);
   const [hostelCoords, setHostelCoords] = useState<[number, number] | null>(null);
   const [schoolCoords, setSchoolCoords] = useState<[number, number] | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  // Parse location from various formats
-  const parseLocation = useCallback((loc: any): [number, number] | null => {
-    if (!loc) return null;
-    
-    // Handle GeoJSON format
-    if (typeof loc === 'object' && loc.coordinates) {
-      return [loc.coordinates[0], loc.coordinates[1]];
-    }
-    
-    // Handle string formats
-    if (typeof loc === 'string') {
-      // Handle POINT(lng lat) format
-      const pointMatch = loc.match(/POINT\(([\d.-]+) ([\d.-]+)\)/);
-      if (pointMatch) return [parseFloat(pointMatch[1]), parseFloat(pointMatch[2])];
-      
-      // Handle WKB hex format
-      if (loc.startsWith('0101000020E6100000')) {
-        try {
-          const hex = loc.substring(18);
-          const bytes = new Uint8Array(hex.length / 2);
-          for (let i = 0; i < hex.length; i += 2) {
-            bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-          }
-          const view = new DataView(bytes.buffer);
-          const lng = view.getFloat64(0, true);
-          const lat = view.getFloat64(8, true);
-          return [lng, lat];
-        } catch (error) {
-          console.error('Failed to parse WKB location:', error);
-          return null;
-        }
-      }
-      
-      // Handle raw coordinate strings
-      const coordMatch = loc.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);
-      if (coordMatch) return [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
-    }
-    
-    return null;
-  }, []);
-
-  // Parse hostel location when component mounts or location changes
+  // Parse hostel coords
   useEffect(() => {
-    setLoading(true);
-    try {
-      const coords = parseLocation(location);
-      if (coords) {
-        setHostelCoords(coords);
-        setParseError(null);
-      } else {
-        setParseError('Unable to parse hostel location.');
-      }
-    } catch (error) {
-      setParseError('Error parsing location data.');
-      console.error('Location parsing error:', error);
-    } finally {
-      setLoading(false);
+    const coords = parseLocation(location);
+    if (coords) {
+      setHostelCoords(coords);
+      setParseError(null);
+    } else {
+      setParseError('Unable to parse hostel location.');
     }
-  }, [location, parseLocation]);
+  }, [location]);
 
-  // Fetch school coordinates from user profile
+  // Fetch school coords
   useEffect(() => {
-    const fetchSchoolLocation = async () => {
-      try {
-        const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        if (!accessToken) return;
+    const accessToken =
+      localStorage.getItem('access_token') ?? sessionStorage.getItem('access_token');
+    if (!accessToken) return;
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (!res.ok) throw new Error(`Failed to fetch user profile: ${res.statusText}`);
-
-        const profile = await res.json();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => r.json())
+      .then((profile) => {
         if (profile.school?.location) {
           const coords = parseLocation(profile.school.location);
-          if (coords) {
-            setSchoolCoords(coords);
-          } else {
-            console.warn('Invalid school location format:', profile.school.location);
-          }
+          if (coords) setSchoolCoords(coords);
         }
-      } catch (error) {
-        console.error('Failed to fetch school location:', error);
-      }
-    };
+      })
+      .catch(() => {});
+  }, []);
 
-    fetchSchoolLocation();
-  }, [parseLocation]);
-
-  // Initialize map when all data is ready
+  // Compute distance
   useEffect(() => {
-    if (!isLoaded || !isOpen || !mapRef.current || !hostelCoords) return;
+    if (hostelCoords && schoolCoords) {
+      setDistance(haversineKm(schoolCoords, hostelCoords));
+    }
+  }, [hostelCoords, schoolCoords]);
 
-    // Create map instance
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: hostelCoords[1], lng: hostelCoords[0] },
-      zoom: 15,
-      mapTypeId: 'roadmap',
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }],
-        },
-      ],
-    });
+  // Build / destroy map
+  useEffect(() => {
+    if (!isOpen || !hostelCoords || !mapRef.current) return;
 
-    // Add hostel marker
-    new window.google.maps.Marker({
-      position: { lat: hostelCoords[1], lng: hostelCoords[0] },
-      map,
-      title: hostelName,
-      icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-    });
+    // Destroy existing instance before re-creating
+    mapInstance.current?.remove();
+    mapInstance.current = null;
 
-    // Add school marker if available
-    if (schoolCoords) {
-      new window.google.maps.Marker({
-        position: { lat: schoolCoords[1], lng: schoolCoords[0] },
-        map,
-        title: 'Your School',
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: '#4285F4',
-          fillOpacity: 1,
-          strokeColor: '#FFFFFF',
-          strokeWeight: 2,
-        },
+    import('leaflet').then((L) => {
+      // Fix broken default icon paths
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
 
-      // Calculate distance between school and hostel
-      const R = 6371; // Earth radius in km
-      const dLat = (hostelCoords[1] - schoolCoords[1]) * (Math.PI / 180);
-      const dLon = (hostelCoords[0] - schoolCoords[0]) * (Math.PI / 180);
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(schoolCoords[1] * (Math.PI / 180)) * 
-        Math.cos(hostelCoords[1] * (Math.PI / 180)) * 
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      setDistance(R * c);
-    }
-  }, [isLoaded, isOpen, hostelCoords, schoolCoords, hostelName]);
+      if (!mapRef.current) return;
+      const map = L.map(mapRef.current).setView(
+        [hostelCoords[1], hostelCoords[0]],
+        15,
+      );
+      mapInstance.current = map;
 
-  // Handle body overflow when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Hostel marker
+      const redIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      L.marker([hostelCoords[1], hostelCoords[0]], { icon: redIcon })
+        .addTo(map)
+        .bindPopup(`<strong>${hostelName}</strong>`)
+        .openPopup();
+
+      // School marker
+      if (schoolCoords) {
+        const blueIcon = L.divIcon({
+          className: '',
+          html: `<div style="background:#3b82f6;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        L.marker([schoolCoords[1], schoolCoords[0]], { icon: blueIcon })
+          .addTo(map)
+          .bindPopup('<strong>Your School</strong>');
+
+        const bounds = L.latLngBounds(
+          [hostelCoords[1], hostelCoords[0]],
+          [schoolCoords[1], schoolCoords[0]],
+        );
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    });
+
     return () => {
-      document.body.style.overflow = 'auto';
+      mapInstance.current?.remove();
+      mapInstance.current = null;
     };
+  }, [isOpen, hostelCoords, schoolCoords, hostelName]);
+
+  // Lock body scroll
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Render error state if any
-  if (mapsError || parseError) {
+  if (parseError) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center p-4 font-sans"
+        className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center p-4"
       >
         <div className="text-center max-w-md">
-          <FiAlertTriangle className="text-black text-5xl mb-4" />
+          <FiAlertTriangle className="text-black text-5xl mb-4 mx-auto" />
           <h2 className="text-2xl font-bold text-black mb-2">Unable to Load Map</h2>
-          <p className="text-gray-666 mb-6">{mapsError || parseError}</p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <p className="text-gray-600 mb-6">{parseError}</p>
+          <button
             onClick={onClose}
-            className="bg-black text-white py-3 px-6 font-medium transition hover:bg-gray-800"
-            aria-label="Close map modal"
+            className="bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors"
           >
             Close
-          </motion.button>
+          </button>
         </div>
       </motion.div>
     );
   }
 
-  // Render loading state
-  if (loading || !hostelCoords) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="h-[400px] sm:h-[600px] flex items-center justify-center"
-      >
-        <div className="relative flex w-64 animate-pulse gap-2 p-4">
-          <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-          <div className="flex-1">
-            <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-            <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-          </div>
-          <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Render map
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-white/90 z-50 flex items-center justify-center p-4 font-sans"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
       <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-xl shadow-xl flex flex-col overflow-hidden">
+        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-bold text-black">{hostelName} Location</h2>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            onClick={onClose}
-            className="text-black"
-            aria-label="Close map modal"
-          >
+          <button onClick={onClose} className="text-black hover:text-gray-600">
             <FiX className="text-2xl" />
-          </motion.button>
+          </button>
         </div>
-        
-        <div ref={mapRef} className="w-full h-[400px] sm:h-[500px] flex-1" />
-        
+
+        {/* Map */}
+        <div ref={mapRef} className="w-full h-[400px] sm:h-[460px]" />
+
+        {/* Footer */}
         <div className="p-4 bg-gray-50 border-t">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-gray-666">{hostelName}</span>
+              <div className="w-3 h-3 rounded-full bg-red-500 mr-2 border border-white shadow" />
+              <span className="text-sm text-gray-700">{hostelName}</span>
             </div>
-            
             {schoolCoords && (
               <div className="flex items-center">
-                <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-                <span className="text-gray-666">Your School</span>
+                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 border border-white shadow" />
+                <span className="text-sm text-gray-700">Your School</span>
               </div>
             )}
           </div>
-          
+
           {distance !== null && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-              <p className="text-center font-medium">
+            <div className="p-3 bg-blue-50 rounded-lg mb-3">
+              <p className="text-center font-medium text-sm">
                 Distance from your school: {distance.toFixed(1)} km
               </p>
             </div>
+          )}
+
+          {hostelCoords && (
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${hostelCoords[1]},${hostelCoords[0]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center py-2 px-4 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+            >
+              Get Directions in Google Maps
+            </a>
           )}
         </div>
       </div>

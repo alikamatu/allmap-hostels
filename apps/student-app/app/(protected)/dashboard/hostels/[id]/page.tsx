@@ -21,6 +21,7 @@ import { ImageGallery } from '@/_components/hostelid/ImageGallery';
 import { HostelInformation } from '@/_components/hostelid/HostelInformation';
 import { RoomCard } from '@/_components/hostelid/RoomCard';
 import { ReviewsComponent } from '@/_components/reviews/ReviewsComponent';
+import { NearbyPlaces } from '@/_components/hostels/NearbyPlaces';
 
 export default function HostelDetailPage() {
   const { id } = useParams();
@@ -247,6 +248,18 @@ export default function HostelDetailPage() {
             onShowMap={() => setShowMap(true)} 
           />
         </div>
+
+        {/* Nearby Places Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.45 }}
+          className="mb-16"
+        >
+          <h2 className="text-2xl font-bold text-black mb-4">Nearby Places</h2>
+          <hr className="border-t border-gray-200 mb-6" />
+          <NearbyPlaces hostelId={hostel.id} />
+        </motion.div>
 
         {/* Room Types Section */}
         <motion.div
