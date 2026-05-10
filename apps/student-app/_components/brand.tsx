@@ -9,7 +9,7 @@ export const BRAND = {
     "Discover verified hostels near your campus. Compare prices, amenities, and reviews. Find your perfect student accommodation with AllMap Hostels.",
   siteUrl:
     process.env.NEXT_PUBLIC_SITE_URL || "https://student.allmap-hostels.com",
-  supportEmail: "support@allmap-hostels.com",
+  supportEmail: "info@allmaphostels.com",
   socials: {
     twitter: "https://twitter.com/AllMapHostels",
     instagram: "https://www.instagram.com/allmaphostels",

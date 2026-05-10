@@ -6,6 +6,7 @@
   --color-border: var(--border);
   --color-sider: var(--sider);
   --color-icon: var(--icon);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Add these CSS variables to your globals.css */
@@ -26,7 +27,7 @@
   --accent-cl: #a855f7;
   --close-btn-cl: #f7f7f7;
   --open-btn-cl: #f7f7f7;
-  
+
   /* Classic Dark */
   --background-cd: #1a1a1a;
   --foreground-cd: #f0f0f0;
@@ -43,7 +44,7 @@
   --accent-cd: #cea205;
   --close-btn-cd: #252525;
   --open-btn-cd: #252525;
-  
+
   /* Web3 Light */
   --background-wl: #f0f8ff;
   --foreground-wl: #1e40af;
@@ -60,7 +61,7 @@
   --accent-wl: #8b5cf6;
   --close-btn-wl: #d1e0ff;
   --open-btn-wl: #d1e0ff;
-  
+
   /* Web3 Dark */
   --background-wd: #0d0044;
   --foreground-wd: #cea205;
@@ -77,7 +78,7 @@
   --accent-wd: #ff00c8;
   --close-btn-wd: #1a0066;
   --open-btn-wd: #1a0066;
-  
+
   /* Active theme variables (dynamically set) */
   --background: var(--background-cl);
   --foreground: var(--foreground-cl);
@@ -150,16 +151,10 @@
   --open-btn: var(--open-btn-wd);
 }
 
-/* Glow effect for active items */
-.shadow-glow {
-  box-shadow: 0 0 15px var(--primary), 0 0 30px var(--accent);
-}
-
 body {
-  background: white;
-  color: black;
-  color: var(--icon);
-  font-family: var(--font-inter);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
 }
 
 .bg-background {

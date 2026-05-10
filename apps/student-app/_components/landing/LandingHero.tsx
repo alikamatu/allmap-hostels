@@ -29,7 +29,7 @@ export function LandingHero() {
               >
                 Find your perfect student hostel
               </h1>
-              <p className="mb-8 max-w-xl text-base text-black/90 sm:text-lg md:text-xl">
+              <p className="mb-8 max-w-xl text-black sm:text-lg md:text-xl">
                 Discover, compare, and book off-campus hostels with verified
                 reviews, proximity filtering, and secure checkout on{" "}
                 {BRAND.name}.

@@ -3,8 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { motion } from 'framer-motion';
-import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiTerminal } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiTerminal, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardFooter 
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -16,15 +28,17 @@ const LoginPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [terminalText, setTerminalText] = useState<string[]>([]);
+  const [systemReady, setSystemReady] = useState(false);
 
   useEffect(() => {
-    // Simulate terminal boot-up sequence
     const bootSequence = [
       "INITIALIZING SYSTEM...",
       "LOADING SECURITY PROTOCOLS...",
-      "AUTHENTICATION MODULE READY",
-      "ACCESS GRANTED: LEVEL 0 SECURITY",
-      "WELCOME, ADMIN"
+      "SCANNING BIOMETRICS...",
+      "DECRYPTING AUTHENTICATION MODULE...",
+      "ESTABLISHING SECURE CONNECTION...",
+      "SYSTEM STATUS: ONLINE",
+      "WELCOME, MASTER ADMIN"
     ];
     
     let currentIndex = 0;
@@ -34,8 +48,9 @@ const LoginPage = () => {
         currentIndex++;
       } else {
         clearInterval(interval);
+        setSystemReady(true);
       }
-    }, 300);
+    }, 250);
 
     return () => clearInterval(interval);
   }, []);
@@ -49,409 +64,293 @@ const LoginPage = () => {
       await login(email, password, rememberMe);
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'AUTHENTICATION FAILED');
+      setError(err instanceof Error ? err.message : 'CRITICAL AUTHENTICATION FAILURE');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Matrix-like code rain effect in background
+  // Enhanced Matrix Rain with varying speeds and characters
   const MatrixRain = () => {
     return (
-      <div className="absolute inset-0 overflow-hidden opacity-20 z-0">
-        {[...Array(20)].map((_, i) => (
+      <div className="absolute inset-0 overflow-hidden opacity-[0.15] z-0 pointer-events-none">
+        {[...Array(30)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute text-green-400 text-xs font-mono"
-            initial={{ y: -20, opacity: 0 }}
+            className="absolute text-green-500 text-sm font-mono whitespace-nowrap"
+            initial={{ y: -100, opacity: 0 }}
             animate={{ 
-              y: '100vh', 
-              opacity: [0, 1, 0],
+              y: '110vh', 
+              opacity: [0, 0.8, 0],
             }}
             transition={{
-              duration: 10 + Math.random() * 20,
+              duration: 5 + Math.random() * 15,
               repeat: Infinity,
               delay: Math.random() * 5,
               ease: "linear"
             }}
             style={{
-              left: `${Math.random() * 100}%`,
+              left: `${(i / 30) * 100}%`,
+              writingMode: 'vertical-rl',
+              textOrientation: 'upright'
             }}
           >
-            {Math.random().toString(36).substring(2, 3)}
+            {Array.from({ length: 20 }).map(() => 
+              String.fromCharCode(0x30A0 + Math.random() * 96)
+            ).join('')}
           </motion.div>
         ))}
       </div>
     );
   };
 
-  // Hacker-style terminal output
   const TerminalOutput = () => (
-    <div className="absolute top-4 left-4 w-80 h-40 bg-black/80 border border-green-500/50 rounded-md p-3 font-mono text-xs text-green-400 overflow-hidden z-10">
-      <div className="flex items-center mb-2">
-        <FiTerminal className="text-green-500 mr-2" />
-        <span className="text-green-500">SYSTEM TERMINAL</span>
-        <div className="ml-2 flex">
-          <div className="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
-          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="fixed bottom-6 left-6 w-96 hidden lg:block z-50"
+    >
+      <div className="bg-black/90 border border-green-500/30 rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.1)] overflow-hidden">
+        <div className="bg-green-950/20 px-3 py-2 border-b border-green-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FiTerminal className="text-green-500 size-3" />
+            <span className="text-[10px] font-mono text-green-500 uppercase tracking-widest">Security Terminal</span>
+          </div>
+          <div className="flex gap-1.5">
+            <div className="size-2 rounded-full bg-red-500/50" />
+            <div className="size-2 rounded-full bg-yellow-500/50" />
+            <div className="size-2 rounded-full bg-green-500/50" />
+          </div>
+        </div>
+        <div className="p-4 font-mono text-[11px] h-48 overflow-y-auto scrollbar-hide text-green-400/80 space-y-1">
+          {terminalText.map((line, index) => (
+            <div key={index} className="flex gap-2">
+              <span className="text-green-600 opacity-50">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
+              <span className="text-green-500">{" >>> "}</span>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {line}
+              </motion.span>
+            </div>
+          ))}
+          <div className="animate-pulse inline-block w-2 h-3 bg-green-500 ml-1 translate-y-0.5" />
         </div>
       </div>
-      <div className="overflow-y-auto h-28">
-        {terminalText.map((line, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-1"
-          >
-            <span className="text-green-500">$ </span>
-            {line}
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    </motion.div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] overflow-hidden relative selection:bg-green-500/30 selection:text-green-200">
       <MatrixRain />
       <TerminalOutput />
       
-      {/* Scanline effect */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/70 pointer-events-none z-10"></div>
-      <div className="absolute inset-0 pointer-events-none z-20 scanlines"></div>
+      {/* Dynamic Grid Background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+
+      {/* Glow Effects */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-green-500/5 blur-[120px] rounded-full pointer-events-none" />
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
         className="relative z-30 w-full max-w-md px-6"
       >
-        <div className="bg-black/90 backdrop-blur-md rounded-md shadow-xl p-8 border border-green-500/30 glitch-effect">
-          <div className="text-center mb-10">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto bg-gradient-to-r from-green-600 to-green-800 w-16 h-16 rounded-full flex items-center justify-center mb-4 glitch-box"
-            >
-              <FiUser className="text-white text-2xl" />
-            </motion.div>
+        <Card className="bg-black/60 backdrop-blur-xl border-green-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
+          {/* Animated border line */}
+          <motion.div 
+            className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500 to-transparent"
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          />
+
+          <CardHeader className="space-y-4 pb-8">
+            <div className="flex justify-center">
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="size-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center relative group"
+              >
+                <div className="absolute inset-0 bg-green-500/20 blur-xl group-hover:blur-2xl transition-all rounded-full opacity-50" />
+                <FiShield className="text-green-500 text-3xl relative z-10" />
+              </motion.div>
+            </div>
             
-            <motion.h1 
-              className="text-3xl font-bold text-green-400 glitch-text"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              data-text="ACCESS CONTROL"
-            >
-              ACCESS CONTROL
-            </motion.h1>
-            <motion.p 
-              className="text-green-600 mt-2 font-mono"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              IDENTIFY YOURSELF
-            </motion.p>
-          </div>
+            <div className="text-center space-y-1.5">
+              <CardTitle className="text-2xl font-mono tracking-tighter text-white uppercase flex items-center justify-center gap-3">
+                <span className="text-green-500">::</span> 
+                Access Point
+                <span className="text-green-500">::</span>
+              </CardTitle>
+              <CardDescription className="font-mono text-green-700 text-[11px] uppercase tracking-widest">
+                Protocol Override Required
+              </CardDescription>
+            </div>
+          </CardHeader>
 
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <label htmlFor="email" className="block text-sm font-medium text-green-500 mb-1 font-mono">
-                  USER_ID
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="text-green-600" />
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-green-600 ml-1">
+                    Identification_ID
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <FiMail className="text-green-700 group-focus-within:text-green-400 transition-colors" />
+                    </div>
+                    <Input
+                      type="email"
+                      placeholder="admin@nexus.sys"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-black/40 border-green-900/50 focus-visible:ring-green-500/50 focus-visible:border-green-500/50 text-green-100 pl-10 h-12 font-mono text-sm placeholder:text-green-900 transition-all duration-300"
+                    />
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 bg-black/50 border border-green-700/50 rounded-md text-green-400 placeholder-green-800 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all font-mono"
-                    placeholder="admin@domain.com"
-                  />
                 </div>
-              </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <label htmlFor="password" className="block text-sm font-medium text-green-500 mb-1 font-mono">
-                  ENCRYPTION_KEY
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="text-green-600" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-green-600 ml-1">
+                    Security_Cipher
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                      <FiLock className="text-green-700 group-focus-within:text-green-400 transition-colors" />
+                    </div>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="bg-black/40 border-green-900/50 focus-visible:ring-green-500/50 focus-visible:border-green-500/50 text-green-100 pl-10 pr-10 h-12 font-mono text-sm placeholder:text-green-900 transition-all duration-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-green-900 hover:text-green-400 transition-colors"
+                    >
+                      {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                    </button>
                   </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 bg-black/50 border border-green-700/50 rounded-md text-green-400 placeholder-green-800 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent transition-all font-mono"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <FiEyeOff className="text-green-600 hover:text-green-400 transition-colors" />
-                    ) : (
-                      <FiEye className="text-green-600 hover:text-green-400 transition-colors" />
-                    )}
-                  </button>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                className="flex items-center justify-between"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <div className="flex items-center">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
                   <input
-                    id="remember-me"
-                    name="remember-me"
                     type="checkbox"
+                    id="remember"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-green-600 rounded focus:ring-green-500 border-green-700 bg-black/50"
+                    className="size-3.5 rounded border-green-900 bg-black/40 text-green-600 focus:ring-green-500 focus:ring-offset-black"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-green-500 font-mono">
-                    PERSIST_SESSION
+                  <label htmlFor="remember" className="text-[10px] font-mono text-green-700 uppercase cursor-pointer hover:text-green-500 transition-colors">
+                    Stay_Connected
                   </label>
                 </div>
-
-                <div className="text-sm">
-                  <a 
-                    href="/forgot-password" 
-                    className="font-mono text-green-600 hover:text-green-400 transition-colors"
-                  >
-                    KEY_RECOVERY
-                  </a>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-              >
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className={`w-full py-3 px-4 rounded-md font-mono font-medium text-white transition-all ${
-                    isLoading 
-                      ? 'bg-green-800/50 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-green-700 to-green-900 hover:from-green-600 hover:to-green-800 shadow-lg hover:shadow-green-500/10 border border-green-600/50'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      AUTHENTICATING...
-                    </span>
-                  ) : (
-                    'EXECUTE_LOGIN'
-                  )}
+                <button type="button" className="text-[10px] font-mono text-green-700 uppercase hover:text-green-400 transition-colors">
+                  Lost_Key?
                 </button>
-              </motion.div>
+              </div>
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="text-red-400 text-sm p-3 bg-red-900/30 rounded-md border border-red-800 font-mono"
-                >
-                  <span className="text-red-500">ERROR: </span>
-                  {error}
-                </motion.div>
-              )}
-            </div>
-          </form>
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <Alert variant="destructive" className="bg-red-950/20 border-red-500/20 text-red-400 font-mono text-[11px] py-3">
+                      <FiAlertCircle className="size-4" />
+                      <AlertTitle className="uppercase tracking-widest mb-1 text-[10px]">Security Alert</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-          <motion.div
-            className="mt-8 text-center text-green-700 font-mono"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-          >
-            <p>
-              NO CREDENTIALS?{' '}
-              <a 
-                href="/register" 
-                className="font-medium text-green-600 hover:text-green-400 transition-colors"
+              <Button 
+                type="submit" 
+                disabled={isLoading || !systemReady}
+                className={cn(
+                  "w-full h-12 font-mono uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group",
+                  systemReady 
+                    ? "bg-green-600 hover:bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.3)]" 
+                    : "bg-green-950/50 text-green-800 cursor-not-allowed"
+                )}
               >
-                REQUEST_ACCESS
-              </a>
+                {isLoading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="size-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    Bypassing...
+                  </div>
+                ) : (
+                  <>
+                    <span className="relative z-10">Initialize Session</span>
+                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+
+          <CardFooter className="flex flex-col gap-4 pt-2 pb-8">
+            <div className="flex items-center gap-4 w-full">
+              <div className="h-[1px] flex-1 bg-green-500/10" />
+              <span className="text-[9px] font-mono text-green-900 uppercase">Authorization Required</span>
+              <div className="h-[1px] flex-1 bg-green-500/10" />
+            </div>
+            
+            <p className="text-[10px] font-mono text-green-700 uppercase">
+              Unauthorized Access? 
+              <button className="ml-2 text-green-500 hover:text-green-300 transition-colors">Request_Node</button>
             </p>
-          </motion.div>
-        </div>
+          </CardFooter>
+
+          {/* Corner accents */}
+          <div className="absolute top-0 left-0 size-4 border-t-2 border-l-2 border-green-500/30" />
+          <div className="absolute top-0 right-0 size-4 border-t-2 border-r-2 border-green-500/30" />
+          <div className="absolute bottom-0 left-0 size-4 border-b-2 border-l-2 border-green-500/30" />
+          <div className="absolute bottom-0 right-0 size-4 border-b-2 border-r-2 border-green-500/30" />
+        </Card>
       </motion.div>
 
+      {/* Audio visualization effect (fake) */}
+      <div className="fixed bottom-10 right-10 flex items-end gap-1 h-12 opacity-20 hidden md:flex">
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-1 bg-green-500"
+            animate={{ height: [4, 20, 8, 30, 4] }}
+            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
+          />
+        ))}
+      </div>
+
       <style jsx global>{`
-        @keyframes scanline {
-          0% {
-            transform: translateY(-100%);
-          }
-          100% {
-            transform: translateY(100%);
-          }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
-        
-        .scanlines {
-          position: relative;
-          overflow: hidden;
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
-        
-        .scanlines:before {
-          content: '';
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          top: 0;
-          left: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(0, 255, 0, 0.05) 50%,
-            rgba(255, 255, 255, 0) 100%
-          );
-          z-index: 20;
-          animation: scanline 8s linear infinite;
-          pointer-events: none;
+        @keyframes glitch {
+          0% { transform: translate(0); }
+          20% { transform: translate(-2px, 2px); }
+          40% { transform: translate(-2px, -2px); }
+          60% { transform: translate(2px, 2px); }
+          80% { transform: translate(2px, -2px); }
+          100% { transform: translate(0); }
         }
-        
-        .glitch-effect {
-          box-shadow: 0 0 10px rgba(0, 255, 0, 0.2),
-                      0 0 20px rgba(0, 255, 0, 0.1),
-                      0 0 30px rgba(0, 255, 0, 0.05);
-        }
-        
-        .glitch-box {
-          position: relative;
-        }
-        
-        .glitch-box:before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          z-index: -1;
-          background: linear-gradient(45deg, #00ff00, #000000, #000000, #00ff00);
-          background-size: 400%;
-          border-radius: 50%;
-          animation: glowing 3s ease infinite;
-          opacity: 0.7;
-        }
-        
-        .glitch-text {
-          position: relative;
-          display: inline-block;
-        }
-        
-        .glitch-text:before,
-        .glitch-text:after {
-          content: attr(data-text);
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-        }
-        
-        .glitch-text:before {
-          left: 2px;
-          text-shadow: -2px 0 #ff00ff;
-          clip: rect(44px, 450px, 56px, 0);
-          animation: glitch-anim 5s infinite linear alternate-reverse;
-        }
-        
-        .glitch-text:after {
-          left: -2px;
-          text-shadow: -2px 0 #00ffff;
-          clip: rect(44px, 450px, 56px, 0);
-          animation: glitch-anim2 5s infinite linear alternate-reverse;
-        }
-        
-        @keyframes glitch-anim {
-          0% { clip: rect(42px, 9999px, 44px, 0); }
-          5% { clip: rect(12px, 9999px, 59px, 0); }
-          10% { clip: rect(48px, 9999px, 29px, 0); }
-          15% { clip: rect(42px, 9999px, 73px, 0); }
-          20% { clip: rect(63px, 9999px, 27px, 0); }
-          25% { clip: rect(34px, 9999px, 55px, 0); }
-          30% { clip: rect(86px, 9999px, 73px, 0); }
-          35% { clip: rect(20px, 9999px, 20px, 0); }
-          40% { clip: rect(26px, 9999px, 60px, 0); }
-          45% { clip: rect(25px, 9999px, 66px, 0); }
-          50% { clip: rect(57px, 9999px, 98px, 0); }
-          55% { clip: rect(5px, 9999px, 46px, 0); }
-          60% { clip: rect(82px, 9999px, 31px, 0); }
-          65% { clip: rect(54px, 9999px, 27px, 0); }
-          70% { clip: rect(28px, 9999px, 99px, 0); }
-          75% { clip: rect(45px, 9999px, 69px, 0); }
-          80% { clip: rect(23px, 9999px, 85px, 0); }
-          85% { clip: rect(54px, 9999px, 84px, 0); }
-          90% { clip: rect(45px, 9999px, 47px, 0); }
-          95% { clip: rect(24px, 9999px, 23px, 0); }
-          100% { clip: rect(32px, 9999px, 92px, 0); }
-        }
-        
-        @keyframes glitch-anim2 {
-          0% { clip: rect(65px, 9999px, 100px, 0); }
-          5% { clip: rect(52px, 9999px, 74px, 0); }
-          10% { clip: rect(79px, 9999px, 85px, 0); }
-          15% { clip: rect(75px, 9999px, 5px, 0); }
-          20% { clip: rect(67px, 9999px, 61px, 0); }
-          25% { clip: rect(14px, 9999px, 79px, 0); }
-          30% { clip: rect(1px, 9999px, 66px, 0); }
-          35% { clip: rect(86px, 9999px, 30px, 0); }
-          40% { clip: rect(23px, 9999px, 98px, 0); }
-          45% { clip: rect(85px, 9999px, 72px, 0); }
-          50% { clip: rect(71px, 9999px, 75px, 0); }
-          55% { clip: rect(2px, 9999px, 48px, 0); }
-          60% { clip: rect(30px, 9999px, 16px, 0); }
-          65% { clip: rect(59px, 9999px, 50px, 0); }
-          70% { clip: rect(41px, 9999px, 62px, 0); }
-          75% { clip: rect(2px, 9999px, 82px, 0); }
-          80% { clip: rect(47px, 9999px, 73px, 0); }
-          85% { clip: rect(3px, 9999px, 27px, 0); }
-          90% { clip: rect(26px, 9999px, 55px, 0); }
-          95% { clip: rect(42px, 9999px, 97px, 0); }
-          100% { clip: rect(38px, 9999px, 49px, 0); }
-        }
-        
-        @keyframes glowing {
-          0% { background-position: 0 0; }
-          50% { background-position: 400% 0; }
-          100% { background-position: 0 0; }
+        .glitch-text:hover {
+          animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
         }
       `}</style>
     </div>

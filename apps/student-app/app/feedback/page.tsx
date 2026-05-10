@@ -80,7 +80,19 @@ export default function PublicContactPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to send message');
+        let errorMessage = 'Failed to send message';
+        
+        if (Array.isArray(errorData.message)) {
+          errorMessage = errorData.message.join(', ');
+        } else if (typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        } else if (Array.isArray(errorData.response?.message)) {
+          errorMessage = errorData.response.message.join(', ');
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       setSuccess(true);
@@ -114,7 +126,7 @@ export default function PublicContactPage() {
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4 bg-white">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
