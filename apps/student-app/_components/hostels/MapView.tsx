@@ -11,6 +11,11 @@ interface MapViewProps {
   schoolCoords: [number, number] | null;
 }
 
+interface RouteInfo {
+  distance: number; // km
+  duration: number; // minutes
+}
+
 // Fix Leaflet's broken default icon paths when bundled with webpack/Next.js
 function fixLeafletIcons(L: typeof import('leaflet')) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,18 +27,54 @@ function fixLeafletIcons(L: typeof import('leaflet')) {
   });
 }
 
+async function fetchOSRMRoute(
+  fromLng: number, fromLat: number,
+  toLng: number, toLat: number,
+): Promise<{ distance: number; duration: number; geometry: [number, number][] } | null> {
+  try {
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.routes?.[0]) return null;
+    const route = data.routes[0];
+    return {
+      distance: route.distance / 1000, // meters → km
+      duration: route.duration / 60,    // seconds → minutes
+      geometry: route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]), // [lng,lat] → [lat,lng]
+    };
+  } catch {
+    return null;
+  }
+}
+
 const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<import('leaflet').Map | null>(null);
+  const routeLayerRef = useRef<import('leaflet').Polyline | null>(null);
+  const leafletRef = useRef<typeof import('leaflet') | null>(null);
   const schoolName = useUserSchoolName();
   const [selectedHostel, setSelectedHostel] = useState<HostelCard | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
   const router = useRouter();
 
+  // Initialize map
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+    if (!mapRef.current) return;
+
+    let aborted = false;
+
+    // Clean up any existing map on this container
+    mapInstance.current?.remove();
+    mapInstance.current = null;
 
     import('leaflet').then((L) => {
+      if (aborted || !mapRef.current) return;
+
       fixLeafletIcons(L);
+      leafletRef.current = L;
 
       const center: [number, number] = schoolCoords
         ? [schoolCoords[1], schoolCoords[0]]
@@ -98,6 +139,15 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
           marker.on('click', () => marker.openPopup());
         });
 
+      // Fit bounds to show all markers
+      const allCoords = hostels
+        .filter((h) => h.coords)
+        .map((h) => [h.coords![1], h.coords![0]] as [number, number]);
+      if (schoolCoords) allCoords.push([schoolCoords[1], schoolCoords[0]]);
+      if (allCoords.length > 1) {
+        map.fitBounds(allCoords, { padding: [40, 40] });
+      }
+
       // Global callbacks from popup buttons
       (window as any).__leafletSelectHostel = (id: string) => {
         const h = hostels.find((x) => x.id === id);
@@ -109,8 +159,11 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
     });
 
     return () => {
+      aborted = true;
       mapInstance.current?.remove();
       mapInstance.current = null;
+      leafletRef.current = null;
+      routeLayerRef.current = null;
       delete (window as any).__leafletSelectHostel;
       delete (window as any).__leafletViewHostel;
     };
@@ -118,18 +171,59 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fit bounds when hostels change after initial mount
+  // Draw route when a hostel is selected
   useEffect(() => {
-    const L = (window as any).L;
-    if (!mapInstance.current || !L || hostels.length === 0) return;
-    const coords = hostels
-      .filter((h) => h.coords)
-      .map((h) => [h.coords![1], h.coords![0]] as [number, number]);
-    if (schoolCoords) coords.push([schoolCoords[1], schoolCoords[0]]);
-    if (coords.length > 1) {
-      mapInstance.current.fitBounds(coords as any, { padding: [40, 40] });
+    if (!selectedHostel?.coords || !schoolCoords || !mapInstance.current) {
+      // Clear existing route
+      if (routeLayerRef.current && mapInstance.current) {
+        mapInstance.current.removeLayer(routeLayerRef.current);
+        routeLayerRef.current = null;
+      }
+      setRouteInfo(null);
+      return;
     }
-  }, [hostels, schoolCoords]);
+
+    let cancelled = false;
+    setLoadingRoute(true);
+
+    fetchOSRMRoute(
+      schoolCoords[0], schoolCoords[1],         // from: school [lng, lat]
+      selectedHostel.coords[0], selectedHostel.coords[1], // to: hostel [lng, lat]
+    ).then((result) => {
+      if (cancelled || !mapInstance.current) return;
+
+      // Remove previous route
+      if (routeLayerRef.current) {
+        mapInstance.current.removeLayer(routeLayerRef.current);
+        routeLayerRef.current = null;
+      }
+
+      if (result && leafletRef.current) {
+        const L = leafletRef.current;
+        // Draw route polyline
+        const polyline = L.polyline(result.geometry as any, {
+          color: '#3b82f6',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '8, 6',
+        }).addTo(mapInstance.current!);
+        routeLayerRef.current = polyline;
+
+        // Fit map to route
+        mapInstance.current!.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+
+        setRouteInfo({
+          distance: result.distance,
+          duration: result.duration,
+        });
+      } else {
+        setRouteInfo(null);
+      }
+      setLoadingRoute(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [selectedHostel, schoolCoords]);
 
   return (
     <div className="flex flex-col h-[800px]">
@@ -152,15 +246,43 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
                 </button>
               </div>
 
-              <div className="p-3 bg-blue-50 rounded-lg mb-4">
-                <p className="font-medium text-sm">{selectedHostel.name}</p>
-                <p className="text-xs text-gray-600 mt-1">{selectedHostel.address}</p>
-                {selectedHostel.distance != null && (
-                  <p className="text-xs text-blue-700 mt-1 font-medium">
-                    {selectedHostel.distance.toFixed(1)} km from your school
-                  </p>
-                )}
-              </div>
+              {/* Route info card */}
+              {loadingRoute && (
+                <div className="p-3 bg-gray-50 rounded-lg mb-4 animate-pulse">
+                  <p className="text-sm text-gray-500 text-center">Calculating route...</p>
+                </div>
+              )}
+
+              {routeInfo && !loadingRoute && (
+                <div className="p-3 bg-blue-50 rounded-lg mb-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-medium">Road Distance</p>
+                      <p className="text-lg font-bold text-blue-700">{routeInfo.distance.toFixed(1)} km</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 uppercase font-medium">Est. Drive Time</p>
+                      <p className="text-lg font-bold text-blue-700">
+                        {routeInfo.duration < 60
+                          ? `${Math.round(routeInfo.duration)} min`
+                          : `${Math.floor(routeInfo.duration / 60)}h ${Math.round(routeInfo.duration % 60)}m`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!routeInfo && !loadingRoute && (
+                <div className="p-3 bg-gray-50 rounded-lg mb-4">
+                  <p className="font-medium text-sm">{selectedHostel.name}</p>
+                  <p className="text-xs text-gray-600 mt-1">{selectedHostel.address}</p>
+                  {selectedHostel.distance != null && (
+                    <p className="text-xs text-blue-700 mt-1 font-medium">
+                      {selectedHostel.distance.toFixed(1)} km from your school (straight line)
+                    </p>
+                  )}
+                </div>
+              )}
 
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${selectedHostel.coords?.[1]},${selectedHostel.coords?.[0]}`}
@@ -184,7 +306,7 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
             <div className="bg-white rounded-xl shadow-lg p-4 flex-1">
               <h3 className="text-lg font-bold mb-4">Hostel Information</h3>
               <p className="text-gray-600 text-sm">
-                Click on a hostel marker and select "Get Directions" to see route options.
+                Click on a hostel marker and select &quot;Get Directions&quot; to see the route, road distance, and estimated drive time.
               </p>
 
               <div className="mt-6">
@@ -193,9 +315,13 @@ const MapView: React.FC<MapViewProps> = ({ hostels, schoolCoords }) => {
                   <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 border border-white shadow" />
                   <span className="text-sm">{schoolName || 'Your School'}</span>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center mb-2">
                   <div className="w-3 h-3 rounded-full bg-red-500 mr-2 border border-white shadow" />
                   <span className="text-sm">Hostel Location</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-6 h-0 mr-2 border-t-2 border-dashed border-blue-500" />
+                  <span className="text-sm">Driving Route</span>
                 </div>
               </div>
 

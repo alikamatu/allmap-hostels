@@ -22,16 +22,17 @@ export function calculateDistance(
 export function parseLocation(location: any): [number, number] | null {
   if (!location) return null;
   
-  // Handle WKB format (PostGIS)
+  // Handle WKB format (PostGIS) — browser-safe (no Node.js Buffer)
   if (typeof location === 'string' && location.startsWith('0101000020E6100000')) {
     try {
-      // Extract the hex part after the prefix
       const hex = location.substring(18);
-      // Convert hex to buffer
-      const buffer = Buffer.from(hex, 'hex');
-      // Read as double (8 bytes each)
-      const lng = buffer.readDoubleLE(0);
-      const lat = buffer.readDoubleLE(8);
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+      }
+      const view = new DataView(bytes.buffer);
+      const lng = view.getFloat64(0, true);
+      const lat = view.getFloat64(8, true);
       return [lng, lat];
     } catch (error) {
       console.error('Failed to parse WKB location:', error);

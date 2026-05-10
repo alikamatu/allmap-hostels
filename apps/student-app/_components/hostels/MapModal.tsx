@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiAlertTriangle } from 'react-icons/fi';
+import { FiX, FiAlertTriangle, FiNavigation, FiClock } from 'react-icons/fi';
 import 'leaflet/dist/leaflet.css';
 
 interface MapModalProps {
@@ -10,6 +10,11 @@ interface MapModalProps {
   onClose: () => void;
   location: string;
   hostelName: string;
+}
+
+interface RouteInfo {
+  distance: number; // km
+  duration: number; // minutes
 }
 
 function parseLocation(loc: any): [number, number] | null {
@@ -44,19 +49,26 @@ function parseLocation(loc: any): [number, number] | null {
   return null;
 }
 
-function haversineKm(
-  [lng1, lat1]: [number, number],
-  [lng2, lat2]: [number, number],
-): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+async function fetchOSRMRoute(
+  fromLng: number, fromLat: number,
+  toLng: number, toLat: number,
+): Promise<{ distance: number; duration: number; geometry: [number, number][] } | null> {
+  try {
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.routes?.[0]) return null;
+    const route = data.routes[0];
+    return {
+      distance: route.distance / 1000, // meters → km
+      duration: route.duration / 60,    // seconds → minutes
+      geometry: route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]), // [lng,lat] → [lat,lng]
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProps) => {
@@ -64,7 +76,8 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
   const mapInstance = useRef<import('leaflet').Map | null>(null);
   const [hostelCoords, setHostelCoords] = useState<[number, number] | null>(null);
   const [schoolCoords, setSchoolCoords] = useState<[number, number] | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
   // Parse hostel coords
@@ -97,22 +110,40 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
       .catch(() => {});
   }, []);
 
-  // Compute distance
+  // Fetch OSRM route when both coords are available
   useEffect(() => {
-    if (hostelCoords && schoolCoords) {
-      setDistance(haversineKm(schoolCoords, hostelCoords));
-    }
+    if (!hostelCoords || !schoolCoords) return;
+
+    let cancelled = false;
+    setLoadingRoute(true);
+
+    fetchOSRMRoute(
+      schoolCoords[0], schoolCoords[1],
+      hostelCoords[0], hostelCoords[1],
+    ).then((result) => {
+      if (cancelled) return;
+      if (result) {
+        setRouteInfo({ distance: result.distance, duration: result.duration });
+      }
+      setLoadingRoute(false);
+    });
+
+    return () => { cancelled = true; };
   }, [hostelCoords, schoolCoords]);
 
   // Build / destroy map
   useEffect(() => {
     if (!isOpen || !hostelCoords || !mapRef.current) return;
 
+    let aborted = false;
+
     // Destroy existing instance before re-creating
     mapInstance.current?.remove();
     mapInstance.current = null;
 
-    import('leaflet').then((L) => {
+    import('leaflet').then(async (L) => {
+      if (aborted || !mapRef.current) return;
+
       // Fix broken default icon paths
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -122,7 +153,7 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
 
-      if (!mapRef.current) return;
+      if (aborted || !mapRef.current) return;
       const map = L.map(mapRef.current).setView(
         [hostelCoords[1], hostelCoords[0]],
         15,
@@ -146,7 +177,7 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
         .bindPopup(`<strong>${hostelName}</strong>`)
         .openPopup();
 
-      // School marker
+      // School marker + route
       if (schoolCoords) {
         const blueIcon = L.divIcon({
           className: '',
@@ -158,15 +189,36 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
           .addTo(map)
           .bindPopup('<strong>Your School</strong>');
 
-        const bounds = L.latLngBounds(
-          [hostelCoords[1], hostelCoords[0]],
-          [schoolCoords[1], schoolCoords[0]],
-        );
-        map.fitBounds(bounds, { padding: [50, 50] });
+        // Fetch and draw driving route
+        if (!aborted) {
+          const route = await fetchOSRMRoute(
+            schoolCoords[0], schoolCoords[1],
+            hostelCoords[0], hostelCoords[1],
+          );
+
+          if (!aborted && route && mapInstance.current) {
+            const polyline = L.polyline(route.geometry as any, {
+              color: '#3b82f6',
+              weight: 4,
+              opacity: 0.8,
+              dashArray: '8, 6',
+            }).addTo(mapInstance.current);
+
+            mapInstance.current.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+          } else if (!aborted && mapInstance.current) {
+            // Fallback: fit bounds without route
+            const bounds = L.latLngBounds(
+              [hostelCoords[1], hostelCoords[0]],
+              [schoolCoords[1], schoolCoords[0]],
+            );
+            mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
+          }
+        }
       }
     });
 
     return () => {
+      aborted = true;
       mapInstance.current?.remove();
       mapInstance.current = null;
     };
@@ -236,23 +288,57 @@ export const MapModal = ({ isOpen, onClose, location, hostelName }: MapModalProp
             )}
           </div>
 
-          {distance !== null && (
+          {/* Route info */}
+          {loadingRoute && (
+            <div className="p-3 bg-gray-100 rounded-lg mb-3 animate-pulse">
+              <p className="text-center text-sm text-gray-500">Calculating route...</p>
+            </div>
+          )}
+
+          {routeInfo && !loadingRoute && (
             <div className="p-3 bg-blue-50 rounded-lg mb-3">
-              <p className="text-center font-medium text-sm">
-                Distance from your school: {distance.toFixed(1)} km
-              </p>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <FiNavigation className="text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-medium">Road Distance</p>
+                    <p className="text-sm font-bold text-blue-700">{routeInfo.distance.toFixed(1)} km</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FiClock className="text-blue-600" />
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 uppercase font-medium">Est. Drive Time</p>
+                    <p className="text-sm font-bold text-blue-700">
+                      {routeInfo.duration < 60
+                        ? `${Math.round(routeInfo.duration)} min`
+                        : `${Math.floor(routeInfo.duration / 60)}h ${Math.round(routeInfo.duration % 60)}m`}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {hostelCoords && (
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${hostelCoords[1]},${hostelCoords[0]}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center py-2 px-4 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-            >
-              Get Directions in Google Maps
-            </a>
+            <div className="flex gap-2">
+              <a
+                href={`https://www.google.com/maps/dir/?api=1${schoolCoords ? `&origin=${schoolCoords[1]},${schoolCoords[0]}` : ''}&destination=${hostelCoords[1]},${hostelCoords[0]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center py-2 px-4 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                Google Maps
+              </a>
+              <a
+                href={`https://www.openstreetmap.org/directions?from=${schoolCoords ? `${schoolCoords[1]},${schoolCoords[0]}` : ''}&to=${hostelCoords[1]},${hostelCoords[0]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center py-2 px-4 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+              >
+                OpenStreetMap
+              </a>
+            </div>
           )}
         </div>
       </div>
