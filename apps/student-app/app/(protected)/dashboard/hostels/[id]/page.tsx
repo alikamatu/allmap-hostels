@@ -249,18 +249,6 @@ export default function HostelDetailPage() {
           />
         </div>
 
-        {/* Nearby Places Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.45 }}
-          className="mb-16"
-        >
-          <h2 className="text-2xl font-bold text-black mb-4">Nearby Places</h2>
-          <hr className="border-t border-gray-200 mb-6" />
-          <NearbyPlaces hostelId={hostel.id} />
-        </motion.div>
-
         {/* Room Types Section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -290,9 +278,9 @@ export default function HostelDetailPage() {
 
           {sortedRoomTypes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sortedRoomTypes.map((roomType) => (
-                <RoomCard 
-                  key={roomType.id}
+              {sortedRoomTypes.map((roomType, idx) => (
+                <RoomCard
+                  key={roomType.id || `roomtype-${roomType.name}-${idx}`}
                   roomType={roomType} 
                   onBook={handleBookRoom}
                   onViewRoom={handleViewRoom}
@@ -330,6 +318,18 @@ export default function HostelDetailPage() {
         </motion.div>
 
         <ReviewsComponent hostelId={hostel.id} hostelName={hostel.name} />
+
+        {/* Nearby Places Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.45 }}
+          className="mb-16"
+        >
+          <h2 className="text-2xl font-bold text-black mb-4">Nearby Places</h2>
+          <hr className="border-t border-gray-200 mb-6" />
+          <NearbyPlaces hostelId={hostel.id} />
+        </motion.div>
       </div>
     </div>
   );

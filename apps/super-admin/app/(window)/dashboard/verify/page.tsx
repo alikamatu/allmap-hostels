@@ -23,10 +23,22 @@ interface AdminVerification {
     name?: string;
     phone?: string;
   };
-  hostel_name: string;
-  hostel_address: string;
-  id_documents: string[];
-  hostel_proof_documents: string[];
+  hostel_name?: string;
+  hostel_address?: string;
+  // Backend may return either camelCase (Prisma default) or snake_case
+  id_documents?: string[];
+  idDocuments?: string[];
+  hostel_proof_documents?: string[];
+  hostelProofDocuments?: string[];
+  payoutMethod?: 'momo' | 'bank' | null;
+  payoutDetails?: {
+    provider?: string;
+    phone?: string;
+    bankName?: string;
+    bankCode?: string;
+    accountNumber?: string;
+    accountName?: string;
+  } | null;
   status: 'pending' | 'approved' | 'rejected';
   rejection_reason?: string;
   reviewed_by_id?: string;
@@ -74,11 +86,16 @@ useEffect(() => {
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(v => 
-        v.hostel_name.toLowerCase().includes(query) ||
-        v.user.email.toLowerCase().includes(query) ||
-        (v.user.name && v.user.name.toLowerCase().includes(query))
-      );
+      result = result.filter(v => {
+        const hostelName = v.hostel_name ?? '';
+        const fullName = `${(v as any).firstName ?? ''} ${(v as any).lastName ?? ''}`.trim();
+        return (
+          hostelName.toLowerCase().includes(query) ||
+          v.user.email.toLowerCase().includes(query) ||
+          (v.user.name?.toLowerCase().includes(query) ?? false) ||
+          fullName.toLowerCase().includes(query)
+        );
+      });
     }
     
     setFilteredVerifications(result);
@@ -313,6 +330,64 @@ const VerificationCard = ({
                   </div>
                 </div>
 
+                {/* Payment / payout details — used to send the GHC 35 commission */}
+                {verification.payoutMethod && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-foreground mb-3">Payment Details</h4>
+                    <div className="space-y-3 pl-2">
+                      <div className="grid grid-cols-3 gap-4">
+                        <span className="font-medium text-muted-foreground">Method:</span>
+                        <span className="col-span-2 text-foreground capitalize">
+                          {verification.payoutMethod === 'momo' ? 'Mobile Money' : 'Bank Account'}
+                        </span>
+                      </div>
+                      {verification.payoutMethod === 'momo' ? (
+                        <>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">Provider:</span>
+                            <span className="col-span-2 text-foreground uppercase">
+                              {verification.payoutDetails?.provider}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">MoMo Number:</span>
+                            <span className="col-span-2 text-foreground font-mono">
+                              {verification.payoutDetails?.phone}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">Account Name:</span>
+                            <span className="col-span-2 text-foreground">
+                              {verification.payoutDetails?.accountName}
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">Bank:</span>
+                            <span className="col-span-2 text-foreground">
+                              {verification.payoutDetails?.bankName}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">Account Number:</span>
+                            <span className="col-span-2 text-foreground font-mono">
+                              {verification.payoutDetails?.accountNumber}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <span className="font-medium text-muted-foreground">Account Name:</span>
+                            <span className="col-span-2 text-foreground">
+                              {verification.payoutDetails?.accountName}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Review details for approved/rejected applications */}
                 {(verification.status === 'approved' || verification.status === 'rejected') && (
                   <div>
@@ -345,15 +420,15 @@ const VerificationCard = ({
                 <div>
                   <h4 className="text-lg font-semibold text-foreground mb-3">Documents</h4>
                   <div className="space-y-4 pl-2">
-                    <DocumentSection 
-                      title="ID Documents" 
-                      documents={verification.id_documents} 
+                    <DocumentSection
+                      title="ID Documents"
+                      documents={verification.idDocuments ?? verification.id_documents}
                       bucket="id-documents"
                       getDocumentUrl={getDocumentUrl}
                     />
-                    <DocumentSection 
-                      title="Hostel Proofs" 
-                      documents={verification.hostel_proof_documents} 
+                    <DocumentSection
+                      title="Hostel Proofs"
+                      documents={verification.hostelProofDocuments ?? verification.hostel_proof_documents}
                       bucket="hostel-proofs"
                       getDocumentUrl={getDocumentUrl}
                     />
@@ -398,20 +473,30 @@ const VerificationCard = ({
 };
 
 const DocumentSection = ({ 
-  title, 
-  documents, 
+  title,
+  documents,
   bucket,
   getDocumentUrl
-}: { 
-  title: string; 
-  documents: string[];
+}: {
+  title: string;
+  documents?: string[] | null;
   bucket: string;
   getDocumentUrl: (path: string, bucket: string) => string;
-}) => (
+}) => {
+  const docs = documents ?? [];
+  if (docs.length === 0) {
+    return (
+      <div className="space-y-2">
+        <h5 className="font-medium text-foreground">{title}</h5>
+        <p className="text-xs text-muted-foreground italic">No documents uploaded.</p>
+      </div>
+    );
+  }
+  return (
   <div className="space-y-2">
     <h5 className="font-medium text-foreground">{title}</h5>
     <div className="flex flex-wrap gap-2">
-      {documents.map((path, index) => {
+      {docs.map((path, index) => {
         const fileName = path.split('/').pop() || `Document ${index + 1}`;
         const fileUrl = getDocumentUrl(path, bucket);
         
@@ -430,7 +515,8 @@ const DocumentSection = ({
       })}
     </div>
   </div>
-);
+  );
+};
 
 const LoadingState = () => (
   <div className="flex-1 flex items-center justify-center min-h-[60vh]">

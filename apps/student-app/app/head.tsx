@@ -1,60 +1,45 @@
+import {
+  AGENT_ECONOMICS,
+  generateOrganizationSchema,
+  generateWebsiteSchema,
+  generateBreadcrumbSchema,
+  generateServiceSchema,
+} from '@/lib/seo';
+
 export default function Head() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
 
+  // Anchor the Organization schema with agent-portal subdomain so Google
+  // associates admin.allmaphostels.com with the same entity (helps E-A-T).
   const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "AllMap Hostels",
-    "url": siteUrl,
-    "logo": `${siteUrl}/logo.png`,
-    "description": "Student hostel booking platform",
-    "foundingDate": "2024",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "contactType": "Customer Support",
-      "email": "support@allmap-hostels.com",
-      "url": siteUrl
+    ...generateOrganizationSchema(),
+    sameAs: [
+      'https://www.facebook.com/allmaphostels',
+      'https://www.instagram.com/allmaphostels',
+      'https://twitter.com/AllMapHostels',
+      AGENT_ECONOMICS.adminAppUrl,
+    ],
+    subOrganization: {
+      '@type': 'Organization',
+      name: 'AllMap Hostels Agent Portal',
+      url: AGENT_ECONOMICS.adminAppUrl,
+      description:
+        `Hostel admins and agents in Ghana onboard properties and earn GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} ` +
+        'per confirmed student booking.',
     },
-    "sameAs": [
-      "https://www.facebook.com/allmaphostels",
-      "https://www.instagram.com/allmaphostels",
-      "https://twitter.com/AllMapHostels"
-    ]
   };
 
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "AllMap Hostels",
-    "url": siteUrl,
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": `${siteUrl}/dashboard?search={search_term_string}`
-      },
-      "query-input": "required name=search_term_string"
-    }
-  };
+  const websiteSchema = generateWebsiteSchema();
 
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": siteUrl
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Browse Hostels",
-        "item": `${siteUrl}/dashboard`
-      }
-    ]
-  };
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: siteUrl },
+    { name: 'Browse Hostels', url: `${siteUrl}/dashboard` },
+    { name: 'For Hostel Agents', url: `${siteUrl}/agents` },
+    { name: 'Terms & Conditions', url: `${siteUrl}/terms` },
+    { name: 'Privacy Policy', url: `${siteUrl}/privacy` },
+  ]);
+
+  const serviceSchema = generateServiceSchema();
 
   return (
     <>
@@ -69,6 +54,10 @@ export default function Head() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
     </>
   );

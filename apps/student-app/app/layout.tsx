@@ -27,8 +27,9 @@ export const metadata: Metadata = {
     default: "AllMap Hostels | Find & Book Student Accommodation",
     template: "%s | AllMap Hostels"
   },
-  description: "Discover and book student hostels near your campus. Compare prices, amenities, and reviews. Find your perfect student accommodation with AllMap Hostels - the #1 hostel booking platform for students.",
+  description: "Find and book verified student hostels in Ghana — Legon, KNUST, UCC, UEW, and more. Compare prices, amenities, and reviews. Hostel owners can list their property on admin.allmaphostels.com and earn GHC 35 on every confirmed booking.",
   keywords: [
+    // Student-facing
     "student hostels",
     "hostel booking",
     "student accommodation",
@@ -41,6 +42,19 @@ export const metadata: Metadata = {
     "off-campus housing",
     "hostel comparison",
     "accommodation near campus",
+    "hostels Ghana",
+    "Accra hostels",
+    "Legon hostels",
+    "KNUST hostels",
+    "UCC hostels",
+    "UEW hostels",
+    // Agent/owner-facing
+    "list hostel Ghana",
+    "hostel agent commission",
+    "earn from hostel listings",
+    "GHC 35 per booking",
+    "admin.allmaphostels.com",
+    "hostel owner portal Ghana",
     "AllMap Hostels"
   ],
   authors: [
@@ -145,7 +159,10 @@ export default function RootLayout({
         <HeadScripts />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://api.mapbox.com" />
+        <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
+        <link rel="dns-prefetch" href="https://admin.allmaphostels.com" />
+        {/* Help Google understand the agent portal is part of the same brand */}
+        <link rel="alternate" href="https://admin.allmaphostels.com" hrefLang="en-gh" />
       </head>
       <body
         className={`${inter.variable} font-sans antialiased`}

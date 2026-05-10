@@ -4,6 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FiMapPin, FiArrowRight, FiCheck } from 'react-icons/fi';
 import { BrandLogo } from '@/_components/brand';
+import {
+  generateBreadcrumbSchema,
+  generateHostelSchema,
+} from '@/lib/seo';
+import {
+  generateSchemaScript,
+  optimizeMetaDescription,
+} from '@/lib/seo-components';
 
 interface PublicHostelPageProps {
   params: Promise<{ id: string }>;
@@ -17,7 +25,21 @@ interface PublicHostel {
   city?: string;
   base_price?: number;
   images?: string[];
+  amenities?: any;
+  rating?: number;
+  total_reviews?: number;
+  is_verified?: boolean;
+  location?: string;
+  phone?: string;
+  email?: string;
   updated_at?: string;
+}
+
+function parseLngLat(loc?: string): { lat: number; lng: number } | null {
+  if (!loc) return null;
+  const m = loc.match(/POINT\(([\d.-]+)\s+([\d.-]+)\)/);
+  if (!m) return null;
+  return { lng: parseFloat(m[1]), lat: parseFloat(m[2]) };
 }
 
 async function getHostel(id: string): Promise<PublicHostel | null> {
@@ -40,23 +62,50 @@ export async function generateMetadata({ params }: PublicHostelPageProps): Promi
   if (!hostel) return { title: 'Hostel Not Found' };
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
+  const url = `${siteUrl}/hostels/${id}`;
+
+  const cityHint = hostel.city || hostel.address?.split(',').pop()?.trim() || 'Ghana';
+  const priceHint = hostel.base_price
+    ? ` From GHC ${hostel.base_price} per semester.`
+    : '';
+  const description = optimizeMetaDescription(
+    `${hostel.name} — verified student hostel in ${cityHint}.${priceHint} ` +
+      (hostel.description || 'Book on AllMap Hostels with secure payments and verified reviews.'),
+    180,
+  );
+
+  const title = `${hostel.name} — Student Hostel in ${cityHint}`;
 
   return {
-    title: `${hostel.name} | AllMap Hostels`,
-    description: hostel.description || `Book ${hostel.name} student hostel near your campus. See prices, amenities, and location.`,
+    title,
+    description,
+    alternates: { canonical: url },
     openGraph: {
-      title: `${hostel.name} | AllMap Hostels`,
-      description: hostel.description,
-      url: `${siteUrl}/hostels/${id}`,
-      images: hostel.images?.[0] ? [{ url: hostel.images[0] }] : [],
+      title,
+      description,
+      url,
+      siteName: 'AllMap Hostels',
+      locale: 'en_GH',
+      images: hostel.images?.length
+        ? hostel.images.slice(0, 4).map((src) => ({ url: src, alt: hostel.name }))
+        : [],
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: hostel.name,
-      description: hostel.description,
+      title,
+      description,
       images: hostel.images?.[0] ? [hostel.images[0]] : [],
-    }
+    },
+    keywords: [
+      hostel.name,
+      `${hostel.name} hostel`,
+      `${hostel.name} prices`,
+      `hostels in ${cityHint}`,
+      `student hostel ${cityHint}`,
+      `book ${hostel.name}`,
+      'AllMap Hostels',
+    ],
   };
 }
 
@@ -65,31 +114,47 @@ export default async function PublicHostelPage({ params }: PublicHostelPageProps
   const hostel = await getHostel(id);
   if (!hostel) notFound();
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Accommodation',
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
+  const url = `${siteUrl}/hostels/${id}`;
+  const coords = parseLngLat(hostel.location);
+  const amenityNames = Array.isArray(hostel.amenities)
+    ? hostel.amenities
+    : hostel.amenities && typeof hostel.amenities === 'object'
+      ? Object.entries(hostel.amenities)
+          .filter(([, v]) => v)
+          .map(([k]) => k)
+      : [];
+
+  const hostelSchema = generateHostelSchema({
     name: hostel.name,
     description: hostel.description,
-    image: hostel.images?.[0],
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: hostel.address,
-      addressLocality: hostel.city || 'Ghana',
-    },
-    offers: {
-      '@type': 'Offer',
-      price: hostel.base_price,
-      priceCurrency: 'GHS',
-      availability: 'https://schema.org/InStock',
-    }
-  };
+    address: hostel.address ?? '',
+    city: hostel.city,
+    country: 'GH',
+    latitude: coords?.lat,
+    longitude: coords?.lng,
+    phone: hostel.phone,
+    email: hostel.email,
+    image: hostel.images?.length ? hostel.images : undefined,
+    url,
+    basePrice: hostel.base_price,
+    priceRange: hostel.base_price ? `GHC ${hostel.base_price}` : undefined,
+    amenities: amenityNames,
+    rating: hostel.rating ? Number(hostel.rating) : undefined,
+    reviewCount: hostel.total_reviews,
+    identifier: hostel.id,
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: siteUrl },
+    { name: 'Hostels', url: `${siteUrl}/dashboard` },
+    { name: hostel.name, url },
+  ]);
 
   return (
     <div className="min-h-screen bg-white text-black font-sans">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {generateSchemaScript(hostelSchema, 'hostel-jsonld')}
+      {generateSchemaScript(breadcrumbSchema, 'hostel-breadcrumb')}
       
       {/* Search-Optimized Header */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 h-20 flex items-center px-6">

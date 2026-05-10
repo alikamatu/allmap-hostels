@@ -238,16 +238,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 export default function AdminVerification() {
   const router = useRouter();
   const [idFiles, setIdFiles] = useState<File[]>([]);
-  const [hostelProofFiles, setHostelProofFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const methods = useForm<AdminVerificationFormData>({
     resolver: zodResolver(adminVerificationSchema),
-    defaultValues: { 
+    defaultValues: {
       termsAccepted: false,
       idType: '',
-      hostelProofType: ''
-    }
+      payoutMethod: undefined,
+    },
   });
 
   const { handleSubmit, formState: { errors }, watch } = methods;
@@ -256,34 +255,46 @@ export default function AdminVerification() {
     setIdFiles(files);
   };
 
-  const handleHostelProofFilesChange = (files: File[]) => {
-    setHostelProofFiles(files);
-  };
-
   const onSubmit = async (data: AdminVerificationFormData) => {
     console.log('Form submitted with data:', data);
     console.log('ID files:', idFiles);
-    console.log('Hostel proof files:', hostelProofFiles);
-    
+
     try {
       setIsSubmitting(true);
-      
+
       const formData = new FormData();
-      
-      // Append form data
-      Object.entries(data).forEach(([key, value]) => {
+
+      // Build the structured payout-details blob the backend expects
+      const payoutDetails =
+        data.payoutMethod === 'momo'
+          ? {
+              provider: data.momoProvider,
+              phone: data.momoNumber,
+              accountName: data.momoAccountName,
+            }
+          : {
+              bankName: data.bankName,
+              accountNumber: data.bankAccountNumber,
+              accountName: data.bankAccountName,
+            };
+
+      // Strip per-method UI fields and add structured payoutDetails
+      const {
+        momoProvider, momoNumber, momoAccountName,
+        bankName, bankAccountNumber, bankAccountName,
+        ...rest
+      } = data;
+
+      Object.entries(rest).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, value.toString());
         }
       });
+      formData.append('payoutDetails', JSON.stringify(payoutDetails));
 
       // Append files
       idFiles.forEach(file => {
         formData.append('idDocuments', file);
-      });
-
-      hostelProofFiles.forEach(file => {
-        formData.append('hostelProofDocuments', file);
       });
 
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -428,37 +439,75 @@ export default function AdminVerification() {
                 />
               </div>
 
-              {/* Hostel Verification */}
+              {/* Payment Details — for the GHC 35 commission payout per booking */}
               <div className="border-b border-gray-200 pb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Hostel Verification</h3>
-                
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Details</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  You earn <span className="font-semibold text-[#FF6A00]">GHC 35</span> for every confirmed
+                  booking on a hostel you onboarded. Tell us where to send your payout.
+                </p>
+
                 <div className="mb-6">
                   <FormSelect
-                    name="hostelProofType"
-                    label="Proof Type"
+                    name="payoutMethod"
+                    label="Payout Method"
                     options={[
-                      { value: 'Lease Agreement', label: 'Lease Agreement' },
-                      { value: 'Utility Bill', label: 'Utility Bill' },
-                      { value: 'Property Deed', label: 'Property Deed' },
-                      { value: 'Other', label: 'Other' }
+                      { value: 'momo', label: 'Mobile Money (MoMo)' },
+                      { value: 'bank', label: 'Bank Account' },
                     ]}
                     required
                   />
                 </div>
-                
-                <FileUploader
-                  label="Upload Proof Documents"
-                  description="Upload documents proving your hostel existence"
-                  accept={{ 
-                    'image/*': ['.jpeg', '.jpg', '.png'], 
-                    'application/pdf': ['.pdf'],
-                    'application/msword': ['.doc'],
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
-                  }}
-                  maxFiles={5}
-                  maxSize={15 * 1024 * 1024}
-                  onFilesChange={handleHostelProofFilesChange}
-                />
+
+                {watchedValues.payoutMethod === 'momo' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormSelect
+                      name="momoProvider"
+                      label="Provider"
+                      options={[
+                        { value: 'mtn', label: 'MTN Mobile Money' },
+                        { value: 'vodafone', label: 'Vodafone Cash' },
+                        { value: 'airteltigo', label: 'AirtelTigo Money' },
+                      ]}
+                      required
+                    />
+                    <FormInput
+                      name="momoNumber"
+                      label="Mobile Money Number"
+                      placeholder="0XX XXX XXXX"
+                      required
+                    />
+                    <FormInput
+                      name="momoAccountName"
+                      label="Account Holder Name"
+                      placeholder="As registered with the provider"
+                      required
+                    />
+                  </div>
+                )}
+
+                {watchedValues.payoutMethod === 'bank' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormInput
+                      name="bankName"
+                      label="Bank Name"
+                      placeholder="e.g. GCB Bank, Ecobank, Stanbic"
+                      required
+                    />
+                    <FormInput
+                      name="bankAccountNumber"
+                      label="Account Number"
+                      placeholder="Bank account number"
+                      required
+                    />
+                    <FormInput
+                      name="bankAccountName"
+                      label="Account Holder Name"
+                      placeholder="As shown on your bank statement"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Terms and Conditions */}

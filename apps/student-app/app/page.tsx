@@ -5,6 +5,8 @@ import { ownerFaqs, studentFaqs } from "@/_components/landing/landing-content";
 import {
   generateFAQSchema,
   generatePageMetadata,
+  generateServiceSchema,
+  generateAgentHowToSchema,
   SEO_KEYWORDS,
 } from "@/lib/seo";
 import { generateSchemaScript } from "@/lib/seo-components";
@@ -73,6 +75,8 @@ export default function HomePage() {
     <>
       {generateSchemaScript(homeOrganizationSchema(), "ld-json-org")}
       {generateSchemaScript(homeWebSiteSchema(), "ld-json-website")}
+      {generateSchemaScript(generateServiceSchema(), "ld-json-service")}
+      {generateSchemaScript(generateAgentHowToSchema(), "ld-json-howto-agent")}
       {generateSchemaScript(generateFAQSchema(faqItems), "ld-json-faq")}
       <LandingPageContent />
     </>

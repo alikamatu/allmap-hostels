@@ -131,9 +131,9 @@ export const ReviewsComponent = ({ hostelId, hostelName }: ReviewsComponentProps
       ) : (
         <div className="space-y-6">
           <AnimatePresence>
-            {reviews.map((review) => (
+            {reviews.map((review, idx) => (
               <ReviewCard
-                key={review.id}
+                key={review.id || `review-${idx}`}
                 review={review}
                 currentUserId={currentUserId}
                 onToggleHelpful={toggleHelpfulVote}

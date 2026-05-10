@@ -4,49 +4,70 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
-  // Main routes
+  const now = new Date();
+
+  // Main routes — order by SEO priority
   const mainRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: 'daily',
       priority: 1,
     },
     {
-      url: `${baseUrl}/login?tab=signup`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
+      url: `${baseUrl}/agents`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
     },
     {
-      url: `${baseUrl}/reset-password`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
+      url: `${baseUrl}/login?tab=signup`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: now,
+      changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/feedback`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/reset-password`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
   ];
 
-  // Fetch dynamic hostel routes
+  // Fetch dynamic hostel routes (these are the high-value pages — students Google
+  // a hostel by name and Google should land them on our public hostel page)
   try {
-    const res = await fetch(`${apiUrl}/public/hostels`, { 
-      next: { revalidate: 3600 } // Cache for 1 hour
+    const res = await fetch(`${apiUrl}/public/hostels`, {
+      next: { revalidate: 3600 }, // Cache for 1 hour
     });
-    
+
     if (res.ok) {
       const hostels = (await res.json()) as Array<{ id: string; updated_at?: string }>;
       const hostelRoutes = hostels.map((hostel) => ({
         url: `${baseUrl}/hostels/${hostel.id}`,
-        lastModified: new Date(hostel.updated_at || new Date()),
+        lastModified: new Date(hostel.updated_at || now),
         changeFrequency: 'weekly' as const,
-        priority: 0.7,
+        priority: 0.8,
       }));
-      
+
       return [...mainRoutes, ...hostelRoutes];
     }
   } catch (error) {

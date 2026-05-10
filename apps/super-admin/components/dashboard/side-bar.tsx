@@ -14,7 +14,9 @@ import {
   Shield,
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Wallet,
+  ClipboardCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,7 +27,9 @@ const navItems = [
   { id: 'users', icon: Users, label: 'Users' },
   { id: 'hostels', icon: Building, label: 'Hostels' },
   { id: 'bookings', icon: Calendar, label: 'Bookings' },
+  { id: 'verify', icon: ClipboardCheck, label: 'Verifications' },
   { id: 'payments', icon: CreditCard, label: 'Payments' },
+  { id: 'payouts', icon: Wallet, label: 'Agent Payouts' },
   { id: 'reviews', icon: Star, label: 'Reviews' },
   { id: 'feedback', icon: MessageSquare, label: 'Support' },
   { id: 'admins', icon: Shield, label: 'Admins' },
@@ -148,7 +152,7 @@ export default function Sidebar() {
                   </div>
                   <div className="ml-3">
                     <p className="text-12 font-medium text-gray-900">Super Admin</p>
-                    <p className="text-10 text-gray-500">admin@allmap.com</p>
+                    <p className="text-10 text-gray-500">info@allmaphostels.com</p>
                   </div>
                 </div>
                 <button className="text-gray-500 hover:text-gray-900">

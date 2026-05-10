@@ -1,15 +1,16 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Building, 
-  Bed, 
-  Calendar, 
-  Star, 
+import {
+  LayoutDashboard,
+  Building,
+  Bed,
+  Calendar,
+  Star,
   Settings,
   ChevronLeft,
   LucideTimer,
+  Wallet,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,6 +27,7 @@ const navItems = [
   { name: 'Hostels', href: '/dashboard/manage-hostels', icon: Building },
   { name: 'Rooms', href: '/dashboard/manage-room', icon: Bed },
   { name: 'History', href: '/dashboard/booking-history', icon: LucideTimer },
+  { name: 'Earnings', href: '/dashboard/earnings', icon: Wallet },
   { name: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];

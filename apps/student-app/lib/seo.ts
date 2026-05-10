@@ -6,7 +6,25 @@
 import { Metadata } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://student.allmap-hostels.com';
+const adminAppUrl =
+  process.env.NEXT_PUBLIC_ADMIN_APP_URL || 'https://admin.allmaphostels.com';
 const ogImageUrl = `${siteUrl}/og-image.jpg`;
+
+/**
+ * Single source of truth for the agent earning structure.
+ * Used both in user-facing copy and in structured-data schemas so search
+ * engines can surface "earn GHC 35 per booking" snippets.
+ */
+export const AGENT_ECONOMICS = {
+  currency: 'GHS',
+  studentBookingFee: 100,
+  agentCommissionPerBooking: 35,
+  platformShare: 65,
+  minimumPayoutAmount: 35,
+  holdHours: 48,
+  payoutMethods: ['MTN MoMo', 'Vodafone Cash', 'AirtelTigo Money', 'Bank Transfer'],
+  adminAppUrl,
+} as const;
 
 interface PageMetadataOptions {
   title: string;
@@ -136,31 +154,75 @@ export function generateHostelSchema(hostel: {
   name: string;
   description: string;
   address: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   phone?: string;
-  image?: string;
+  email?: string;
+  image?: string | string[];
   rating?: number;
   reviewCount?: number;
   url?: string;
   priceRange?: string;
+  basePrice?: number;
+  amenities?: string[];
+  identifier?: string;
 }) {
+  const amenityFeatures = (hostel.amenities ?? []).map((a) => ({
+    '@type': 'LocationFeatureSpecification',
+    name: a,
+    value: true,
+  }));
+
   return {
     '@context': 'https://schema.org',
-    '@type': 'Lodging',
+    // Use Lodging — the most accurate type for student hostels and well-supported by Google
+    '@type': ['Lodging', 'LocalBusiness'],
     name: hostel.name,
     description: hostel.description,
+    ...(hostel.identifier && { identifier: hostel.identifier }),
     address: {
       '@type': 'PostalAddress',
-      streetAddress: hostel.address
+      streetAddress: hostel.address,
+      addressLocality: hostel.city ?? 'Accra',
+      addressRegion: hostel.region ?? 'Greater Accra',
+      addressCountry: hostel.country ?? 'GH',
     },
+    ...(hostel.latitude != null && hostel.longitude != null && {
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: hostel.latitude,
+        longitude: hostel.longitude,
+      },
+    }),
     ...(hostel.phone && { telephone: hostel.phone }),
+    ...(hostel.email && { email: hostel.email }),
     ...(hostel.image && { image: hostel.image }),
     ...(hostel.url && { url: hostel.url }),
     ...(hostel.priceRange && { priceRange: hostel.priceRange }),
+    ...(amenityFeatures.length > 0 && { amenityFeature: amenityFeatures }),
+    ...(hostel.basePrice != null && {
+      makesOffer: {
+        '@type': 'Offer',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: hostel.basePrice,
+          priceCurrency: 'GHS',
+          unitText: 'per semester',
+        },
+        availability: 'https://schema.org/InStock',
+        url: hostel.url,
+      },
+    }),
     ...(hostel.rating && {
       aggregateRating: {
         '@type': 'AggregateRating',
         ratingValue: hostel.rating,
-        reviewCount: hostel.reviewCount || 1
+        reviewCount: hostel.reviewCount || 1,
+        bestRating: 5,
+        worstRating: 1,
       }
     })
   };
@@ -317,5 +379,139 @@ export const SEO_KEYWORDS = {
   ],
   ghana_misspellings_synonyms: [
     'hostle', 'hostels accomodation', 'accomodation near campus', 'student hostel accra', 'ug legon hostel', 'knust hostel', 'ucc hostel', 'uew hostel'
+  ],
+  agents: [
+    'list hostel on AllMap',
+    'hostel agent Ghana',
+    'earn money listing hostels',
+    'hostel agent commission',
+    'become a hostel agent',
+    'hostel owner Ghana',
+    'list my hostel online',
+    'hostel admin platform',
+    'hostel marketing platform Ghana',
+    'GHC 35 per booking',
+    'hostel referral earnings',
+    'student housing partner program',
+    'AllMap admin portal',
+    'admin.allmaphostels.com',
+    'manage hostel bookings online',
+    'hostel listing platform Ghana',
+  ],
+  trust_signals: [
+    'verified hostel listings',
+    'secure payment Paystack',
+    'mobile money payments Ghana',
+    'protected booking',
+    'Ghana Data Protection Act compliant',
+    'student-verified reviews',
+    '24/7 hostel support',
   ]
 };
+
+/**
+ * Schema for the AllMap Hostels service marketplace + agent commission program.
+ * Search engines can surface this in rich results (FAQs, JobPosting-like snippets).
+ */
+export function generateServiceSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'AllMap Hostels Student Booking & Agent Program',
+    serviceType: 'Student Hostel Booking and Agent Commission Program',
+    provider: {
+      '@type': 'Organization',
+      name: 'AllMap Hostels',
+      url: siteUrl,
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'Ghana',
+    },
+    audience: [
+      { '@type': 'Audience', audienceType: 'Tertiary Students' },
+      { '@type': 'Audience', audienceType: 'Hostel Owners and Agents' },
+    ],
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Verified hostel booking',
+        description:
+          `Students pay a one-time GHC ${AGENT_ECONOMICS.studentBookingFee} ` +
+          'booking fee to reserve a verified hostel room near their campus.',
+        price: AGENT_ECONOMICS.studentBookingFee,
+        priceCurrency: AGENT_ECONOMICS.currency,
+        category: 'Student Accommodation Booking',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Agent commission per booking',
+        description:
+          `Hostel admins earn GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} ` +
+          'for every confirmed booking on a hostel they onboarded. Payouts via ' +
+          AGENT_ECONOMICS.payoutMethods.join(', ') + '.',
+        price: AGENT_ECONOMICS.agentCommissionPerBooking,
+        priceCurrency: AGENT_ECONOMICS.currency,
+        category: 'Agent Earnings',
+        url: adminAppUrl,
+      },
+    ],
+    url: siteUrl,
+  };
+}
+
+/**
+ * HowTo schema for agents — boosts visibility in Google for queries like
+ * "how to become a hostel agent in Ghana".
+ */
+export function generateAgentHowToSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to earn as a hostel agent on AllMap Hostels',
+    description:
+      `Onboard your hostel on AllMap Hostels and earn GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} ` +
+      'on every confirmed student booking.',
+    totalTime: 'P1D',
+    estimatedCost: {
+      '@type': 'MonetaryAmount',
+      currency: AGENT_ECONOMICS.currency,
+      value: '0',
+    },
+    yield: `GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} per confirmed booking`,
+    tool: [
+      { '@type': 'HowToTool', name: 'Mobile money or bank account' },
+      { '@type': 'HowToTool', name: 'Hostel ownership or management documents' },
+    ],
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Sign up on the admin portal',
+        text: `Create an account at ${adminAppUrl} and complete your profile.`,
+        url: adminAppUrl,
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Submit verification & payout details',
+        text:
+          'Upload your ID and provide your MoMo or bank details so we can pay your commissions directly.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'List your hostel',
+        text: 'Add rooms, photos, amenities and prices once verification is approved.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Earn per booking',
+        text:
+          `Receive GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} for every confirmed student booking. ` +
+          `Commissions clear after a ${AGENT_ECONOMICS.holdHours}-hour hold and are paid out by super-admin.`,
+      },
+    ],
+  };
+}

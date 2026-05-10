@@ -6,6 +6,7 @@ import RecentActivity from './recent-activity';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useRecentActivities } from '@/hooks/useRecentActivities';
 import AnalyticsChart from './analytics-chart';
+import AgentPayoutsSummary from './agent-payouts-summary';
 
 export default function DashboardContent() {
   const { stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
@@ -131,6 +132,9 @@ export default function DashboardContent() {
           </div>
           <AnalyticsChart />
         </div>
+
+        {/* Agent Payouts */}
+        <AgentPayoutsSummary />
 
         {/* Recent Activity */}
         <div className="mb-6">

@@ -10,6 +10,7 @@ import { BookingType, Room, BookingFormData, BookingFormErrors, EmergencyContact
 import { useRouter } from 'next/navigation';
 import { RoomType } from '@repo/types';
 import { DepositModal } from '../payment/DepositModal';
+import { BookingResultModal, BookingResult } from './BookingResultModal';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
   const [autoCheckEnabled, setAutoCheckEnabled] = useState(false);
   const router = useRouter();
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [bookingResult, setBookingResult] = useState<BookingResult>(null);
   const { refreshBalance } = useDepositBalance();
   
   // Ref for the interval
@@ -436,29 +438,50 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
         intervalRef.current = null;
       }
 
+      // Show success modal — close the booking form behind it so
+      // the user lands on the result, not on the now-stale form.
       onClose();
-      alert(
-        `Booking confirmed! Booking ID: ${booking.id}\nGHS ${BOOKING_FEE} deducted from your deposit.\nRemaining balance: GHS ${totalAmount}`
-      );
-      
-      setTimeout(() => {
-        router.push('/dashboard/bookings');
-      }, 1000);
+      setBookingResult({
+        kind: 'success',
+        bookingId: booking.id,
+        hostelName: hostel.name,
+        bookingFee: BOOKING_FEE,
+        remainingBalance: Number(totalAmount) - BOOKING_FEE,
+      });
     } catch (error: any) {
       console.error('❌ Booking failed:', error);
       setBookingError(`Booking failed: ${error.message}`);
+      setBookingResult({
+        kind: 'failure',
+        message: error.message ?? 'Something went wrong while creating your booking.',
+      });
     } finally {
       setLoading(false);
     }
-  }, [profile, selectedRoomId, formData, emergencyContacts, hostel.id, depositBalance, totalAmount, onClose, validateForm]);
+  }, [profile, selectedRoomId, formData, emergencyContacts, hostel.id, hostel.name, depositBalance, totalAmount, onClose, validateForm]);
 
   const canBook = selectedRoomId && depositBalance >= BOOKING_FEE && availableRooms.length > 0;
 
-  if (!isOpen) return null;
+  // Always render the result modal — it must outlive the booking modal closing.
+  const resultModal = (
+    <BookingResultModal
+      result={bookingResult}
+      onClose={() => setBookingResult(null)}
+      onViewBookings={() => {
+        setBookingResult(null);
+        router.push('/dashboard/bookings');
+      }}
+      onRetry={() => setBookingResult(null)}
+    />
+  );
+
+  if (!isOpen) return resultModal;
 
   return (
     <AnimatePresence>
+      {resultModal}
       <motion.div
+        key="booking-modal-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -667,9 +690,9 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {availableRooms.map(room => (
+                  {availableRooms.map((room, idx) => (
                     <motion.div
-                      key={room.id}
+                      key={room.id || `room-${room.roomNumber}-${idx}`}
                       className={`p-4 border  cursor-pointer transition-colors ${
                         selectedRoomId === room.id
                           ? 'bg-black/5 border-black'
