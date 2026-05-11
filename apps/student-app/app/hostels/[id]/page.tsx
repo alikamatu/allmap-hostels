@@ -25,7 +25,7 @@ interface PublicHostel {
   city?: string;
   base_price?: number;
   images?: string[];
-  amenities?: any;
+  amenities?: string[] | Record<string, boolean>;
   rating?: number;
   total_reviews?: number;
   is_verified?: boolean;

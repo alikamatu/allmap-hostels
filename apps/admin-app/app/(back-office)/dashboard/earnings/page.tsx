@@ -79,8 +79,8 @@ export default function EarningsPage() {
       setSummary(s);
       setCommissions(c);
       setPayouts(p);
-    } catch (e: any) {
-      setErr(e.message ?? 'Failed to load earnings');
+    } catch (e: unknown) {
+      setErr((e as Error).message ?? 'Failed to load earnings');
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export default function EarningsPage() {
   const submitPayout = async () => {
     setSubmitting(true);
     try {
-      let body: { method?: 'momo' | 'bank'; destination?: Record<string, any>; notes?: string } = {
+      const body: { method?: 'momo' | 'bank'; destination?: Record<string, string>; notes?: string } = {
         notes: notes || undefined,
       };
 
@@ -124,8 +124,8 @@ export default function EarningsPage() {
       setOverride(emptyOverride);
       setNotes('');
       await loadAll();
-    } catch (e: any) {
-      alert(e.message ?? 'Failed to submit payout request');
+    } catch (e: unknown) {
+      setErr((e as Error).message ?? 'Failed to submit payout request');
     } finally {
       setSubmitting(false);
     }
@@ -284,7 +284,7 @@ export default function EarningsPage() {
           >
             <h3 className="text-lg font-bold mb-1">Request Payout</h3>
             <p className="text-sm text-gray-500 mb-4">
-              You'll receive {cedi(summary?.availableAmount ?? 0)} from your available balance.
+              You will receive {cedi(summary?.availableAmount ?? 0)} from your available balance.
             </p>
 
             {/* Verified destination */}
@@ -348,7 +348,7 @@ export default function EarningsPage() {
                     <select
                       value={override.provider}
                       onChange={(e) =>
-                        setOverride({ ...override, provider: e.target.value as any })
+                        setOverride({ ...override, provider: e.target.value as 'mtn' | 'vodafone' | 'airteltigo' })
                       }
                       className="w-full px-3 py-2 border border-gray-300 mb-3 text-sm"
                     >
