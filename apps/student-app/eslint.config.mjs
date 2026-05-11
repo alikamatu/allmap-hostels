@@ -14,8 +14,12 @@ const eslintConfig = [
   {
     settings: {
       next: {
-        rootDir: "apps/student-app",
+        rootDir: __dirname,
       },
+    },
+    rules: {
+      // App Router only — no /pages directory to lint for HTML links
+      "@next/next/no-html-link-for-pages": "off",
     },
   },
 ];
