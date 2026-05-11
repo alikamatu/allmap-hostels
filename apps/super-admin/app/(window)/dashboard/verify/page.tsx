@@ -25,6 +25,8 @@ interface AdminVerification {
   };
   hostel_name?: string;
   hostel_address?: string;
+  firstName?: string;
+  lastName?: string;
   // Backend may return either camelCase (Prisma default) or snake_case
   id_documents?: string[];
   idDocuments?: string[];
@@ -88,7 +90,7 @@ useEffect(() => {
       const query = searchQuery.toLowerCase();
       result = result.filter(v => {
         const hostelName = v.hostel_name ?? '';
-        const fullName = `${(v as any).firstName ?? ''} ${(v as any).lastName ?? ''}`.trim();
+        const fullName = `${v.firstName ?? ''} ${v.lastName ?? ''}`.trim();
         return (
           hostelName.toLowerCase().includes(query) ||
           v.user.email.toLowerCase().includes(query) ||

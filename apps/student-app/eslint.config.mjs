@@ -20,12 +20,6 @@ const eslintConfig = [
     rules: {
       // App Router only — no /pages directory to lint for HTML links
       "@next/next/no-html-link-for-pages": "off",
-      // Allow `any` — codebase uses it pragmatically for API responses
-      "@typescript-eslint/no-explicit-any": "off",
-      // Allow @ts-ignore (used in legacy spots)
-      "@typescript-eslint/ban-ts-comment": "off",
-      // Allow {} object type
-      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
 ];

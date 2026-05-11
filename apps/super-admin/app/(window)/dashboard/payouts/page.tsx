@@ -23,6 +23,9 @@ import {
 const cedi = (n: number | string) =>
   `GHS ${Number(n).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const errMsg = (e: unknown): string =>
+  e instanceof Error ? e.message : typeof e === 'string' ? e : 'Something went wrong';
+
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
     requested: 'bg-blue-100 text-blue-700',
@@ -101,8 +104,8 @@ export default function AgentPayoutsPage() {
       setOverview(o);
       setPayouts(p);
       setSelectedIds(new Set()); // Reset selections after reload
-    } catch (e: any) {
-      setErr(e.message ?? 'Failed to load payouts');
+    } catch (e: unknown) {
+      setErr(errMsg(e) || 'Failed to load payouts');
     } finally {
       setLoading(false);
     }
@@ -113,8 +116,8 @@ export default function AgentPayoutsPage() {
     try {
       const list = await payoutsApi.listCommissions(commissionFilter || undefined);
       setCommissions(list);
-    } catch (e: any) {
-      setErr(e.message ?? 'Failed to load commissions');
+    } catch (e: unknown) {
+      setErr(errMsg(e) || 'Failed to load commissions');
     } finally {
       setCommissionLoading(false);
     }
@@ -125,8 +128,8 @@ export default function AgentPayoutsPage() {
     try {
       const list = await payoutsApi.byHostel();
       setHostels(list);
-    } catch (e: any) {
-      setErr(e.message ?? 'Failed to load by-hostel rollup');
+    } catch (e: unknown) {
+      setErr(errMsg(e) || 'Failed to load by-hostel rollup');
     } finally {
       setHostelsLoading(false);
     }
@@ -172,8 +175,8 @@ export default function AgentPayoutsPage() {
       const r = await payoutsApi.bulkApprove(Array.from(selectedIds));
       alert(`Approved ${r.approved} of ${r.requested} payouts.`);
       await load();
-    } catch (e: any) {
-      alert(e.message ?? 'Bulk approve failed');
+    } catch (e: unknown) {
+      alert(errMsg(e) || 'Bulk approve failed');
     } finally {
       setBulkActionLoading(false);
     }
@@ -189,8 +192,8 @@ export default function AgentPayoutsPage() {
       setBulkRef('');
       setBulkNotes('');
       await load();
-    } catch (e: any) {
-      alert(e.message ?? 'Bulk mark-paid failed');
+    } catch (e: unknown) {
+      alert(errMsg(e) || 'Bulk mark-paid failed');
     } finally {
       setBulkActionLoading(false);
     }
@@ -244,7 +247,7 @@ export default function AgentPayoutsPage() {
       ];
     });
 
-    const escape = (v: any) => {
+    const escape = (v: string | number | null | undefined) => {
       const s = String(v ?? '');
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
@@ -270,8 +273,8 @@ export default function AgentPayoutsPage() {
     try {
       await payoutsApi.releaseCommission(id);
       await Promise.all([loadCommissions(), load()]);
-    } catch (e: any) {
-      alert(e.message ?? 'Failed to release commission');
+    } catch (e: unknown) {
+      alert(errMsg(e) || 'Failed to release commission');
     }
   };
 
@@ -281,8 +284,8 @@ export default function AgentPayoutsPage() {
     try {
       await payoutsApi.voidCommission(id, reason);
       await Promise.all([loadCommissions(), load()]);
-    } catch (e: any) {
-      alert(e.message ?? 'Failed to void commission');
+    } catch (e: unknown) {
+      alert(errMsg(e) || 'Failed to void commission');
     }
   };
 
@@ -290,8 +293,8 @@ export default function AgentPayoutsPage() {
     try {
       const detail = await payoutsApi.get(id);
       setSelected(detail);
-    } catch (e: any) {
-      alert(e.message ?? 'Failed to load payout');
+    } catch (e: unknown) {
+      alert(errMsg(e) || 'Failed to load payout');
     }
   };
 
@@ -306,8 +309,8 @@ export default function AgentPayoutsPage() {
     try {
       await payoutsApi.approve(selected.id);
       await refreshAfterAction();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(errMsg(e));
     } finally {
       setActionLoading(false);
     }
@@ -321,8 +324,8 @@ export default function AgentPayoutsPage() {
     try {
       await payoutsApi.reject(selected.id, reason);
       await refreshAfterAction();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(errMsg(e));
     } finally {
       setActionLoading(false);
     }
@@ -336,8 +339,8 @@ export default function AgentPayoutsPage() {
     try {
       await payoutsApi.markPaid(selected.id, ref);
       await refreshAfterAction();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(errMsg(e));
     } finally {
       setActionLoading(false);
     }

@@ -40,8 +40,11 @@ export default function AgentPayoutsSummary() {
         if (cancelled) return;
         setOverview(ov);
         setPending(list);
-      } catch (e: any) {
-        if (!cancelled) setError(e.message ?? 'Failed to load payouts');
+      } catch (e: unknown) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : 'Failed to load payouts';
+          setError(msg);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
