@@ -61,7 +61,7 @@ export function BookingModal({ isOpen, onClose, roomType, hostel }: BookingModal
     refreshBalance();
   };
 
-  const BOOKING_FEE = 70;
+  const BOOKING_FEE = 100;
 
   // Auto-populate form with user profile data
   useEffect(() => {

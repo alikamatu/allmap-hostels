@@ -321,7 +321,7 @@ export function DepositModal({ isOpen, onClose, onDepositSuccess }: DepositModal
 
                 {/* Quick Amount Buttons */}
                 <div className="grid grid-cols-3 gap-2 mb-6">
-                  {[70, 140, 220, 540, 1000, 2000].map((quickAmount) => (
+                  {[100, 200, 500, 1000, 2000, 5000].map((quickAmount) => (
                     <button
                       key={quickAmount}
                       onClick={() => setAmount(quickAmount.toString())}

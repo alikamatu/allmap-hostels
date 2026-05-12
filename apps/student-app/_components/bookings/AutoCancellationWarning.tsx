@@ -21,7 +21,7 @@ export const AutoCancellationWarning = ({ booking }: AutoCancellationWarningProp
   }
 
   const { daysUntilAutoCancel, minimumRequired } = booking.paymentRequirements;
-  const amountNeeded = minimumRequired - booking.amountPaid + 70;
+  const amountNeeded = minimumRequired - booking.amountPaid + 100;
 
   const getWarningColor = () => {
     if (daysUntilAutoCancel <= 2) return 'bg-red-50 border-red-200 text-red-800';
