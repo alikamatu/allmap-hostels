@@ -35,7 +35,7 @@ export function LandingHowItWorks() {
       className="bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="how-it-works-heading"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl" data-reveal>
         <SectionHeader
           id="how-it-works-heading"
           eyebrow="Platform process"

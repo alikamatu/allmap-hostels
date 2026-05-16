@@ -1,4 +1,4 @@
-import { Building2, HelpCircle, Users } from "lucide-react";
+import { Building2, ChevronDown, HelpCircle, Users } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
 import { ownerFaqs, studentFaqs } from "./landing-content";
 
@@ -21,12 +21,13 @@ function FaqBlock({
             <summary className="cursor-pointer list-none py-5 font-medium text-gray-900 marker:content-none [&::-webkit-details-marker]:hidden">
               <span className="flex items-start justify-between gap-4">
                 <span>{faq.question}</span>
-                <span className="shrink-0 text-orange-600 transition-transform group-open:rotate-180">
-                  ▼
-                </span>
+                <ChevronDown
+                  className="h-4 w-4 shrink-0 text-orange-600 transition-transform duration-200 ease-out group-open:rotate-180"
+                  aria-hidden
+                />
               </span>
             </summary>
-            <div className="border-t border-gray-100 pb-5 pt-2 text-sm leading-relaxed text-gray-600">
+            <div className="ah-anim-fade-in border-t border-gray-100 pb-5 pt-3 text-sm leading-relaxed text-gray-600">
               {faq.answer}
             </div>
           </details>
@@ -43,7 +44,7 @@ export function LandingFaq() {
       className="bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-4xl" data-reveal>
         <SectionHeader
           id="faq-heading"
           eyebrow="Knowledge base"

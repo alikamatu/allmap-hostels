@@ -9,19 +9,41 @@ export const usePasswordReset = () => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   const handleResetRequest = useCallback(async (email: string) => {
-    if (!email) {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
       setResetError('Please enter your email address');
+      return;
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(trimmed)) {
+      setResetError('Please enter a valid email address');
       return;
     }
 
     try {
       setResetStatus('loading');
-      // Simulate API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setResetError('');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/admin/request-reset`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: trimmed }),
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to send reset email');
+      }
+
       setResetStatus('success');
     } catch (err) {
       setResetStatus('error');
-      setResetError('Failed to send reset email');
+      setResetError(
+        err instanceof Error ? err.message : 'Failed to send reset email',
+      );
     }
   }, []);
 
@@ -41,6 +63,6 @@ export const usePasswordReset = () => {
     resetError,
     modalRef,
     handleResetRequest,
-    closeModal
+    closeModal,
   };
 };

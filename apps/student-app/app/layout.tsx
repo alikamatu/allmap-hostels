@@ -154,7 +154,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         <HeadScripts />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -164,9 +164,7 @@ export default function RootLayout({
         {/* Help Google understand the agent portal is part of the same brand */}
         <link rel="alternate" href="https://admin.allmaphostels.com" hrefLang="en-gh" />
       </head>
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
+      <body className="font-sans antialiased">
         <AuthProvider>
           <ThemeProvider>
             {children}

@@ -1,12 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Search, Calendar, Filter, X } from 'lucide-react';
-import { Button, Input, Select } from '@repo/ui';
+import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar, ChevronDown, Filter, Search, SlidersHorizontal, X } from 'lucide-react';
 import { BookingStatus, PaymentStatus, BookingType } from '@/types/booking';
 import { Hostel } from '@/types/hostel';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
 
 type BookingFiltersState = {
   search: string;
@@ -22,10 +20,10 @@ type BookingFiltersState = {
 interface BookingFiltersProps {
   filters: BookingFiltersState;
   hostels: Hostel[];
+  searchInput: string;
+  onSearchChange: (value: string) => void;
   onFilterChange: (filters: Partial<BookingFiltersState>) => void;
 }
-
-// ─── Filter Options ──────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = [
   { value: 'all',                      label: 'All Status' },
@@ -37,14 +35,14 @@ const STATUS_OPTIONS = [
 ];
 
 const PAYMENT_OPTIONS = [
-  { value: 'all',                    label: 'All Payments' },
-  { value: PaymentStatus.PENDING,    label: 'Pending' },
-  { value: PaymentStatus.PARTIAL,    label: 'Partial' },
-  { value: PaymentStatus.PAID,       label: 'Paid' },
-  { value: PaymentStatus.OVERDUE,    label: 'Overdue' },
+  { value: 'all',                  label: 'All Payments' },
+  { value: PaymentStatus.PENDING,  label: 'Pending' },
+  { value: PaymentStatus.PARTIAL,  label: 'Partial' },
+  { value: PaymentStatus.PAID,     label: 'Paid' },
+  { value: PaymentStatus.OVERDUE,  label: 'Overdue' },
 ];
 
-const BOOKING_TYPE_OPTIONS = [
+const TYPE_OPTIONS = [
   { value: 'all',                  label: 'All Types' },
   { value: BookingType.SEMESTER,   label: 'Semester' },
   { value: BookingType.MONTHLY,    label: 'Monthly' },
@@ -59,232 +57,257 @@ const SORT_OPTIONS = [
   { value: 'studentName',  label: 'Student Name' },
 ];
 
-const ORDER_OPTIONS = [
-  { value: 'DESC', label: 'Newest First' },
-  { value: 'ASC',  label: 'Oldest First' },
-];
-
-// ─── Filter Chip ─────────────────────────────────────────────────────────────
-
-const FilterChip: React.FC<{ label: string; value: string; onClear: () => void }> = ({
-  label, value, onClear,
+const SelectField = ({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
 }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 text-xs">
-    {label}: {value}
-    <X className="h-3 w-3 cursor-pointer hover:text-orange-950" onClick={onClear} />
-  </span>
+  <div>
+    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full h-9 px-2.5 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00]"
+    >
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  </div>
 );
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-
 const BookingFilters: React.FC<BookingFiltersProps> = ({
-  filters,
-  hostels,
-  onFilterChange,
+  filters, hostels, searchInput, onSearchChange, onFilterChange,
 }) => {
-  const hasActiveFilters = 
-    filters.search || 
-    filters.status !== 'all' || 
-    filters.paymentStatus !== 'all' ||
-    filters.bookingType !== 'all' ||
-    filters.hostelId ||
-    filters.dateRange.from ||
-    filters.dateRange.to;
+  const [panelOpen, setPanelOpen] = useState(false);
 
-  const clearAllFilters = () => {
+  const activeFilterCount = [
+    filters.status !== 'all',
+    filters.paymentStatus !== 'all',
+    filters.bookingType !== 'all',
+    !!filters.dateRange.from,
+    !!filters.dateRange.to,
+    filters.sortBy !== 'createdAt' || filters.sortOrder !== 'DESC',
+  ].filter(Boolean).length;
+
+  const clearAll = () => {
     onFilterChange({
-      search: '',
       status: 'all',
       paymentStatus: 'all',
       bookingType: 'all',
-      hostelId: '',
+      hostelId: hostels[0]?.id || '',
       dateRange: { from: '', to: '' },
       sortBy: 'createdAt',
-      sortOrder: 'DESC'
+      sortOrder: 'DESC',
     });
+    onSearchChange('');
   };
 
+  const hostelOptions = [
+    { value: '', label: 'All Hostels' },
+    ...hostels.map(h => ({ value: h.id, label: h.name })),
+  ];
+
   return (
-    <div className="bg-white border border-gray-200 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-600" />
-          <h3 className="font-semibold text-gray-900 text-sm">Filters</h3>
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* Always-visible top row */}
+      <div className="flex items-center gap-2 p-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search student, room…"
+            value={searchInput}
+            onChange={e => onSearchChange(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00] transition"
+          />
+          {searchInput && (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        
-        {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearAllFilters}
-            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+
+        {/* Hostel select — always visible on desktop, inside panel on mobile */}
+        <div className="hidden md:block w-44">
+          <select
+            value={filters.hostelId}
+            onChange={e => onFilterChange({ hostelId: e.target.value })}
+            className="w-full h-9 px-2.5 text-sm bg-white border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00]"
           >
-            <X className="h-3 w-3 mr-1" />
-            Clear All
-          </Button>
+            {hostelOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+
+        {/* Filter toggle button */}
+        <button
+          onClick={() => setPanelOpen(p => !p)}
+          className={[
+            'flex items-center gap-1.5 h-9 px-3 text-sm font-medium rounded-lg border transition-colors flex-shrink-0',
+            panelOpen || activeFilterCount > 0
+              ? 'border-[#FF6A00] text-[#FF6A00] bg-orange-50'
+              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+          ].join(' ')}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Filters</span>
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center w-4 h-4 bg-[#FF6A00] text-white text-[10px] font-bold rounded-full">
+              {activeFilterCount}
+            </span>
+          )}
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${panelOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Clear all */}
+        {(activeFilterCount > 0 || searchInput) && (
+          <button
+            onClick={clearAll}
+            className="hidden sm:flex items-center gap-1 h-9 px-2.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+          >
+            <X className="h-3 w-3" />
+            Clear
+          </button>
         )}
       </div>
 
-      {/* Primary Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-        {/* Search */}
-        <div className="lg:col-span-2">
-          <Input
-            label="Search"
-            icon={Search}
-            type="text"
-            placeholder="Search bookings..."
-            value={filters.search}
-            onChange={(e) => onFilterChange({ search: e.target.value })}
-            className="h-9 text-sm"
-          />
-        </div>
-
-        {/* Hostel Filter */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Hostel</label>
-          <Select
-            value={filters.hostelId}
-            onChange={(e) => onFilterChange({ hostelId: e.target.value })}
-            className="h-9 text-sm"
+      {/* Expandable filter panel */}
+      <AnimatePresence initial={false}>
+        {panelOpen && (
+          <motion.div
+            key="panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeInOut' }}
+            className="overflow-hidden"
           >
-            <option value="">Select hostel</option>
-            {hostels.map(hostel => (
-              <option key={hostel.id} value={hostel.id}>{hostel.name}</option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Status Filter */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Status</label>
-          <Select
-            value={filters.status}
-            onChange={(e) => onFilterChange({ status: e.target.value as BookingStatus | 'all' })}
-            className="h-9 text-sm"
-          >
-            {STATUS_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Payment Status Filter */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Payment</label>
-          <Select
-            value={filters.paymentStatus}
-            onChange={(e) => onFilterChange({ paymentStatus: e.target.value as PaymentStatus | 'all' })}
-            className="h-9 text-sm"
-          >
-            {PAYMENT_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Booking Type Filter */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Type</label>
-          <Select
-            value={filters.bookingType}
-            onChange={(e) => onFilterChange({ bookingType: e.target.value as BookingType | 'all' })}
-            className="h-9 text-sm"
-          >
-            {BOOKING_TYPE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
-      {/* Date Range and Sorting */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-        {/* Date Range */}
-        <div className="lg:col-span-2">
-          <label className="text-sm font-medium leading-none mb-2 block">Check-in Date Range</label>
-          <div className="flex gap-2 items-center">
-            <Input
-              icon={Calendar}
-              type="date"
-              value={filters.dateRange.from}
-              onChange={(e) => onFilterChange({ 
-                dateRange: { ...filters.dateRange, from: e.target.value }
-              })}
-              className="h-9 text-sm"
-            />
-            <span className="text-gray-500 text-xs flex-shrink-0">to</span>
-            <Input
-              icon={Calendar}
-              type="date"
-              value={filters.dateRange.to}
-              onChange={(e) => onFilterChange({ 
-                dateRange: { ...filters.dateRange, to: e.target.value }
-              })}
-              className="h-9 text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Sort By */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Sort By</label>
-          <Select
-            value={filters.sortBy}
-            onChange={(e) => onFilterChange({ sortBy: e.target.value })}
-            className="h-9 text-sm"
-          >
-            {SORT_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Sort Order */}
-        <div>
-          <label className="text-sm font-medium leading-none mb-2 block">Order</label>
-          <Select
-            value={filters.sortOrder}
-            onChange={(e) => onFilterChange({ sortOrder: e.target.value as 'ASC' | 'DESC' })}
-            className="h-9 text-sm"
-          >
-            {ORDER_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
-      {/* Active Filters Summary */}
-      {hasActiveFilters && (
-        <div className="mt-3 p-3 bg-orange-50 border border-orange-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-orange-800 font-medium">Active filters applied</span>
-            <div className="flex items-center gap-1 flex-wrap justify-end">
-              {filters.search && (
-                <FilterChip
-                  label="Search"
-                  value={filters.search}
-                  onClear={() => onFilterChange({ search: '' })}
+            <div className="border-t border-gray-100 p-3 space-y-3">
+              {/* Hostel (mobile only — desktop shows above) */}
+              <div className="md:hidden">
+                <SelectField
+                  label="Hostel"
+                  value={filters.hostelId}
+                  onChange={v => onFilterChange({ hostelId: v })}
+                  options={hostelOptions}
                 />
-              )}
-              {filters.status !== 'all' && (
-                <FilterChip
+              </div>
+
+              {/* Status + Payment + Type row */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <SelectField
                   label="Status"
                   value={filters.status}
-                  onClear={() => onFilterChange({ status: 'all' })}
+                  onChange={v => onFilterChange({ status: v as BookingStatus | 'all' })}
+                  options={STATUS_OPTIONS}
                 />
-              )}
-              {filters.paymentStatus !== 'all' && (
-                <FilterChip
+                <SelectField
                   label="Payment"
                   value={filters.paymentStatus}
-                  onClear={() => onFilterChange({ paymentStatus: 'all' })}
+                  onChange={v => onFilterChange({ paymentStatus: v as PaymentStatus | 'all' })}
+                  options={PAYMENT_OPTIONS}
                 />
+                <SelectField
+                  label="Type"
+                  value={filters.bookingType}
+                  onChange={v => onFilterChange({ bookingType: v as BookingType | 'all' })}
+                  options={TYPE_OPTIONS}
+                />
+                <SelectField
+                  label="Sort"
+                  value={filters.sortBy}
+                  onChange={v => onFilterChange({ sortBy: v })}
+                  options={SORT_OPTIONS}
+                />
+              </div>
+
+              {/* Date range + order */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <Calendar className="inline h-3 w-3 mr-1" />From
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.dateRange.from}
+                    onChange={e => onFilterChange({ dateRange: { ...filters.dateRange, from: e.target.value } })}
+                    className="w-full h-9 px-2.5 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <Calendar className="inline h-3 w-3 mr-1" />To
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.dateRange.to}
+                    onChange={e => onFilterChange({ dateRange: { ...filters.dateRange, to: e.target.value } })}
+                    className="w-full h-9 px-2.5 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Order</label>
+                  <select
+                    value={filters.sortOrder}
+                    onChange={e => onFilterChange({ sortOrder: e.target.value as 'ASC' | 'DESC' })}
+                    className="w-full h-9 px-2.5 text-sm bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/25 focus:border-[#FF6A00]"
+                  >
+                    <option value="DESC">Newest First</option>
+                    <option value="ASC">Oldest First</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mobile clear all */}
+              {(activeFilterCount > 0 || searchInput) && (
+                <div className="sm:hidden">
+                  <button
+                    onClick={clearAll}
+                    className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-3 w-3" />
+                    Clear all filters
+                  </button>
+                </div>
               )}
             </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Active filter chips (compact) */}
+      {activeFilterCount > 0 && !panelOpen && (
+        <div className="flex items-center gap-1.5 px-3 pb-2.5 flex-wrap">
+          <Filter className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          {filters.status !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+              {filters.status}
+              <button onClick={() => onFilterChange({ status: 'all' })}><X className="h-2.5 w-2.5" /></button>
+            </span>
+          )}
+          {filters.paymentStatus !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+              {filters.paymentStatus}
+              <button onClick={() => onFilterChange({ paymentStatus: 'all' })}><X className="h-2.5 w-2.5" /></button>
+            </span>
+          )}
+          {filters.bookingType !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+              {filters.bookingType}
+              <button onClick={() => onFilterChange({ bookingType: 'all' })}><X className="h-2.5 w-2.5" /></button>
+            </span>
+          )}
+          {(filters.dateRange.from || filters.dateRange.to) && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+              Date range
+              <button onClick={() => onFilterChange({ dateRange: { from: '', to: '' } })}><X className="h-2.5 w-2.5" /></button>
+            </span>
+          )}
         </div>
       )}
     </div>

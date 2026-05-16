@@ -1,20 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-
-
-const fontMont = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["400"]
-});
 
 const interFont = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"]
-})
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -74,11 +68,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-
-      <body
-        className={`${fontMont.variable} ${interFont.variable} antialiased`}
-      >
+    <html lang="en" className={interFont.variable}>
+      <body className="font-sans antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>

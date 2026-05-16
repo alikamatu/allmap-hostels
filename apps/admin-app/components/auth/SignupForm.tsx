@@ -1,11 +1,10 @@
-// SignupForm.tsx - Add this after the password fields in renderStep2()
 "use client";
 
-import { motion } from 'framer-motion';
-import { FiArrowRight } from 'react-icons/fi';
-import { FaSpinner } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ArrowLeft, AlertCircle, Check } from 'lucide-react';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordStrength } from '@/components/ui/PasswordStrength';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { AuthFormData } from '@/types/auth';
 
 interface SignupFormProps {
@@ -19,6 +18,8 @@ interface SignupFormProps {
   onShowPasswordChange: (show: boolean) => void;
   onShowConfirmPasswordChange: (show: boolean) => void;
   onStepChange: (step: number) => void;
+  onGoogleSuccess: (credential: string) => Promise<void>;
+  onGoogleError: (error: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -33,170 +34,263 @@ export const SignupForm: React.FC<SignupFormProps> = ({
   onShowPasswordChange,
   onShowConfirmPasswordChange,
   onStepChange,
-  onSubmit
+  onGoogleSuccess,
+  onGoogleError,
+  onSubmit,
 }) => {
-  const renderStep1 = () => (
-    <>
-      <InputField
-        label="Full Name"
-        type="text"
-        icon="user"
-        value={formData.name || ''}
-        onChange={(e) => onFormDataChange({ name: e.target.value })}
-        placeholder="John Doe"
-        required
-      />
-      
-      <InputField
-        label="Email Address"
-        type="email"
-        icon="mail"
-        value={formData.email}
-        onChange={(e) => onFormDataChange({ email: e.target.value })}
-        placeholder="your@email.com"
-        required
-      />
-      
-      <InputField
-        label="Phone Number"
-        type="tel"
-        icon="phone"
-        maxLength={10}
-        value={formData.phone || ''}
-        onChange={(e) => onFormDataChange({ phone: e.target.value })}
-        placeholder="+1 (555) 123-4567"
-      />
-
-      <button
-        type="submit"
-        className="w-full py-3 px-4 bg-[#FF6A00] text-white font-medium hover:bg-[#E55E00] flex items-center justify-center"
-      >
-        Continue <FiArrowRight className="ml-2" />
-      </button>
-    </>
-  );
-
-  const renderStep2 = () => (
-    <>
-      <InputField
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        icon="lock"
-        showPasswordToggle
-        onTogglePassword={() => onShowPasswordChange(!showPassword)}
-        value={formData.password}
-        onChange={(e) => onFormDataChange({ password: e.target.value })}
-        placeholder="••••••••"
-        required
-      />
-      <PasswordStrength password={formData.password} />
-      
-      <InputField
-        label="Confirm Password"
-        type={showConfirmPassword ? "text" : "password"}
-        icon="lock"
-        showPasswordToggle
-        onTogglePassword={() => onShowConfirmPasswordChange(!showConfirmPassword)}
-        value={formData.confirmPassword || ''}
-        onChange={(e) => onFormDataChange({ confirmPassword: e.target.value })}
-        placeholder="••••••••"
-        required
-        error={formData.confirmPassword && formData.password !== formData.confirmPassword ? "Passwords do not match" : undefined}
-      />
-
-      {/* Terms and Conditions Checkbox */}
-      <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-        <input
-          type="checkbox"
-          id="acceptTerms"
-          checked={formData.acceptTerms || false}
-          onChange={(e) => onFormDataChange({ acceptTerms: e.target.checked })}
-          className="mt-1 rounded border-gray-300 text-[#FF6A00] focus:ring-[#FF6A00]"
-          required
-        />
-        <label htmlFor="acceptTerms" className="text-sm text-gray-700">
-          I agree to the{' '}
-          <a 
-            href="/terms" 
-            target="_blank" 
-            className="text-[#FF6A00] hover:underline font-medium"
-          >
-            Terms and Conditions
-          </a>{' '}
-          and{' '}
-          <a 
-            href="/privacy" 
-            target="_blank" 
-            className="text-[#FF6A00] hover:underline font-medium"
-          >
-            Privacy Policy
-          </a>
-        </label>
-      </div>
-
-      {formData.role === 'student' && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-700">
-            <strong>Student Account:</strong> You will need to complete your profile setup after verification, including school information and emergency contacts.
-          </p>
-        </div>
-      )}
-      
-      <div className="flex space-x-3">
-        <button
-          type="button"
-          onClick={() => onStepChange(1)}
-          className="w-1/3 py-3 px-4 bg-gray-200 text-gray-700 font-medium hover:bg-gray-300"
-        >
-          Back
-        </button>
-        <button
-          type="submit"
-          disabled={loading || !formData.acceptTerms}
-          className={`flex-1 py-3 px-4 text-white font-medium flex items-center justify-center ${
-            loading || !formData.acceptTerms
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-[#FF6A00] hover:bg-[#E55E00]'
-          }`}
-        >
-          {loading ? (
-            <>
-              <FaSpinner className="animate-spin mr-3" />
-              {formData.role === 'student' ? 'Creating Student Account...' : 'Creating Account...'}
-            </>
-          ) : (
-            formData.role === 'student' ? 'Create Student Account' : 'Create Account'
-          )}
-        </button>
-      </div>
-    </>
-  );
+  const passwordsMatch =
+    !!formData.confirmPassword &&
+    formData.password === formData.confirmPassword;
 
   return (
-    <motion.form
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      onSubmit={onSubmit}
-      className="space-y-5"
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18 }}
     >
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        {step === 1 ? 'Create Your Account' : 'Set Your Password'}
-      </h2>
-      <p className="text-gray-600 mb-6">
-        {step === 1 
-          ? 'Join thousands of travelers worldwide' 
-          : 'Create a secure password for your account'
-        }
-      </p>
-      
+      {/* Header */}
+      <div className="mb-6">
+        {step === 2 && (
+          <button
+            type="button"
+            onClick={() => onStepChange(1)}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </button>
+        )}
+
+        {/* Step bar */}
+        <div className="flex gap-1.5 mb-4">
+          {[1, 2].map((s) => (
+            <div
+              key={s}
+              className={[
+                'h-[3px] rounded-full transition-all duration-300',
+                s === step ? 'flex-1 bg-[#FF6A00]' : 'w-8 bg-gray-200',
+              ].join(' ')}
+            />
+          ))}
+        </div>
+
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          {step === 1 ? 'Create your account' : 'Secure your account'}
+        </h2>
+        <p className="text-gray-500 text-sm mt-1">
+          {step === 1
+            ? 'Step 1 of 2 — Your basic information'
+            : 'Step 2 of 2 — Set a strong password'}
+        </p>
+      </div>
+
+      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">
-          {error}
+        <div className="mb-5 flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-500" />
+          <span>{error}</span>
         </div>
       )}
-      
-      {step === 1 ? renderStep1() : renderStep2()}
-    </motion.form>
+
+      <AnimatePresence mode="wait">
+        {step === 1 ? (
+          <motion.form
+            key="step1"
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -14 }}
+            transition={{ duration: 0.18 }}
+            onSubmit={onSubmit}
+            noValidate
+          >
+            {/* Google on step 1 */}
+            <div className="mb-4">
+              <GoogleAuthButton
+                onSuccess={onGoogleSuccess}
+                onError={onGoogleError}
+                disabled={loading}
+                label="Sign up with Google"
+              />
+            </div>
+
+            <div className="relative mb-5">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-xs text-gray-400 font-medium uppercase tracking-wider">
+                  or continue with email
+                </span>
+              </div>
+            </div>
+
+            <InputField
+              label="Full name"
+              type="text"
+              icon="user"
+              name="name"
+              autoComplete="name"
+              value={formData.name || ''}
+              onChange={(e) => onFormDataChange({ name: e.target.value })}
+              placeholder="John Doe"
+              required
+            />
+
+            <InputField
+              label="Email address"
+              type="email"
+              icon="mail"
+              name="email"
+              autoComplete="email"
+              value={formData.email}
+              onChange={(e) => onFormDataChange({ email: e.target.value })}
+              placeholder="you@example.com"
+              required
+            />
+
+            <InputField
+              label="Phone number"
+              type="tel"
+              icon="phone"
+              name="phone"
+              autoComplete="tel"
+              maxLength={15}
+              value={formData.phone || ''}
+              onChange={(e) => onFormDataChange({ phone: e.target.value })}
+              placeholder="0XX XXX XXXX"
+              hint="Used for account recovery only"
+            />
+
+            <button
+              type="submit"
+              className="w-full h-11 rounded-lg bg-[#FF6A00] hover:bg-[#E55E00] active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.form>
+        ) : (
+          <motion.form
+            key="step2"
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -14 }}
+            transition={{ duration: 0.18 }}
+            onSubmit={onSubmit}
+            noValidate
+          >
+            <InputField
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              icon="lock"
+              name="password"
+              autoComplete="new-password"
+              showPasswordToggle
+              onTogglePassword={() => onShowPasswordChange(!showPassword)}
+              value={formData.password}
+              onChange={(e) => onFormDataChange({ password: e.target.value })}
+              placeholder="Min. 8 characters"
+              required
+            />
+            {formData.password && (
+              <div className="-mt-3 mb-5">
+                <PasswordStrength password={formData.password} />
+              </div>
+            )}
+
+            <InputField
+              label="Confirm password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              icon="lock"
+              name="confirmPassword"
+              autoComplete="new-password"
+              showPasswordToggle
+              onTogglePassword={() =>
+                onShowConfirmPasswordChange(!showConfirmPassword)
+              }
+              value={formData.confirmPassword || ''}
+              onChange={(e) =>
+                onFormDataChange({ confirmPassword: e.target.value })
+              }
+              placeholder="••••••••"
+              required
+              error={
+                formData.confirmPassword && !passwordsMatch
+                  ? 'Passwords do not match'
+                  : undefined
+              }
+            />
+
+            {/* Terms */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl mb-5">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={formData.acceptTerms ?? false}
+                onClick={() =>
+                  onFormDataChange({ acceptTerms: !formData.acceptTerms })
+                }
+                className={[
+                  'mt-0.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors',
+                  formData.acceptTerms
+                    ? 'bg-[#FF6A00] border-[#FF6A00]'
+                    : 'bg-white border-gray-300 hover:border-gray-400',
+                ].join(' ')}
+                style={{ width: 18, height: 18 }}
+              >
+                {formData.acceptTerms && (
+                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3.5} />
+                )}
+              </button>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                I agree to AllmapHostels&apos;{' '}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#FF6A00] hover:underline font-medium"
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#FF6A00] hover:underline font-medium"
+                >
+                  Privacy Policy
+                </a>
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !formData.acceptTerms}
+              className={[
+                'w-full h-11 rounded-lg text-sm font-semibold',
+                'flex items-center justify-center gap-2 transition-all',
+                loading || !formData.acceptTerms
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-[#FF6A00] hover:bg-[#E55E00] active:scale-[0.98] text-white',
+              ].join(' ')}
+            >
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  Creating account…
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };

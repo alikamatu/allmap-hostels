@@ -25,7 +25,7 @@ export function LandingFeatures() {
       className="bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="features-heading"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl" data-reveal>
         <SectionHeader
           id="features-heading"
           eyebrow="Platform solutions"

@@ -9,7 +9,7 @@ export function LandingContact() {
       className="border-t border-gray-100 bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="contact-heading"
     >
-      <div className="mx-auto max-w-3xl text-center">
+      <div className="mx-auto max-w-3xl text-center" data-reveal>
         <div className="mb-4 inline-flex items-center gap-2">
           <Globe className="h-5 w-5 text-gray-400" aria-hidden />
           <span className="text-xs tracking-widest text-gray-500 uppercase">

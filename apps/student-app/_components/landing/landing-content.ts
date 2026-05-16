@@ -1,7 +1,56 @@
 import { BRAND } from "@/_components/brand";
+import { AGENT_ECONOMICS } from "@/lib/seo";
 
 export const ADMIN_APP_URL =
   process.env.NEXT_PUBLIC_ADMIN_APP_URL || "https://admin.allmaphostels.com";
+
+export const AGENT_EARNINGS = {
+  currency: AGENT_ECONOMICS.currency,
+  studentFee: AGENT_ECONOMICS.studentBookingFee,
+  commission: AGENT_ECONOMICS.agentCommissionPerBooking,
+  platformShare: AGENT_ECONOMICS.platformShare,
+  minimumPayout: AGENT_ECONOMICS.minimumPayoutAmount,
+  holdHours: AGENT_ECONOMICS.holdHours,
+  payoutMethods: AGENT_ECONOMICS.payoutMethods,
+} as const;
+
+export const agentValueProps = [
+  {
+    title: "GHS 35 per confirmed booking",
+    body: "Every student who books your hostel pays a one-time GHS 100 access fee. GHS 35 of that lands in your agent wallet — automatically.",
+  },
+  {
+    title: "Direct mobile-money payouts",
+    body: "Withdraw to MTN MoMo, Vodafone Cash, AirtelTigo Money, or your bank. No middlemen, no waiting on a third-party processor.",
+  },
+  {
+    title: "48-hour clearance, then paid",
+    body: "Commissions clear 48 hours after a confirmed booking. Request a payout any time after that — minimum GHS 35.",
+  },
+  {
+    title: "Free to list, no setup fees",
+    body: "Listing is free. You only earn when students book through AllMap — pure performance, zero ongoing costs.",
+  },
+] as const;
+
+export const agentPayoutSteps = [
+  {
+    title: "Sign up at the agent portal",
+    body: "Create an account on admin.allmaphostels.com and verify your email.",
+  },
+  {
+    title: "List your hostel",
+    body: "Add photos, amenities, room types, and pricing. Submit for review.",
+  },
+  {
+    title: "Students book and pay",
+    body: "Verified students pay the GHS 100 access fee through the platform.",
+  },
+  {
+    title: "GHS 35 lands in your wallet",
+    body: "After 48-hour clearance, request a payout to your MoMo or bank account.",
+  },
+] as const;
 
 export const LANDING_IMAGES = {
   heroBg: "/photos/hero/des.svg",
@@ -10,10 +59,10 @@ export const LANDING_IMAGES = {
 } as const;
 
 export const landingStats = [
-  { value: "420+", label: "Verified Students", sub: "Active Users" },
-  { value: "18+", label: "Partner Hostels", sub: "Properties Listed" },
-  { value: "98%", label: "Satisfaction Rate", sub: "User Feedback" },
-  { value: "3+", label: "Campuses Served", sub: "Nationwide" },
+  { value: "420+", label: "Verified students", sub: "Active accounts" },
+  { value: "18+", label: "Partner hostels", sub: "Properties listed" },
+  { value: "GHS 35", label: "Per booking", sub: "Earned by agents" },
+  { value: "48h", label: "Clearance", sub: "Then payout ready" },
 ] as const;
 
 export const hostelFeatureList = [
@@ -239,29 +288,34 @@ export const studentFaqs = [
 
 export const ownerFaqs = [
   {
-    question: "How do I list my hostel?",
+    question: "How much do agents earn per booking?",
     answer:
-      "Create an account on the owner platform, complete your property profile, and submit it for review. We will guide you through photos, pricing, and availability.",
+      "Agents earn GHS 35 for every confirmed student booking on their hostel. Students pay a one-time GHS 100 access fee — GHS 35 of that goes to you, the remaining GHS 65 covers AllMap operations and verification.",
   },
   {
-    question: "Are there platform fees?",
+    question: "How do I list my hostel?",
     answer:
-      "Fees depend on your plan and region. You will see costs before you go live—no surprise charges hidden in small print.",
+      "Create a free account at admin.allmaphostels.com, complete your property profile (photos, amenities, room types, prices), and submit it for review. There is no listing fee and no monthly subscription — you only earn when students book.",
+  },
+  {
+    question: "When and how do I get paid?",
+    answer:
+      "Commissions clear 48 hours after a booking is confirmed. After clearance you can request a payout from your agent wallet to MTN MoMo, Vodafone Cash, AirtelTigo Money, or your bank account. The minimum payout is GHS 35.",
+  },
+  {
+    question: "Are there any setup or monthly fees?",
+    answer:
+      "No. Listing is free and there are no monthly subscriptions. AllMap is purely performance-based — you only ever pay (in the form of the platform share) when a student actually books and pays for your hostel.",
   },
   {
     question: "How do I manage bookings?",
     answer:
-      "Use the owner dashboard to track enquiries, confirmations, and payouts. Notifications help you respond quickly to students.",
+      "Use the agent dashboard to track enquiries, confirmations, room availability, and payouts in real time. Email and in-app notifications keep you on top of every new booking.",
   },
   {
-    question: "How are payouts handled?",
+    question: "How do I get more visibility on the platform?",
     answer:
-      "Payout timing and methods are configured in your dashboard. You receive statements you can use for accounting.",
-  },
-  {
-    question: "How do I get more visibility?",
-    answer:
-      "Complete profiles with quality photos, accurate amenities, and competitive pricing perform best. We surface listings that students can trust.",
+      "Complete profiles with at least 5 quality photos, accurate amenities, verified contact details, and clear pricing rank highest. Hostels with verified student reviews also surface more often in proximity searches.",
   },
 ] as const;
 

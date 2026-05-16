@@ -48,7 +48,7 @@ export function LandingWhyChoose() {
       className="bg-white px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="why-choose-heading"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl" data-reveal>
         <SectionHeader
           id="why-choose-heading"
           eyebrow="Platform benefits"

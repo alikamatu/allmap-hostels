@@ -3,6 +3,7 @@ import { BRAND } from "@/_components/brand";
 import { LandingPageContent } from "@/_components/landing/LandingPageContent";
 import { ownerFaqs, studentFaqs } from "@/_components/landing/landing-content";
 import {
+  AGENT_ECONOMICS,
   generateFAQSchema,
   generatePageMetadata,
   generateServiceSchema,
@@ -12,17 +13,22 @@ import {
 import { generateSchemaScript } from "@/lib/seo-components";
 
 const siteUrl = BRAND.siteUrl;
+const canonical = siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
 
 export const metadata: Metadata = generatePageMetadata({
-  title: "Find & book verified student hostels",
-  description: BRAND.description,
+  title: "Find & book verified student hostels in Ghana",
+  description: `Discover, compare, and book verified student hostels near UPSA, Legon, KNUST, UCC and UEW on ${BRAND.name}. Hostel agents earn ${AGENT_ECONOMICS.currency} ${AGENT_ECONOMICS.agentCommissionPerBooking} per confirmed booking — paid directly to MoMo or bank.`,
   keywords: [
     ...SEO_KEYWORDS.general,
     ...SEO_KEYWORDS.searching.slice(0, 8),
     ...SEO_KEYWORDS.ghana_intents.slice(0, 6),
+    ...SEO_KEYWORDS.agents.slice(0, 8),
+    `earn GHC ${AGENT_ECONOMICS.agentCommissionPerBooking} per booking`,
+    "hostel agent commission Ghana",
+    "MTN MoMo hostel payout",
   ],
   url: siteUrl,
-  canonicalUrl: siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`,
+  canonicalUrl: canonical,
 });
 
 function homeOrganizationSchema() {
@@ -43,6 +49,8 @@ function homeOrganizationSchema() {
       contactType: "customer support",
       email: BRAND.supportEmail,
       url: siteUrl,
+      areaServed: "GH",
+      availableLanguage: ["en"],
     },
   };
 }
@@ -54,6 +62,7 @@ function homeWebSiteSchema() {
     name: BRAND.name,
     url: siteUrl,
     description: BRAND.description,
+    inLanguage: "en-GH",
     potentialAction: {
       "@type": "SearchAction",
       target: {

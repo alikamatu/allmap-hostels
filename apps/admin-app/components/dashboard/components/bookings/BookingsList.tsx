@@ -1,25 +1,16 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { 
-  Eye, CreditCard, CheckCircle, XCircle, 
-  ChevronLeft, ChevronRight, Calendar, User, Home
+import React, { useMemo } from 'react';
+import {
+  Calendar, CheckCircle, ChevronLeft, ChevronRight,
+  CreditCard, Eye, Home, User, XCircle,
 } from 'lucide-react';
-import { Button } from '@repo/ui';
 import { Booking, BookingStatus, PaymentStatus } from '@/types/booking';
 import { formatCurrency } from '@/utils/currency';
 import { formatDate } from '@/utils/date';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface ConfirmBookingData {
-  notes?: string;
-}
-
-interface CancelBookingData {
-  reason: string;
-  notes?: string;
-}
+interface ConfirmBookingData { notes?: string }
+interface CancelBookingData { reason: string; notes?: string }
 
 interface BookingsListProps {
   bookings: Booking[];
@@ -33,53 +24,67 @@ interface BookingsListProps {
   onCheckOut: (booking: Booking) => void;
   onConfirm: (bookingId: string, data: ConfirmBookingData) => Promise<unknown>;
   onCancel: (bookingId: string, data: CancelBookingData) => Promise<unknown>;
-  pagination?: {
-    page: number;
-    totalPages: number;
-    total: number;
-    limit: number;
-  };
+  pagination?: { page: number; totalPages: number; total: number; limit: number };
   currentPage: number;
   onPageChange: (page: number) => void;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Status / Payment helpers ─────────────────────────────────────────────────
 
-const STATUS_VARIANTS: Partial<Record<BookingStatus, string>> = {
+const STATUS_CLASSES: Partial<Record<BookingStatus, string>> = {
   [BookingStatus.PENDING]:     'bg-yellow-100 text-yellow-800 border-yellow-200',
   [BookingStatus.CONFIRMED]:   'bg-blue-100 text-blue-800 border-blue-200',
   [BookingStatus.CHECKED_IN]:  'bg-green-100 text-green-800 border-green-200',
-  [BookingStatus.CHECKED_OUT]: 'bg-gray-100 text-gray-800 border-gray-200',
+  [BookingStatus.CHECKED_OUT]: 'bg-gray-100 text-gray-700 border-gray-200',
   [BookingStatus.CANCELLED]:   'bg-red-100 text-red-800 border-red-200',
   [BookingStatus.NO_SHOW]:     'bg-red-100 text-red-800 border-red-200',
 };
 
-const PAYMENT_VARIANTS: Partial<Record<PaymentStatus, string>> = {
+const PAYMENT_CLASSES: Partial<Record<PaymentStatus, string>> = {
   [PaymentStatus.PENDING]:  'bg-yellow-100 text-yellow-800',
   [PaymentStatus.PARTIAL]:  'bg-orange-100 text-orange-800',
   [PaymentStatus.PAID]:     'bg-green-100 text-green-800',
   [PaymentStatus.OVERDUE]:  'bg-red-100 text-red-800',
-  [PaymentStatus.REFUNDED]: 'bg-gray-100 text-gray-800',
+  [PaymentStatus.REFUNDED]: 'bg-gray-100 text-gray-700',
 };
 
-const StatusBadge: React.FC<{ status: BookingStatus }> = ({ status }) => (
-  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium border ${STATUS_VARIANTS[status] ?? 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+const StatusBadge = ({ status }: { status: BookingStatus }) => (
+  <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide border rounded-md ${STATUS_CLASSES[status] ?? 'bg-gray-100 text-gray-700 border-gray-200'}`}>
     {String(status).replace('_', ' ')}
   </span>
 );
 
-const PaymentBadge: React.FC<{ status: PaymentStatus }> = ({ status }) => (
-  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium ${PAYMENT_VARIANTS[status] ?? 'bg-gray-100 text-gray-800'}`}>
+const PaymentBadge = ({ status }: { status: PaymentStatus }) => (
+  <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-md ${PAYMENT_CLASSES[status] ?? 'bg-gray-100 text-gray-700'}`}>
     {status}
   </span>
 );
 
-// ─── Booking Row ─────────────────────────────────────────────────────────────
+// ─── Action buttons ───────────────────────────────────────────────────────────
 
-const BookingRow: React.FC<{
+const ActionBtn = ({
+  icon, label, onClick, colorClass = 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  colorClass?: string;
+}) => (
+  <button
+    onClick={onClick}
+    title={label}
+    className={`p-1.5 rounded-lg transition-colors ${colorClass}`}
+  >
+    {icon}
+  </button>
+);
+
+// ─── Mobile Booking Card ──────────────────────────────────────────────────────
+
+const BookingCard: React.FC<{
   booking: Booking;
   selected: boolean;
-  onSelect: (selected: boolean) => void;
+  onSelect: (v: boolean) => void;
   onViewDetails: () => void;
   onPayment: () => void;
   onCheckIn: () => void;
@@ -87,145 +92,233 @@ const BookingRow: React.FC<{
   onConfirm: () => void;
   onCancel: () => void;
 }> = ({ booking, selected, onSelect, onViewDetails, onPayment, onCheckIn, onCheckOut, onConfirm, onCancel }) => {
-  const canCheckIn = booking.status === BookingStatus.CONFIRMED && booking.paymentStatus === PaymentStatus.PAID;
+  const canCheckIn  = booking.status === BookingStatus.CONFIRMED && booking.paymentStatus === PaymentStatus.PAID;
   const canCheckOut = booking.status === BookingStatus.CHECKED_IN;
-  const canPayment = [PaymentStatus.PENDING, PaymentStatus.PARTIAL].includes(booking.paymentStatus);
-  const canConfirm = booking.status === BookingStatus.PENDING;
-  const canCancel = [BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status);
+  const canPayment  = [PaymentStatus.PENDING, PaymentStatus.PARTIAL].includes(booking.paymentStatus);
+  const canConfirm  = booking.status === BookingStatus.PENDING;
+  const canCancel   = [BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status);
 
-  const paymentProgress = useMemo(() => {
-    return booking.totalAmount > 0 ? (booking.amountPaid / booking.totalAmount) * 100 : 0;
-  }, [booking.amountPaid, booking.totalAmount]);
-
-  const [paymentUpdateKey, setPaymentUpdateKey] = useState(0);
-
-  useEffect(() => {
-    setPaymentUpdateKey(prev => prev + 1);
-  }, [booking.amountPaid, booking.paymentStatus]);
+  const payPct = booking.totalAmount > 0 ? (booking.amountPaid / booking.totalAmount) * 100 : 0;
 
   return (
-    <tr className={`border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 ${selected ? 'bg-orange-50' : ''}`}>
-      <td className="px-4 py-3 whitespace-nowrap">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={(e) => onSelect(e.target.checked)}
-          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
-        />
-      </td>
-      
-      {/* Student */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-8 w-8">
-            <div className="h-8 w-8 bg-gray-100 flex items-center justify-center">
-              <User className="h-4 w-4 text-gray-600" />
+    <div className={`bg-white rounded-xl border transition-colors ${selected ? 'border-[#FF6A00] bg-orange-50/30' : 'border-gray-200'}`}>
+      <div className="p-3">
+        {/* Top row: checkbox + name + badges */}
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={e => onSelect(e.target.checked)}
+            className="mt-0.5 h-4 w-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500 flex-shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-sm font-semibold text-gray-900 truncate">{booking.studentName}</p>
+              <div className="flex gap-1 flex-shrink-0">
+                <StatusBadge status={booking.status} />
+              </div>
             </div>
-          </div>
-          <div className="ml-3">
-            <div className="text-sm font-medium text-gray-900">{booking.studentName}</div>
-            <div className="text-xs text-gray-500">{booking.studentEmail}</div>
+            <p className="text-xs text-gray-500 truncate">{booking.studentEmail}</p>
           </div>
         </div>
-      </td>
 
-      {/* Accommodation */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div className="flex items-start gap-2">
-          <Home className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <div className="text-sm font-medium text-gray-900">{booking.hostel?.name || '—'}</div>
-            <div className="text-xs text-gray-500">
-              {booking.room?.roomNumber ? `Room ${booking.room.roomNumber}` : '—'}
-              {booking.room?.roomType?.name && (
-                <span className="text-gray-400"> • {booking.room.roomType.name}</span>
+        {/* Details */}
+        <div className="mt-2.5 space-y-1.5 pl-6">
+          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+            <Home className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            <span className="truncate">{booking.hostel?.name || '—'}</span>
+            {booking.room?.roomNumber && (
+              <span className="text-gray-400">· Rm {booking.room.roomNumber}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+            <Calendar className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            <span>{formatDate(booking.checkInDate)}</span>
+            <span className="text-gray-400">→</span>
+            <span>{formatDate(booking.checkOutDate)}</span>
+          </div>
+
+          {/* Payment row */}
+          <div className="flex items-center justify-between gap-2">
+            <PaymentBadge status={booking.paymentStatus} />
+            <div className="text-right">
+              <p className="text-xs font-semibold text-gray-900">{formatCurrency(booking.totalAmount)}</p>
+              {booking.amountDue > 0 && (
+                <p className="text-[10px] text-red-600">Due {formatCurrency(booking.amountDue)}</p>
               )}
             </div>
           </div>
+
+          {/* Payment progress bar */}
+          {booking.totalAmount > 0 && (
+            <div className="w-full bg-gray-100 rounded-full h-1">
+              <div
+                className={`h-1 rounded-full transition-all ${booking.paymentStatus === PaymentStatus.PAID ? 'bg-green-500' : 'bg-orange-500'}`}
+                style={{ width: `${Math.min(payPct, 100)}%` }}
+              />
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Action row */}
+      <div className="flex items-center gap-1 px-3 py-2 border-t border-gray-100">
+        <ActionBtn
+          icon={<Eye className="h-4 w-4" />}
+          label="View details"
+          onClick={onViewDetails}
+          colorClass="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+        />
+        {canPayment && (
+          <ActionBtn
+            icon={<CreditCard className="h-4 w-4" />}
+            label="Record payment"
+            onClick={onPayment}
+            colorClass="text-green-600 hover:bg-green-50"
+          />
+        )}
+        {canConfirm && (
+          <ActionBtn
+            icon={<CheckCircle className="h-4 w-4" />}
+            label="Confirm"
+            onClick={onConfirm}
+            colorClass="text-blue-600 hover:bg-blue-50"
+          />
+        )}
+        {canCheckIn && (
+          <ActionBtn
+            icon={<CheckCircle className="h-4 w-4" />}
+            label="Check in"
+            onClick={onCheckIn}
+            colorClass="text-green-600 hover:bg-green-50"
+          />
+        )}
+        {canCheckOut && (
+          <ActionBtn
+            icon={<XCircle className="h-4 w-4" />}
+            label="Check out"
+            onClick={onCheckOut}
+            colorClass="text-purple-600 hover:bg-purple-50"
+          />
+        )}
+        {canCancel && (
+          <ActionBtn
+            icon={<XCircle className="h-4 w-4" />}
+            label="Cancel"
+            onClick={onCancel}
+            colorClass="text-red-600 hover:bg-red-50"
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Desktop Table Row ────────────────────────────────────────────────────────
+
+const BookingRow: React.FC<{
+  booking: Booking;
+  selected: boolean;
+  onSelect: (v: boolean) => void;
+  onViewDetails: () => void;
+  onPayment: () => void;
+  onCheckIn: () => void;
+  onCheckOut: () => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ booking, selected, onSelect, onViewDetails, onPayment, onCheckIn, onCheckOut, onConfirm, onCancel }) => {
+  const canCheckIn  = booking.status === BookingStatus.CONFIRMED && booking.paymentStatus === PaymentStatus.PAID;
+  const canCheckOut = booking.status === BookingStatus.CHECKED_IN;
+  const canPayment  = [PaymentStatus.PENDING, PaymentStatus.PARTIAL].includes(booking.paymentStatus);
+  const canConfirm  = booking.status === BookingStatus.PENDING;
+  const canCancel   = [BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(booking.status);
+  const payPct      = booking.totalAmount > 0 ? (booking.amountPaid / booking.totalAmount) * 100 : 0;
+
+  return (
+    <tr className={`border-b border-gray-100 transition-colors ${selected ? 'bg-orange-50' : 'hover:bg-gray-50'}`}>
+      <td className="pl-4 pr-2 py-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={e => onSelect(e.target.checked)}
+          className="h-4 w-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500"
+        />
       </td>
 
-      {/* Dates */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div className="flex items-center">
-          <Calendar className="h-3 w-3 text-gray-400 mr-2" />
+      <td className="px-3 py-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <User className="h-3.5 w-3.5 text-gray-500" />
+          </div>
           <div>
-            <div className="text-sm text-gray-900">{formatDate(booking.checkInDate)}</div>
-            <div className="text-xs text-gray-500">{formatDate(booking.checkOutDate)}</div>
+            <p className="text-sm font-medium text-gray-900 leading-none">{booking.studentName}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{booking.studentEmail}</p>
           </div>
         </div>
       </td>
 
-      {/* Status */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <StatusBadge status={booking.status} />
-      </td>
-
-      {/* Payment */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div className="space-y-2">
-          <PaymentBadge status={booking.paymentStatus} />
-          {canPayment && (
-            <div className="w-full bg-gray-200 h-1.5">
-              <div 
-                key={paymentUpdateKey}
-                className="bg-orange-600 h-1.5 transition-all duration-500 ease-out" 
-                style={{ width: `${paymentProgress}%` }}
-              />
-            </div>
-          )}
-          {booking.paymentStatus === PaymentStatus.PAID && (
-            <div className="w-full bg-gray-200 h-1.5">
-              <div className="bg-green-600 h-1.5 w-full" />
-            </div>
-          )}
+      <td className="px-3 py-3">
+        <div className="flex items-center gap-1.5">
+          <Home className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm text-gray-900">{booking.hostel?.name || '—'}</p>
+            <p className="text-xs text-gray-400">
+              {booking.room?.roomNumber ? `Room ${booking.room.roomNumber}` : '—'}
+              {booking.room?.roomType?.name && ` · ${booking.room.roomType.name}`}
+            </p>
+          </div>
         </div>
       </td>
 
-      {/* Amount */}
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div className="text-sm text-gray-900">{formatCurrency(booking.totalAmount)}</div>
-        <div className="text-xs text-green-600">Paid: {formatCurrency(booking.amountPaid)}</div>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <div className="flex items-center gap-1.5">
+          <Calendar className="h-3 w-3 text-gray-400" />
+          <div>
+            <p className="text-sm text-gray-900">{formatDate(booking.checkInDate)}</p>
+            <p className="text-xs text-gray-400">{formatDate(booking.checkOutDate)}</p>
+          </div>
+        </div>
+      </td>
+
+      <td className="px-3 py-3"><StatusBadge status={booking.status} /></td>
+
+      <td className="px-3 py-3">
+        <div className="space-y-1.5">
+          <PaymentBadge status={booking.paymentStatus} />
+          <div className="w-20 bg-gray-100 rounded-full h-1">
+            <div
+              className={`h-1 rounded-full transition-all ${booking.paymentStatus === PaymentStatus.PAID ? 'bg-green-500' : 'bg-orange-500'}`}
+              style={{ width: `${Math.min(payPct, 100)}%` }}
+            />
+          </div>
+        </div>
+      </td>
+
+      <td className="px-3 py-3 whitespace-nowrap">
+        <p className="text-sm font-medium text-gray-900">{formatCurrency(booking.totalAmount)}</p>
+        <p className="text-xs text-green-600">Paid {formatCurrency(booking.amountPaid)}</p>
         {booking.amountDue > 0 && (
-          <div className="text-xs text-red-600">Due: {formatCurrency(booking.amountDue)}</div>
+          <p className="text-xs text-red-600">Due {formatCurrency(booking.amountDue)}</p>
         )}
       </td>
 
-      {/* Actions */}
-      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-        <div className="flex items-center justify-end space-x-1">
-          <Button variant="ghost" size="icon" onClick={onViewDetails} title="View Details" className="h-7 w-7">
-            <Eye className="h-4 w-4 text-gray-600" />
-          </Button>
-
+      <td className="px-3 py-3">
+        <div className="flex items-center justify-end gap-0.5">
+          <ActionBtn icon={<Eye className="h-4 w-4" />} label="View" onClick={onViewDetails} />
           {canPayment && (
-            <Button variant="ghost" size="icon" onClick={onPayment} title="Record Payment" className="h-7 w-7 text-green-600 hover:text-green-900 hover:bg-green-50">
-              <CreditCard className="h-4 w-4" />
-            </Button>
+            <ActionBtn icon={<CreditCard className="h-4 w-4" />} label="Payment" onClick={onPayment} colorClass="text-green-600 hover:bg-green-50" />
           )}
-
-          {canCheckIn && (
-            <Button variant="ghost" size="icon" onClick={onCheckIn} title="Check In" className="h-7 w-7 text-blue-600 hover:text-blue-900 hover:bg-blue-50">
-              <CheckCircle className="h-4 w-4" />
-            </Button>
-          )}
-
-          {canCheckOut && (
-            <Button variant="ghost" size="icon" onClick={onCheckOut} title="Check Out" className="h-7 w-7 text-purple-600 hover:text-purple-900 hover:bg-purple-50">
-              <XCircle className="h-4 w-4" />
-            </Button>
-          )}
-
           {canConfirm && (
-            <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirm Booking" className="h-7 w-7 text-green-600 hover:text-green-900 hover:bg-green-50">
-              <CheckCircle className="h-4 w-4" />
-            </Button>
+            <ActionBtn icon={<CheckCircle className="h-4 w-4" />} label="Confirm" onClick={onConfirm} colorClass="text-blue-600 hover:bg-blue-50" />
           )}
-
+          {canCheckIn && (
+            <ActionBtn icon={<CheckCircle className="h-4 w-4" />} label="Check in" onClick={onCheckIn} colorClass="text-green-600 hover:bg-green-50" />
+          )}
+          {canCheckOut && (
+            <ActionBtn icon={<XCircle className="h-4 w-4" />} label="Check out" onClick={onCheckOut} colorClass="text-purple-600 hover:bg-purple-50" />
+          )}
           {canCancel && (
-            <Button variant="ghost" size="icon" onClick={onCancel} title="Cancel Booking" className="h-7 w-7 text-red-600 hover:text-red-900 hover:bg-red-50">
-              <XCircle className="h-4 w-4" />
-            </Button>
+            <ActionBtn icon={<XCircle className="h-4 w-4" />} label="Cancel" onClick={onCancel} colorClass="text-red-600 hover:bg-red-50" />
           )}
         </div>
       </td>
@@ -233,193 +326,198 @@ const BookingRow: React.FC<{
   );
 };
 
-// ─── Table Header ────────────────────────────────────────────────────────────
+// ─── Pagination ────────────────────────────────────────────────────────────────
 
-const TABLE_HEADERS = ['Student', 'Accommodation', 'Dates', 'Status', 'Payment', 'Amount'];
+const Pagination = ({
+  pagination, currentPage, onPageChange,
+}: {
+  pagination: { page: number; totalPages: number; total: number; limit: number };
+  currentPage: number;
+  onPageChange: (p: number) => void;
+}) => {
+  if (pagination.totalPages <= 1) return null;
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+  const start = (currentPage - 1) * pagination.limit + 1;
+  const end   = Math.min(currentPage * pagination.limit, pagination.total);
+
+  const pageNums = Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+    return Math.max(1, currentPage - 2) + i;
+  }).filter(p => p <= pagination.totalPages);
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+      <p className="text-xs text-gray-500 hidden sm:block">
+        {start}–{end} of {pagination.total}
+      </p>
+      <div className="flex items-center gap-1 mx-auto sm:mx-0">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {pageNums.map(p => (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`h-8 w-8 text-sm rounded-lg font-medium transition-colors ${
+              p === currentPage
+                ? 'bg-[#FF6A00] text-white'
+                : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          onClick={() => onPageChange(Math.min(pagination.totalPages, currentPage + 1))}
+          disabled={currentPage === pagination.totalPages}
+          className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+
+const Skeleton = () => (
+  <>
+    {/* Mobile skeletons */}
+    <div className="md:hidden space-y-3 p-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-xl border border-gray-200 p-3 animate-pulse">
+          <div className="flex gap-2">
+            <div className="w-4 h-4 bg-gray-100 rounded mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3.5 bg-gray-100 rounded w-2/3" />
+              <div className="h-3 bg-gray-100 rounded w-1/2" />
+              <div className="h-3 bg-gray-100 rounded w-3/4" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    {/* Desktop skeleton */}
+    <div className="hidden md:block">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 animate-pulse">
+          <div className="w-4 h-4 bg-gray-100 rounded" />
+          <div className="w-8 h-8 bg-gray-100 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 bg-gray-100 rounded w-1/4" />
+            <div className="h-2.5 bg-gray-100 rounded w-1/5" />
+          </div>
+          <div className="w-16 h-5 bg-gray-100 rounded" />
+          <div className="w-12 h-5 bg-gray-100 rounded" />
+          <div className="w-20 h-5 bg-gray-100 rounded" />
+        </div>
+      ))}
+    </div>
+  </>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const BookingsList: React.FC<BookingsListProps> = ({
-  bookings,
-  loading,
-  selectedBookings,
-  onBookingSelect,
-  onSelectAll,
-  onViewDetails,
-  onPayment,
-  onCheckIn,
-  onCheckOut,
-  onConfirm,
-  onCancel,
-  pagination,
-  currentPage,
-  onPageChange,
+  bookings, loading, selectedBookings,
+  onBookingSelect, onSelectAll, onViewDetails, onPayment,
+  onCheckIn, onCheckOut, onConfirm, onCancel,
+  pagination, currentPage, onPageChange,
 }) => {
-  const allSelected = bookings.length > 0 && selectedBookings.length === bookings.length;
+  const allSelected  = bookings.length > 0 && selectedBookings.length === bookings.length;
   const someSelected = selectedBookings.length > 0 && selectedBookings.length < bookings.length;
-  const memoizedBookings = useMemo(() => bookings, [bookings]);
 
-  // ── Loading State ──────────────────────────────────────────────────────────
+  const memoBookings = useMemo(() => bookings, [bookings]);
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200">
-        <div className="p-8 text-center">
-          <div className="animate-spin h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4" />
-          <p className="text-gray-600 text-sm">Loading bookings...</p>
-        </div>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <Skeleton />
       </div>
     );
   }
-
-  // ── Empty State ────────────────────────────────────────────────────────────
 
   if (bookings.length === 0) {
     return (
-      <div className="bg-white border border-gray-200">
-        <div className="p-8 text-center">
-          <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No active bookings found</h3>
-          <p className="text-gray-500 text-sm">
-            No pending, confirmed, or checked-in bookings match your current filters.
-          </p>
-        </div>
+      <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+        <Calendar className="h-8 w-8 text-gray-300 mx-auto mb-3" />
+        <p className="text-sm font-medium text-gray-700 mb-1">No active bookings</p>
+        <p className="text-xs text-gray-400">No pending, confirmed, or checked-in bookings match your filters.</p>
       </div>
     );
   }
 
-  // ── Data Table ─────────────────────────────────────────────────────────────
+  const rowProps = (booking: Booking) => ({
+    booking,
+    selected: selectedBookings.includes(booking.id),
+    onSelect: (v: boolean) => onBookingSelect(booking.id, v),
+    onViewDetails: () => onViewDetails(booking),
+    onPayment:     () => onPayment(booking),
+    onCheckIn:     () => onCheckIn(booking),
+    onCheckOut:    () => onCheckOut(booking),
+    onConfirm:     () => onConfirm(booking.id, { notes: 'Confirmed' }),
+    onCancel:      () => onCancel(booking.id, { reason: 'Cancelled by admin', notes: 'Cancelled' }),
+  });
 
   return (
-    <div className="bg-white border border-gray-200">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* Mobile card list */}
+      <div className="md:hidden">
+        {/* Select all row */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={el => { if (el) el.indeterminate = someSelected; }}
+            onChange={e => onSelectAll(e.target.checked)}
+            className="h-4 w-4 text-orange-600 rounded border-gray-300"
+          />
+          <span className="text-xs text-gray-500">
+            {selectedBookings.length > 0 ? `${selectedBookings.length} selected` : `${bookings.length} bookings`}
+          </span>
+        </div>
+        <div className="space-y-2 p-2.5">
+          {memoBookings.map(booking => (
+            <BookingCard key={`${booking.id}-${booking.amountPaid}`} {...rowProps(booking)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="pl-4 pr-2 py-3 text-left">
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  ref={(input) => { if (input) input.indeterminate = someSelected; }}
-                  onChange={(e) => onSelectAll(e.target.checked)}
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                  ref={el => { if (el) el.indeterminate = someSelected; }}
+                  onChange={e => onSelectAll(e.target.checked)}
+                  className="h-4 w-4 text-orange-600 rounded border-gray-300"
                 />
               </th>
-              {TABLE_HEADERS.map((header) => (
-                <th
-                  key={header}
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {header}
+              {['Student', 'Accommodation', 'Dates', 'Status', 'Payment', 'Amount'].map(h => (
+                <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  {h}
                 </th>
               ))}
-              <th scope="col" className="relative px-4 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
+              <th className="px-3 py-3" />
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {memoizedBookings.map((booking) => (
-              <BookingRow
-                key={`${booking.id}-${booking.amountPaid}-${booking.paymentStatus}`}
-                booking={booking}
-                selected={selectedBookings.includes(booking.id)}
-                onSelect={(selected) => onBookingSelect(booking.id, selected)}
-                onViewDetails={() => onViewDetails(booking)}
-                onPayment={() => onPayment(booking)}
-                onCheckIn={() => onCheckIn(booking)}
-                onCheckOut={() => onCheckOut(booking)}
-                onConfirm={() => onConfirm(booking.id, { notes: 'Confirmed from list' })}
-                onCancel={() => onCancel(booking.id, { 
-                  reason: 'Cancelled from list', 
-                  notes: 'Cancelled by admin' 
-                })}
-              />
+          <tbody>
+            {memoBookings.map(booking => (
+              <BookingRow key={`${booking.id}-${booking.amountPaid}-${booking.paymentStatus}`} {...rowProps(booking)} />
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="bg-white px-4 py-3 border-t border-gray-200">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(Math.min(pagination.totalPages, currentPage + 1))}
-              disabled={currentPage === pagination.totalPages}
-            >
-              Next
-            </Button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing{' '}
-                <span className="font-medium">{(currentPage - 1) * pagination.limit + 1}</span>{' '}
-                to{' '}
-                <span className="font-medium">{Math.min(currentPage * pagination.limit, pagination.total)}</span>{' '}
-                of{' '}
-                <span className="font-medium">{pagination.total}</span> bookings
-              </p>
-            </div>
-            <div>
-              <nav className="relative z-0 inline-flex shadow-sm -space-x-px" aria-label="Pagination">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 rounded-none"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, currentPage - 2) + i;
-                  if (pageNum > pagination.totalPages) return null;
-                  
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pageNum === currentPage ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => onPageChange(pageNum)}
-                      className={`rounded-none h-8 w-8 p-0 ${
-                        pageNum === currentPage
-                          ? 'bg-orange-50 border-orange-500 text-orange-600 hover:bg-orange-100'
-                          : ''
-                      }`}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-                
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onPageChange(Math.min(pagination.totalPages, currentPage + 1))}
-                  disabled={currentPage === pagination.totalPages}
-                  className="h-8 w-8 rounded-none"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
+      {pagination && <Pagination pagination={pagination} currentPage={currentPage} onPageChange={onPageChange} />}
     </div>
   );
 };

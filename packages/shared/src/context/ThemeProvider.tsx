@@ -39,16 +39,17 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isMounted) return;
-    
-    // Update document classes and localStorage
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.setAttribute("data-style", style);
-    
+
+    const root = document.documentElement;
+    // Strip only previous theme/style markers and re-apply, preserving any
+    // other classes set by the server (e.g. next/font variable classes).
+    root.classList.remove("light", "dark", "classic", "web3");
+    root.classList.add(theme, style);
+    root.classList.toggle("dark", theme === "dark");
+    root.setAttribute("data-style", style);
+
     localStorage.setItem("theme", theme);
     localStorage.setItem("style", style);
-    
-    // Update CSS variables based on theme+style combination
-    document.documentElement.className = `${theme} ${style}`;
   }, [theme, style, isMounted]);
 
   const toggleTheme = () => {
