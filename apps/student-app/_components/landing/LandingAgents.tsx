@@ -34,7 +34,7 @@ export function LandingAgents() {
             id="agents-heading"
             eyebrow="For hostel owners & agents"
             title={`Earn ${currency} ${commission} every time a student books your hostel`}
-            description={`Students pay a one-time ${currency} ${studentFee} access fee. ${currency} ${commission} of that goes straight to your agent wallet — paid out to MoMo or bank within hours of clearance.`}
+            description={`Students pay a one-time ${currency} ${studentFee} access fee. ${currency} ${commission} of that goes straight to your agent wallet paid out to MoMo or bank within hours of clearance.`}
             icon={<Banknote className="h-4 w-4" aria-hidden />}
           />
         </div>
@@ -42,7 +42,7 @@ export function LandingAgents() {
         {/* Earnings split card */}
         <div
           data-reveal
-          className="mt-10 grid gap-4 rounded-3xl border border-gray-200 bg-gradient-to-br from-orange-50 via-white to-white p-6 sm:grid-cols-3 sm:p-8"
+          className="mt-10 grid gap-4 rounded-3xl border border-gray-200 bg-gradient-to-br from-orange-50 via-white to-white p-6 sm:grid-cols-2 sm:p-8"
         >
           <SplitRow
             label="Student pays"
@@ -56,12 +56,6 @@ export function LandingAgents() {
             sub="Per confirmed booking"
             accent="text-orange-700"
             highlight
-          />
-          <SplitRow
-            label="Platform"
-            value={`${currency} ${platformShare}`}
-            sub="Verification, support, ops"
-            accent="text-gray-900"
           />
         </div>
 
@@ -196,28 +190,24 @@ function SplitRow({
 }) {
   return (
     <div
-      className={`flex flex-col rounded-2xl p-5 transition-colors ${
-        highlight ? "bg-gray-900 text-white" : "bg-white"
-      }`}
+      className={`flex flex-col rounded-2xl p-5 transition-colors ${highlight ? "bg-gray-900 text-white" : "bg-white"
+        }`}
     >
       <p
-        className={`text-xs font-medium uppercase tracking-wider ${
-          highlight ? "text-orange-300" : "text-gray-500"
-        }`}
+        className={`text-xs font-medium uppercase tracking-wider ${highlight ? "text-orange-300" : "text-gray-500"
+          }`}
       >
         {label}
       </p>
       <p
-        className={`mt-2 text-3xl font-bold tracking-tight ${
-          highlight ? "text-orange-300" : accent
-        }`}
+        className={`mt-2 text-3xl font-bold tracking-tight ${highlight ? "text-orange-300" : accent
+          }`}
       >
         {value}
       </p>
       <p
-        className={`mt-1 text-xs ${
-          highlight ? "text-gray-300" : "text-gray-500"
-        }`}
+        className={`mt-1 text-xs ${highlight ? "text-gray-300" : "text-gray-500"
+          }`}
       >
         {sub}
       </p>

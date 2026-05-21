@@ -40,7 +40,7 @@ export function LandingHero() {
               <p className="ah-anim-fade-up ah-delay-150 mb-8 max-w-xl text-black sm:text-lg md:text-xl">
                 Discover, compare, and book off-campus hostels near Legon, KNUST,
                 UCC and UEW. Verified reviews, proximity filtering, and secure
-                checkout — all on {BRAND.name}.
+                checkout all on {BRAND.name}.
               </p>
               <div className="ah-anim-fade-up ah-delay-225 flex flex-col gap-4 sm:flex-row">
                 <Link

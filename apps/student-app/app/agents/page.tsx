@@ -29,7 +29,7 @@ const agentFaqs = [
   {
     question: 'How am I paid?',
     answer:
-      `Via ${AGENT_ECONOMICS.payoutMethods.join(', ')} — whichever you registered during verification. ` +
+      `Via ${AGENT_ECONOMICS.payoutMethods.join(', ')}  whichever you registered during verification. ` +
       'You can change your payout method by contacting support.',
   },
   {
@@ -93,7 +93,7 @@ export default function AgentsPage() {
       <section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <p className="inline-block text-[11px] font-bold uppercase tracking-widest bg-orange-50 text-[#FF6A00] px-3 py-1 rounded-full mb-5">
-            Hostel Agent Program — Ghana
+            Hostel Agent Program  Ghana
           </p>
           <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-none mb-5">
             List your hostel.
@@ -209,7 +209,7 @@ export default function AgentsPage() {
               body={
                 <>
                   Every confirmed booking credits <strong>GHC {AGENT_ECONOMICS.agentCommissionPerBooking}</strong> to your wallet.
-                  After a {AGENT_ECONOMICS.holdHours}-hour clearance period, request a payout —
+                  After a {AGENT_ECONOMICS.holdHours}-hour clearance period, request a payout
                   minimum GHC {AGENT_ECONOMICS.minimumPayoutAmount}.
                 </>
               }
@@ -235,7 +235,7 @@ export default function AgentsPage() {
             />
             <Feature
               title="Built for Ghana"
-              body="Designed around Ghanaian universities, payment habits, and the hostel market — not a generic global tool."
+              body="Designed around Ghanaian universities, payment habits, and the hostel market  not a generic global tool."
             />
             <Feature
               title="Verified students"
@@ -247,7 +247,7 @@ export default function AgentsPage() {
             />
             <Feature
               title="Free to join"
-              body="No setup fee, no monthly subscription. You only earn — we cover the rest."
+              body="No setup fee, no monthly subscription. You only earn  we cover the rest."
             />
           </div>
         </div>
@@ -331,11 +331,10 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl p-6 ${
-        highlight
+      className={`rounded-2xl p-6 ${highlight
           ? 'bg-black text-white shadow-xl shadow-black/10'
           : 'bg-white border border-gray-200'
-      }`}
+        }`}
     >
       <p className={`text-[11px] font-bold uppercase tracking-widest mb-3 ${highlight ? 'text-[#FF6A00]' : 'text-gray-500'}`}>
         {eyebrow}
