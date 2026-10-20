@@ -1,0 +1,66 @@
+name: Supabase keep-alive
+
+# Free-tier Supabase projects are paused after ~7 days without database
+# activity. This job runs a tiny real query through PostgREST (which executes
+# SQL in Postgres) so the project registers activity. Health endpoints such as
+# /auth/v1/health do NOT count, because they never reach the database.
+
+on:
+  schedule:
+    # 09:17 UTC on every 3rd day of the month (max gap between runs: 3 days).
+    - cron: "17 9 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query Supabase via REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Optional repo variable to override the table that is read.
+          KEEPALIVE_TABLE: ${{ vars.SUPABASE_KEEPALIVE_TABLE || 'hostels' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY must be set under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          url="${SUPABASE_URL%/}/rest/v1/${KEEPALIVE_TABLE}?select=id&limit=1"
+
+          # Legacy anon keys are JWTs (eyJ...) and are also sent as a Bearer
+          # token. New publishable keys (sb_publishable_...) are not JWTs and
+          # must only be sent in the apikey header.
+          headers=(-H "apikey: ${SUPABASE_ANON_KEY}" -H "Accept: application/json")
+          case "${SUPABASE_ANON_KEY}" in
+            eyJ*) headers+=(-H "Authorization: Bearer ${SUPABASE_ANON_KEY}") ;;
+          esac
+
+          status=$(curl -sS -o response.json -w '%{http_code}' \
+            --retry 3 --retry-delay 10 --retry-all-errors --max-time 30 \
+            "${headers[@]}" "${url}") || status="000"
+
+          echo "GET /rest/v1/${KEEPALIVE_TABLE}?select=id&limit=1 -> HTTP ${status}"
+
+          if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+            # Print only the PostgREST error code/message, never row data.
+            jq -r '"\(.code // "") \(.message // "")"' response.json 2>/dev/null || true
+            echo "::error::Supabase keep-alive query failed with HTTP ${status}. If the project is paused, resume it in the dashboard; if the table is missing or not readable by the anon role, set the SUPABASE_KEEPALIVE_TABLE repo variable."
+            exit 1
+          fi
+
+          # An empty array still means the query ran in Postgres (e.g. RLS
+          # filtered every row), which is all we need. Don't log row contents.
+          echo "Rows returned: $(jq 'length' response.json 2>/dev/null || echo '?')"
+          rm -f response.json

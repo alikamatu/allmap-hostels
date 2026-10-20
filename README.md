@@ -79,6 +79,29 @@ This project is managed as a **Turborepo Monorepo**, ensuring code consistency, 
 
 ---
 
+## ⏰ Supabase Keep-Alive (GitHub Actions)
+
+The Supabase project (`allmap-hostels`) is on the Free plan, which pauses projects after ~7 days without database activity. The workflow [`.github/workflows/supabase-keepalive.yml`](./.github/workflows/supabase-keepalive.yml) runs every 3 days (and on demand via **Actions → Supabase keep-alive → Run workflow**). It performs a real, read-only database query through the REST API:
+
+```
+GET {SUPABASE_URL}/rest/v1/hostels?select=id&limit=1
+```
+
+The job fails on any non-2xx response. An empty result (`[]`) is still a success, since the query ran in Postgres.
+
+Set these under **Settings → Secrets and variables → Actions → Secrets** (values come from the Supabase dashboard, **Project Settings → API**):
+
+| Secret | Value |
+| :--- | :--- |
+| `SUPABASE_URL` | Project URL, e.g. `https://<project-ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | The public `anon` key (legacy, `eyJ...`) or the publishable key (`sb_publishable_...`). **Never** use the `service_role`/secret key. |
+
+Optional: set the repository **variable** `SUPABASE_KEEPALIVE_TABLE` (under the **Variables** tab) to read a different table with an `id` column if `hostels` doesn't exist or isn't granted to the anon role.
+
+> Note: scheduled workflows only run from the default branch, and GitHub disables them in public repos after 60 days with no repository activity. Re-enable it from the Actions tab if that happens.
+
+---
+
 ## 📖 Documentation
 
 - [Architecture Guide](./ARCHITECTURE.md) - Deep dive into design decisions and data flow.
