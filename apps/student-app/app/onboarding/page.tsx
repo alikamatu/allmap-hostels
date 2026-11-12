@@ -91,8 +91,12 @@ export default function OnboardingPage() {
           typeof cachedUser.name === "string" ? cachedUser.name : "";
         const phoneVal =
           typeof cachedUser.phone === "string" ? cachedUser.phone : "";
-        const genderVal =
-          typeof cachedUser.gender === "string" ? cachedUser.gender : "";
+        const rawGender =
+          typeof cachedUser.gender === "string"
+            ? cachedUser.gender.toLowerCase()
+            : "";
+        const genderVal: "" | "male" | "female" =
+          rawGender === "male" || rawGender === "female" ? rawGender : "";
         const schoolVal =
           typeof cachedUser.school_id === "string"
             ? cachedUser.school_id

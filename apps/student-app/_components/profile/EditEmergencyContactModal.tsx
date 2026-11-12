@@ -23,7 +23,8 @@ interface EditEmergencyContactModalProps {
   isOpen: boolean;
   onClose: () => void;
   emergencyContact: EmergencyContact;
-  onUpdate: (updatedProfile: Record<string, unknown>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onUpdate: (updatedProfile: any) => void;
 }
 
 const relationships = [

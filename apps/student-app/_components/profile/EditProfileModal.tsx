@@ -15,7 +15,8 @@ interface EditProfileModalProps {
     phone: string;
     gender?: string;
   };
-  onUpdate: (updatedProfile: Record<string, unknown>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onUpdate: (updatedProfile: any) => void;
 }
 
 export default function EditProfileModal({
