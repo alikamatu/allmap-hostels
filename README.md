@@ -24,14 +24,19 @@ Explore the AllMap ecosystem across our production environments:
 This project is managed as a **Turborepo Monorepo**, ensuring code consistency, shared types, and efficient build caching across the entire ecosystem.
 
 ### Applications (`/apps`)
-| Application | Description | Tech Stack |
-| :--- | :--- | :--- |
-| **`admin-app`** | Property management for hostel owners. Handles rooms, bookings, and revenue. | Next.js 15, React 19, Framer Motion |
-| **`student-app`** | User-facing discovery and booking platform for students. | Next.js 15/16, HeroUI, Tailwind 4 |
-| **`super-admin`** | Platform-level governance, user management, and system analytics. | Next.js 15, Radix UI, Recharts |
+
+| Application       | Description                                                                  | Tech Stack                          |
+| :---------------- | :--------------------------------------------------------------------------- | :---------------------------------- |
+| **`admin-app`**   | Property management for hostel owners. Handles rooms, bookings, and revenue. | Next.js 15, React 19, Framer Motion |
+| **`student-app`** | User-facing discovery and booking platform for students.                     | Next.js 15/16, HeroUI, Tailwind 4   |
+| **`super-admin`** | Platform-level governance, user management, and system analytics.            | Next.js 15, Radix UI, Recharts      |
+| **`api`**         | Centralized backend REST API, database ORM, auth, and business logic.        | NestJS 11, Prisma, PostgreSQL       |
 
 ### Shared Packages (`/packages`)
+
 - **`@repo/ui`**: A curated library of shared React components ensuring visual consistency.
+- **`@repo/shared`**: Shared state contexts, hooks, and services.
+- **`@repo/types`**: Shared domain models and TypeScript interfaces.
 - **`@repo/typescript-config`**: Standardized TS configurations for strict type safety.
 - **`@repo/eslint-config`**: Shared linting rules (Next.js, Prettier) for code quality.
 
@@ -39,7 +44,9 @@ This project is managed as a **Turborepo Monorepo**, ensuring code consistency, 
 
 ## 🛠 Technology Stack
 
-- **Core**: React 19 & Next.js 15 (App Router)
+- **Frontend Core**: React 19 & Next.js 15 (App Router)
+- **Backend Core**: NestJS 11 & Express
+- **Database & ORM**: PostgreSQL, Supabase, Prisma ORM
 - **Type Safety**: TypeScript 5+
 - **Styling**: Tailwind CSS 4 (Beta/Native)
 - **State Management**: React Context & Hooks
@@ -52,22 +59,27 @@ This project is managed as a **Turborepo Monorepo**, ensuring code consistency, 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - [Node.js](https://nodejs.org/) (>= 18.0.0)
 - [npm](https://www.npmjs.com/) (>= 10.0.0)
 
 ### Local Development
+
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/alikamatu/allmap-hostels.git
    cd allmap-hostels
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Run all apps in development mode**:
+
    ```bash
    npm run dev
    ```

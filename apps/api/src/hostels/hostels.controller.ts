@@ -1,0 +1,282 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+  UploadedFiles,
+  UseInterceptors,
+  Request,
+  HttpStatus,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
+import { HostelsService } from './hostels.service';
+import { CreateHostelDto } from './dto/create-hostel.dto';
+import { UserRole } from '@prisma/client';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { UpdateHostelDto } from './dto/update-hostel.dto';
+import { File as MulterFile } from 'multer';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { RoomType } from '@prisma/client';
+import { RoomsService } from 'src/rooms/rooms.service';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+
+@Controller('hostels')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(CacheInterceptor)
+export class HostelsController {
+  constructor(
+    private readonly hostelsService: HostelsService,
+    private readonly roomsService: RoomsService,
+  ) {}
+
+  @Post('create')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  @UseInterceptors(FilesInterceptor('images'))
+  create(
+    @Request() req: any,
+    @Body() createHostelDto: CreateHostelDto,
+    @UploadedFiles() files: MulterFile[],
+  ) {
+    console.log('Request user:', req.user);
+    console.log('CreateHostelDto adminId:', createHostelDto.adminId);
+
+    // Extract admin ID from JWT token in request or from DTO
+    const adminId = createHostelDto.adminId || req.user?.id || req.user?.sub;
+
+    if (!adminId) {
+      throw new Error('Unable to determine admin ID from request');
+    }
+
+    return this.hostelsService.create(adminId, createHostelDto, files);
+  }
+
+  // Updated: Fetch hostels for the current user only
+  @Get('fetch')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  async findUserHostels(@CurrentUser() user: any) {
+    const userId = user.id || user.sub;
+
+    console.log(
+      `User ${userId} with role ${user.role} requesting their hostels`,
+    );
+
+    // All users (including super admins) get only their own hostels by default
+    // This ensures data security and proper access control
+    return this.hostelsService.findByAdminId(userId);
+  }
+
+  // Optional: Add a separate endpoint for super admins to get all hostels
+  @Get('all')
+  @CacheKey('all_hostels')
+  @CacheTTL(30) // Cache for 30 seconds
+  findAllHostels() {
+    return this.hostelsService.findAll();
+  }
+
+  @Get('admin/:adminId')
+  @Roles(UserRole.super_admin)
+  findHostelsByAdmin(@Param('adminId') adminId: string) {
+    return this.hostelsService.findByAdminId(adminId);
+  }
+
+  @Get(':id/contact')
+  @ApiOperation({ summary: 'Get hostel contact details' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Hostel contact details retrieved successfully',
+  })
+  async getHostelContact(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hostelsService.getHostelContact(id);
+  }
+
+  @Patch(':id/verify')
+  @Roles(UserRole.super_admin)
+  @ApiOperation({
+    summary: 'Set hostel verification status (super admin only)',
+  })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Verification status updated successfully',
+  })
+  async setVerified(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('isVerified') isVerified: boolean,
+  ) {
+    return this.hostelsService.setVerified(id, Boolean(isVerified));
+  }
+
+  @Patch(':id/booking-status')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  @ApiOperation({ summary: 'Toggle hostel booking availability' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Booking status updated successfully',
+  })
+  async toggleBookingStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('acceptingBookings') acceptingBookings: boolean,
+    @CurrentUser() user: any,
+  ) {
+    if (user.role !== UserRole.super_admin) {
+      await this.hostelsService.verifyOwnership(id, user.id || user.sub);
+    }
+
+    return this.hostelsService.toggleBookingStatus(id, acceptingBookings);
+  }
+
+  @Get(':id/room-types')
+  @ApiOperation({ summary: 'Get room types for a hostel' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Room types retrieved successfully',
+  })
+  async getRoomTypesByHostelId(
+    @Param('id', ParseUUIDPipe) hostelId: string,
+    @CurrentUser() user: any,
+  ): Promise<RoomType[]> {
+    // Ensure user can only access their own hostel data (unless super admin)
+    if (user.role !== UserRole.super_admin) {
+      await this.hostelsService.verifyOwnership(hostelId, user.id || user.sub);
+    }
+
+    return this.hostelsService.getRoomTypesByHostelId(hostelId);
+  }
+
+  @Get('students/:id/room-types')
+  @ApiOperation({ summary: 'Get room types for a hostel' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Room types retrieved successfully',
+  })
+  async getRoomTypesByHostelIdStudent(
+    @Param('id', ParseUUIDPipe) hostelId: string,
+  ): Promise<RoomType[]> {
+    return this.hostelsService.getRoomTypesByHostelId(hostelId);
+  }
+
+  @Get(':id/room-types/:roomTypeId')
+  @ApiOperation({ summary: 'Get room type details by ID' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiParam({ name: 'roomTypeId', description: 'Room Type ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Room type details retrieved successfully',
+  })
+  async getRoomTypeById(
+    @Param('id', ParseUUIDPipe) hostelId: string,
+    @Param('roomTypeId', ParseUUIDPipe) roomTypeId: string,
+    @CurrentUser() user: any,
+  ): Promise<RoomType> {
+    // Ensure user can only access their own hostel data (unless super admin)
+    if (user.role !== UserRole.super_admin) {
+      await this.hostelsService.verifyOwnership(hostelId, user.id || user.sub);
+    }
+
+    return this.roomsService.getRoomTypeById(hostelId, roomTypeId);
+  }
+
+  @Get(':id/students/room-types/:roomTypeId')
+  @ApiOperation({ summary: 'Get room type details by ID' })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  @ApiParam({ name: 'roomTypeId', description: 'Room Type ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Room type details retrieved successfully',
+  })
+  async getRoomTypeByIdStudent(
+    @Param('id', ParseUUIDPipe) hostelId: string,
+    @Param('roomTypeId', ParseUUIDPipe) roomTypeId: string,
+  ): Promise<RoomType> {
+    return this.roomsService.getRoomTypeById(hostelId, roomTypeId);
+  }
+
+  @Get(':id')
+  @CacheKey('hostel_' + ':id')
+  @CacheTTL(30) // Cache for 30 seconds
+  findOne(@Param('id') id: string) {
+    return this.hostelsService.findOne(id);
+  }
+
+  @Get(':id/nearby-places')
+  @CacheTTL(300)
+  @ApiOperation({
+    summary: 'Get nearby places for a hostel via SerpAPI Google Maps',
+  })
+  @ApiParam({ name: 'id', description: 'Hostel ID' })
+  getNearbyPlaces(
+    @Param('id') id: string,
+    @Query('category') category?: string,
+  ) {
+    return this.hostelsService.findNearbyPlaces(id, category);
+  }
+
+  @Put(':id')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  @UseInterceptors(FilesInterceptor('images'))
+  async update(
+    @Param('id') id: string,
+    @Body() updateHostelDto: UpdateHostelDto,
+    @UploadedFiles() files: MulterFile[],
+    @CurrentUser() user: any,
+  ) {
+    // Ensure user can only update their own hostels (unless super admin)
+    if (user.role !== UserRole.super_admin) {
+      await this.hostelsService.verifyOwnership(id, user.id || user.sub);
+    }
+
+    return this.hostelsService.update(id, updateHostelDto, files);
+  }
+
+  @Delete(':id/image')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  removeImage(
+    @Param('id') id: string,
+    @Body('imageUrl') imageUrl: string,
+    @CurrentUser() user: any,
+  ) {
+    // Ensure user can only modify their own hostels (unless super admin)
+    if (user.role !== UserRole.super_admin) {
+      this.hostelsService.verifyOwnership(id, user.id || user.sub);
+    }
+
+    return this.hostelsService.removeImage(id, imageUrl);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+    // Ensure user can only delete their own hostels (unless super admin)
+    if (user.role !== UserRole.super_admin) {
+      await this.hostelsService.verifyOwnership(id, user.id || user.sub);
+    }
+
+    return this.hostelsService.remove(id);
+  }
+}
+
+@Controller('hostels')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class HostelsDashboardController {
+  constructor(private readonly hostelsService: HostelsService) {}
+
+  @Get('dashboard/summary')
+  @Roles(UserRole.hostel_admin, UserRole.super_admin)
+  getDashboardSummary(@CurrentUser() user: any) {
+    return this.hostelsService.getDashboardSummary(user.id || user.sub);
+  }
+}

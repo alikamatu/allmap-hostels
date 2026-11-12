@@ -1,6 +1,6 @@
-import { AuthTab } from '@/types/auth';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AuthTab } from "@/types/auth";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
   BarChart3,
@@ -8,7 +8,7 @@ import {
   CreditCard,
   Star,
   User,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface HeroSectionProps {
   activeTab: AuthTab;
@@ -18,41 +18,41 @@ interface HeroSectionProps {
 const adminFeatures = [
   {
     Icon: Building2,
-    text: 'Manage all your hostel listings in one place',
+    text: "Manage all your hostel listings in one place",
   },
   {
     Icon: BarChart3,
-    text: 'Real-time booking analytics & revenue tracking',
+    text: "Real-time booking analytics & revenue tracking",
   },
   {
     Icon: Banknote,
-    text: 'GHS 35 commission per confirmed student booking',
+    text: "GHS 35 commission per confirmed student booking",
   },
   {
     Icon: CreditCard,
-    text: 'Instant payouts via MoMo or bank transfer',
+    text: "Instant payouts via MoMo or bank transfer",
   },
   {
     Icon: Star,
-    text: 'Guest reviews & reputation management tools',
+    text: "Guest reviews & reputation management tools",
   },
 ];
 
 const heroContent = {
   login: {
-    headline: 'Welcome back,\nAdmin',
-    sub: 'Manage your hostels, track earnings,\nand handle bookings — all from one dashboard.',
+    headline: "Welcome back,\nAdmin",
+    sub: "Manage your hostels, track earnings,\nand handle bookings — all from one dashboard.",
   },
   signup: {
-    headline: 'List Your Hostel\nwith AllmapHostels',
-    sub: 'Join hostel owners across Ghana earning commissions\nfrom verified student bookings every day.',
+    headline: "List Your Hostel\nwith AllmapHostels",
+    sub: "Join hostel owners across Ghana earning commissions\nfrom verified student bookings every day.",
   },
 };
 
 const trustAvatars = [
-  { initials: 'KA', color: 'bg-emerald-500' },
-  { initials: 'EO', color: 'bg-blue-500' },
-  { initials: 'MS', color: 'bg-orange-500' },
+  { initials: "KA", color: "bg-emerald-500" },
+  { initials: "EO", color: "bg-blue-500" },
+  { initials: "MS", color: "bg-orange-500" },
 ];
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -101,15 +101,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         <div className="text-gray-400 text-sm">
-          {activeTab === 'login' ? 'New here?' : 'Have an account?'}{' '}
+          {activeTab === "login" ? "New here?" : "Have an account?"}{" "}
           <button
             type="button"
             onClick={() =>
-              onSwitchTab(activeTab === 'login' ? 'signup' : 'login')
+              onSwitchTab(activeTab === "login" ? "signup" : "login")
             }
             className="text-[#FF6A00] font-semibold hover:brightness-125 transition-all"
           >
-            {activeTab === 'login' ? 'Sign up' : 'Sign in'}
+            {activeTab === "login" ? "Sign up" : "Sign in"}
           </button>
         </div>
       </div>
@@ -165,9 +165,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
           <div>
             <p className="text-white text-[13px] font-semibold">
-              500+ hostel admins
+              15+ hostel admins
             </p>
-            <p className="text-gray-500 text-[11px]">earning on AllmapHostels</p>
+            <p className="text-gray-500 text-[11px]">
+              earning on AllmapHostels
+            </p>
           </div>
         </div>
 

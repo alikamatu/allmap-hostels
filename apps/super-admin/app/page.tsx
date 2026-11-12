@@ -1,358 +1,296 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiTerminal, FiAlertCircle, FiShield } from 'react-icons/fi';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
-  CardFooter 
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  MapPin,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const LoginPage = () => {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [terminalText, setTerminalText] = useState<string[]>([]);
-  const [systemReady, setSystemReady] = useState(false);
 
-  useEffect(() => {
-    const bootSequence = [
-      "INITIALIZING SYSTEM...",
-      "LOADING SECURITY PROTOCOLS...",
-      "SCANNING BIOMETRICS...",
-      "DECRYPTING AUTHENTICATION MODULE...",
-      "ESTABLISHING SECURE CONNECTION...",
-      "SYSTEM STATUS: ONLINE",
-      "WELCOME, MASTER ADMIN"
-    ];
-    
-    let currentIndex = 0;
-    const interval = setInterval(() => {
-      if (currentIndex < bootSequence.length) {
-        setTerminalText(prev => [...prev, bootSequence[currentIndex]]);
-        currentIndex++;
-      } else {
-        clearInterval(interval);
-        setSystemReady(true);
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
     setError(null);
-    
+
     try {
       await login(email, password, rememberMe);
-      router.push('/dashboard');
+      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'CRITICAL AUTHENTICATION FAILURE');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to sign in. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Enhanced Matrix Rain with varying speeds and characters
-  const MatrixRain = () => {
-    return (
-      <div className="absolute inset-0 overflow-hidden opacity-[0.15] z-0 pointer-events-none">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute text-green-500 text-sm font-mono whitespace-nowrap"
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ 
-              y: '110vh', 
-              opacity: [0, 0.8, 0],
-            }}
-            transition={{
-              duration: 5 + Math.random() * 15,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: "linear"
-            }}
-            style={{
-              left: `${(i / 30) * 100}%`,
-              writingMode: 'vertical-rl',
-              textOrientation: 'upright'
-            }}
-          >
-            {Array.from({ length: 20 }).map(() => 
-              String.fromCharCode(0x30A0 + Math.random() * 96)
-            ).join('')}
-          </motion.div>
-        ))}
-      </div>
-    );
-  };
-
-  const TerminalOutput = () => (
-    <motion.div 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="fixed bottom-6 left-6 w-96 hidden lg:block z-50"
-    >
-      <div className="bg-black/90 border border-green-500/30 rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.1)] overflow-hidden">
-        <div className="bg-green-950/20 px-3 py-2 border-b border-green-500/20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FiTerminal className="text-green-500 size-3" />
-            <span className="text-[10px] font-mono text-green-500 uppercase tracking-widest">Security Terminal</span>
-          </div>
-          <div className="flex gap-1.5">
-            <div className="size-2 rounded-full bg-red-500/50" />
-            <div className="size-2 rounded-full bg-yellow-500/50" />
-            <div className="size-2 rounded-full bg-green-500/50" />
-          </div>
-        </div>
-        <div className="p-4 font-mono text-[11px] h-48 overflow-y-auto scrollbar-hide text-green-400/80 space-y-1">
-          {terminalText.map((line, index) => (
-            <div key={index} className="flex gap-2">
-              <span className="text-green-600 opacity-50">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-              <span className="text-green-500">{" >>> "}</span>
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {line}
-              </motion.span>
-            </div>
-          ))}
-          <div className="animate-pulse inline-block w-2 h-3 bg-green-500 ml-1 translate-y-0.5" />
-        </div>
-      </div>
-    </motion.div>
-  );
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#020617] overflow-hidden relative selection:bg-green-500/30 selection:text-green-200">
-      <MatrixRain />
-      <TerminalOutput />
-      
-      {/* Dynamic Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-
-      {/* Glow Effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-green-500/5 blur-[120px] rounded-full pointer-events-none" />
-      
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-30 w-full max-w-md px-6"
+    <div className="relative min-h-screen overflow-hidden bg-white text-[#1d2722] selection:bg-[#f5dfcd] selection:text-[#1d2722]">
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-0 h-full w-[72%] opacity-70"
+        viewBox="0 0 1100 900"
+        preserveAspectRatio="xMidYMid slice"
+        fill="none"
       >
-        <Card className="bg-black/60 backdrop-blur-xl border-green-500/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden relative">
-          {/* Animated border line */}
-          <motion.div 
-            className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500 to-transparent"
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          />
+        <defs>
+          <pattern
+            id="map-grid"
+            width="42"
+            height="42"
+            patternUnits="userSpaceOnUse"
+          >
+            <path d="M 42 0 L 0 0 0 42" stroke="#f0f3f1" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="1100" height="900" fill="url(#map-grid)" />
+        <path
+          d="M-90 644C86 562 80 448 260 422c173-25 210 104 374 54 116-36 110-147 248-170 99-17 163 16 257-28"
+          stroke="#e9eeeb"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M-72 690C107 606 119 498 286 473c158-24 199 98 354 53 130-38 129-152 271-176 98-16 168 17 251-23"
+          stroke="#e9eeeb"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M-54 738C129 653 157 549 314 526c142-21 189 92 333 51 142-40 147-160 291-182 96-15 170 20 246-17"
+          stroke="#e9eeeb"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M128 900c22-93 99-120 112-198 14-86-52-126-35-211 15-75 87-102 95-178 8-69-30-112-16-184"
+          stroke="#edf1ee"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M177 900c24-89 95-113 108-190 15-85-48-125-30-208 16-76 82-101 94-176 11-68-22-113-4-181"
+          stroke="#edf1ee"
+          strokeWidth="1.5"
+        />
+        <circle cx="637" cy="470" r="5" fill="#e98136" />
+        <circle cx="637" cy="470" r="13" stroke="#e98136" strokeOpacity=".22" />
+        <path d="M637 483v19" stroke="#e98136" strokeOpacity=".5" />
+      </svg>
 
-          <CardHeader className="space-y-4 pb-8">
-            <div className="flex justify-center">
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className="size-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center relative group"
+      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col px-6 sm:px-10 lg:px-16">
+        <header className="flex h-20 shrink-0 items-center justify-between border-b border-[#edf0ee]">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f7eee7] text-[#d66b25]">
+              <MapPin className="size-5" strokeWidth={2.2} aria-hidden="true" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-[15px] font-semibold">allmap</p>
+              <p className="mt-1 text-[10px] font-medium tracking-[0.13em] text-[#8b9690]">
+                ADMINISTRATION
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-[#68746d]">
+            <ShieldCheck className="size-4 text-[#668271]" aria-hidden="true" />
+            <span className="hidden sm:inline">
+              Secure administrator access
+            </span>
+            <span className="sm:hidden">Secure access</span>
+          </div>
+        </header>
+
+        <main className="grid flex-1 items-center gap-16 py-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-24 lg:py-16">
+          <section className="relative z-10 hidden max-w-xl lg:block">
+            <p className="mb-6 text-xs font-semibold tracking-[0.14em] text-[#d66b25]">
+              ALLMAP OPERATIONS
+            </p>
+            <h1 className="max-w-lg text-5xl font-semibold leading-[1.08] text-[#202923] sm:text-6xl">
+              A clearer view of every stay.
+            </h1>
+            <p className="mt-6 max-w-md text-base leading-7 text-[#69756e]">
+              Manage properties, bookings, and payments from one considered
+              workspace.
+            </p>
+            <div className="mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-[#e8edea] pt-5 text-[11px] font-medium tracking-[0.1em] text-[#7b8780]">
+              <span>PROPERTIES</span>
+              <span
+                className="size-1 rounded-full bg-[#e98136]"
+                aria-hidden="true"
+              />
+              <span>BOOKINGS</span>
+              <span
+                className="size-1 rounded-full bg-[#e98136]"
+                aria-hidden="true"
+              />
+              <span>PAYMENTS</span>
+            </div>
+          </section>
+
+          <section
+            className="relative z-10 w-full max-w-md justify-self-center lg:justify-self-end"
+            aria-labelledby="sign-in-title"
+          >
+            <div className="mb-8">
+              <p className="mb-3 text-xs font-medium text-[#d66b25]">
+                ADMIN PORTAL
+              </p>
+              <h2
+                id="sign-in-title"
+                className="text-3xl font-semibold text-[#202923]"
               >
-                <div className="absolute inset-0 bg-green-500/20 blur-xl group-hover:blur-2xl transition-all rounded-full opacity-50" />
-                <FiShield className="text-green-500 text-3xl relative z-10" />
-              </motion.div>
+                Sign in
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[#758078]">
+                Use your administrator account to continue.
+              </p>
             </div>
-            
-            <div className="text-center space-y-1.5">
-              <CardTitle className="text-2xl font-mono tracking-tighter text-white uppercase flex items-center justify-center gap-3">
-                <span className="text-green-500">::</span> 
-                Access Point
-                <span className="text-green-500">::</span>
-              </CardTitle>
-              <CardDescription className="font-mono text-green-700 text-[11px] uppercase tracking-widest">
-                Protocol Override Required
-              </CardDescription>
-            </div>
-          </CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-green-600 ml-1">
-                    Identification_ID
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                      <FiMail className="text-green-700 group-focus-within:text-green-400 transition-colors" />
-                    </div>
-                    <Input
-                      type="email"
-                      placeholder="admin@nexus.sys"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-black/40 border-green-900/50 focus-visible:ring-green-500/50 focus-visible:border-green-500/50 text-green-100 pl-10 h-12 font-mono text-sm placeholder:text-green-900 transition-all duration-300"
-                    />
-                  </div>
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-[#35423a]"
+                >
+                  Email address
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  inputMode="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  className="h-12 rounded-lg border-[#dce2de] bg-white px-3.5 text-sm text-[#202923] shadow-none placeholder:text-[#a0aaa4] focus-visible:border-[#d9874c] focus-visible:ring-[#d9874c]/20"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-green-600 ml-1">
-                    Security_Cipher
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                      <FiLock className="text-green-700 group-focus-within:text-green-400 transition-colors" />
-                    </div>
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="bg-black/40 border-green-900/50 focus-visible:ring-green-500/50 focus-visible:border-green-500/50 text-green-100 pl-10 pr-10 h-12 font-mono text-sm placeholder:text-green-900 transition-all duration-300"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-green-900 hover:text-green-400 transition-colors"
-                    >
-                      {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
-                  </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-[#35423a]"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    className="h-12 rounded-lg border-[#dce2de] bg-white px-3.5 pr-12 text-sm text-[#202923] shadow-none placeholder:text-[#a0aaa4] focus-visible:border-[#d9874c] focus-visible:ring-[#d9874c]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#7b8780] transition-colors hover:text-[#26372e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d9874c]"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-[18px]" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-[18px]" aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
+              <div className="flex min-h-6 items-center justify-between gap-4 pt-1">
+                <label
+                  htmlFor="remember"
+                  className="flex cursor-pointer items-center gap-2.5 text-sm text-[#5f6b64]"
+                >
                   <input
                     type="checkbox"
                     id="remember"
                     checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="size-3.5 rounded border-green-900 bg-black/40 text-green-600 focus:ring-green-500 focus:ring-offset-black"
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="size-4 accent-[#d66b25] focus-visible:ring-2 focus-visible:ring-[#d9874c] focus-visible:ring-offset-2"
                   />
-                  <label htmlFor="remember" className="text-[10px] font-mono text-green-700 uppercase cursor-pointer hover:text-green-500 transition-colors">
-                    Stay_Connected
-                  </label>
-                </div>
-                <button type="button" className="text-[10px] font-mono text-green-700 uppercase hover:text-green-400 transition-colors">
-                  Lost_Key?
-                </button>
+                  Keep me signed in
+                </label>
+                <span className="text-xs text-[#98a19b]">
+                  Administrator only
+                </span>
               </div>
 
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                  >
-                    <Alert variant="destructive" className="bg-red-950/20 border-red-500/20 text-red-400 font-mono text-[11px] py-3">
-                      <FiAlertCircle className="size-4" />
-                      <AlertTitle className="uppercase tracking-widest mb-1 text-[10px]">Security Alert</AlertTitle>
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {error && (
+                <div
+                  role="alert"
+                  className="flex gap-2.5 rounded-lg border border-[#f1d5d0] bg-[#fff8f6] px-3.5 py-3 text-sm text-[#a33d2f]"
+                >
+                  <TriangleAlert
+                    className="mt-0.5 size-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <p>{error}</p>
+                </div>
+              )}
 
-              <Button 
-                type="submit" 
-                disabled={isLoading || !systemReady}
-                className={cn(
-                  "w-full h-12 font-mono uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group",
-                  systemReady 
-                    ? "bg-green-600 hover:bg-green-500 text-black shadow-[0_0_20px_rgba(34,197,94,0.3)]" 
-                    : "bg-green-950/50 text-green-800 cursor-not-allowed"
-                )}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="group mt-2 h-12 w-full justify-between rounded-lg bg-[#202923] px-4 text-sm font-medium text-white shadow-none transition-colors hover:bg-[#34443a] disabled:cursor-not-allowed disabled:opacity-70"
               >
+                <span>{isLoading ? "Signing in…" : "Continue"}</span>
                 {isLoading ? (
-                  <div className="flex items-center gap-3">
-                    <div className="size-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    Bypassing...
-                  </div>
+                  <span
+                    className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
+                    aria-label="Loading"
+                  />
                 ) : (
-                  <>
-                    <span className="relative z-10">Initialize Session</span>
-                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
-                  </>
+                  <ArrowRight
+                    className="size-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
                 )}
               </Button>
             </form>
-          </CardContent>
 
-          <CardFooter className="flex flex-col gap-4 pt-2 pb-8">
-            <div className="flex items-center gap-4 w-full">
-              <div className="h-[1px] flex-1 bg-green-500/10" />
-              <span className="text-[9px] font-mono text-green-900 uppercase">Authorization Required</span>
-              <div className="h-[1px] flex-1 bg-green-500/10" />
+            <div className="mt-7 flex items-start gap-2.5 border-t border-[#e8edea] pt-5 text-xs leading-5 text-[#7b8780]">
+              <LockKeyhole
+                className="mt-0.5 size-4 shrink-0 text-[#9aa49e]"
+                aria-hidden="true"
+              />
+              <p>
+                Access is restricted to authorized Allmap administrators. Your
+                credentials are handled securely.
+              </p>
             </div>
-            
-            <p className="text-[10px] font-mono text-green-700 uppercase">
-              Unauthorized Access? 
-              <button className="ml-2 text-green-500 hover:text-green-300 transition-colors">Request_Node</button>
-            </p>
-          </CardFooter>
+          </section>
+        </main>
 
-          {/* Corner accents */}
-          <div className="absolute top-0 left-0 size-4 border-t-2 border-l-2 border-green-500/30" />
-          <div className="absolute top-0 right-0 size-4 border-t-2 border-r-2 border-green-500/30" />
-          <div className="absolute bottom-0 left-0 size-4 border-b-2 border-l-2 border-green-500/30" />
-          <div className="absolute bottom-0 right-0 size-4 border-b-2 border-r-2 border-green-500/30" />
-        </Card>
-      </motion.div>
-
-      {/* Audio visualization effect (fake) */}
-      <div className="fixed bottom-10 right-10 flex items-end gap-1 h-12 opacity-20 hidden md:flex">
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="w-1 bg-green-500"
-            animate={{ height: [4, 20, 8, 30, 4] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
-          />
-        ))}
+        <footer className="flex min-h-14 items-center justify-between gap-4 border-t border-[#edf0ee] text-[11px] text-[#929c96]">
+          <span>© 2026 Allmap</span>
+          <span>Administrator sign in</span>
+        </footer>
       </div>
-
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        @keyframes glitch {
-          0% { transform: translate(0); }
-          20% { transform: translate(-2px, 2px); }
-          40% { transform: translate(-2px, -2px); }
-          60% { transform: translate(2px, 2px); }
-          80% { transform: translate(2px, -2px); }
-          100% { transform: translate(0); }
-        }
-        .glitch-text:hover {
-          animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
-        }
-      `}</style>
     </div>
   );
 };

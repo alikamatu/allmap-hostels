@@ -7,6 +7,10 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "api:dev": "turbo run dev --filter=api",
+    "api:build": "turbo run build --filter=api",
+    "api:lint": "turbo run lint --filter=api",
+    "api:check-types": "turbo run check-types --filter=api",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -27,6 +31,10 @@
     ],
     "apps/super-admin/**/*.{ts,tsx,js,jsx}": [
       "eslint --config apps/super-admin/eslint.config.mjs --fix",
+      "prettier --write"
+    ],
+    "apps/api/**/*.{ts,js}": [
+      "eslint --config apps/api/eslint.config.mjs --fix",
       "prettier --write"
     ],
     "packages/ui/**/*.{ts,tsx,js,jsx}": [

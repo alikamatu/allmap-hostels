@@ -5,6 +5,7 @@ This document outlines the technical architecture, design patterns, and system d
 ## 🏛 Monorepo Strategy
 
 The project utilizes a **Turborepo** monorepo structure. This allows us to:
+
 - **Share Code**: Common UI components and utility functions are shared across all applications.
 - **Unified Configuration**: ESLint, TypeScript, and Tailwind configurations are centralized.
 - **Optimized Builds**: Remote caching and task orchestration significantly speed up CI/CD.
@@ -12,18 +13,25 @@ The project utilizes a **Turborepo** monorepo structure. This allows us to:
 ## 🗺 System Design
 
 ### Client Applications
+
 1. **Student App**: Serves as the primary entry point. Orchestrates the discovery and booking flow. Optimized for mobile-first interactions.
 2. **Admin App**: A sophisticated management dashboard. Features include bulk room creation, booking management, and real-time inventory tracking.
 3. **Super Admin**: The "God-view" of the platform. Focuses on user verification, hostel approval, and financial oversight.
 
+### Backend Services
+
+1. **API (`apps/api`)**: Centralized NestJS REST API server handling authentication, user roles/verification, booking lifecycles, hostel/room management, paystack transactions, commissions, caching (Redis), and database access via Prisma ORM.
+
 ### Data Flow
+
 - **API Interaction**: Applications communicate with a centralized backend via RESTful APIs.
 - **State Management**: Primarily relies on React Server Components for data fetching, with Client-side Context for auth and interactive UI states.
-- **Authentication**: JWT-based authentication managed through a unified `AuthContext` shared (conceptually) across apps.
+- **Authentication**: JWT-based authentication managed through a unified `AuthContext` and guards across apps.
 
 ## 🎨 Design System
 
 We follow a **Component-Driven Development** (CDD) approach.
+
 - **`@repo/ui`**: Contains atomic and molecular components (Button, Card, Input).
 - **Tailwind CSS 4**: Utilizes the latest CSS-in-JS capabilities and high-performance JIT compilation.
 - **Framer Motion**: Standardized animation durations and easings for a cohesive "premium" feel.
