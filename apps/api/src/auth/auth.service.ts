@@ -73,10 +73,15 @@ export class AuthService {
 
     if (existingUser) {
       // If user exists but doesn't have google_id, update it
-      if (!existingUser.googleId) {
+      if (!existingUser.googleId || !existingUser.termsAccepted) {
         return await this.prisma.user.update({
           where: { id: existingUser.id },
-          data: { googleId: google_id },
+          data: {
+            googleId: existingUser.googleId || google_id,
+            termsAccepted: true,
+            termsAcceptedAt: existingUser.termsAcceptedAt || new Date(),
+            isVerified: true,
+          },
         });
       }
       return existingUser;
@@ -91,6 +96,8 @@ export class AuthService {
         passwordHash: 'GOOGLE_AUTH_USER', // Placeholder for required field
         role: 'student',
         isVerified: true, // Google emails are verified
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
         onboardingCompleted: false,
         status: 'verified',
       },
@@ -443,7 +450,11 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      if (user.role !== 'super_admin' && !user.termsAccepted) {
+      if (
+        user.role !== 'super_admin' &&
+        !user.termsAccepted &&
+        !user.googleId
+      ) {
         throw new UnauthorizedException(
           'Please accept the terms and conditions to continue',
         );
@@ -466,6 +477,12 @@ export class AuthService {
           phone: user.phone || undefined,
           gender: user.gender || undefined,
           school_id: user.schoolId || undefined,
+          emergency_contact_name: user.emergencyContactName || undefined,
+          emergency_contact_phone: user.emergencyContactPhone || undefined,
+          emergency_contact_relationship:
+            user.emergencyContactRelationship || undefined,
+          emergency_contact_email: user.emergencyContactEmail || undefined,
+          last_onboarding_step: user.lastOnboardingStep || 1,
           terms_accepted: user.termsAccepted,
           onboarding_completed: user.onboardingCompleted || false,
         },

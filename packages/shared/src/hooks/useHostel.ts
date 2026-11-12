@@ -1,19 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Hostel } from '@repo/types';
 import { bookingService } from '../service/bookingService';
 
+// Module-level in-memory cache for ultra-fast instant page transitions
+interface CacheEntry {
+  data: Hostel;
+  timestamp: number;
+}
+const hostelCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+
 export const useHostel = (hostelId: string) => {
-  const [hostel, setHostel] = useState<Hostel | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = hostelCache.get(hostelId);
+  const isCacheValid = cached && (Date.now() - cached.timestamp < CACHE_TTL_MS);
+
+  const [hostel, setHostel] = useState<Hostel | null>(cached ? cached.data : null);
+  const [loading, setLoading] = useState<boolean>(!isCacheValid);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
 
-  const fetchHostel = useCallback(async () => {
+  const fetchHostel = useCallback(async (isBackgroundRevalidation = false) => {
     try {
-      setLoading(true);
+      if (!isBackgroundRevalidation) {
+        setLoading(true);
+      }
       setError(null);
       
       const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
@@ -22,30 +43,28 @@ export const useHostel = (hostelId: string) => {
         throw new Error('User not authenticated');
       }
       
-      console.log(`Fetching hostel ${hostelId} with token present:`, !!accessToken);
-      
-      // Fetch hostel details, contact info, and room types in parallel
+      // Fetch hostel details, contact info, and room types concurrently
       const [hostelRes, contactRes, roomTypesRes] = await Promise.all([
         fetch(`${apiUrl}/hostels/${hostelId}`, {
           headers: { 
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          cache: 'no-store'
+          cache: 'default'
         }),
         fetch(`${apiUrl}/hostels/${hostelId}/contact`, {
           headers: { 
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          cache: 'no-store'
+          cache: 'default'
         }),
         fetch(`${apiUrl}/hostels/students/${hostelId}/room-types`, {
           headers: { 
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          cache: 'no-store'
+          cache: 'default'
         })
       ]);
 
@@ -65,12 +84,9 @@ export const useHostel = (hostelId: string) => {
       if (contactRes.ok) {
         try {
           contactInfo = await contactRes.json();
-          console.log('Contact info fetched:', contactInfo);
         } catch (contactError) {
           console.warn('Failed to parse contact info:', contactError);
         }
-      } else {
-        console.warn('Contact endpoint returned:', contactRes.status, contactRes.statusText);
       }
 
       // Check room types response
@@ -85,99 +101,110 @@ export const useHostel = (hostelId: string) => {
       }
 
       const hostelData = await hostelRes.json();
-      const roomTypes = await roomTypesRes.json();
+      const rawRoomTypes = await roomTypesRes.json();
 
-      console.log('Hostel data received:', {
-        id: hostelData.id,
-        name: hostelData.name,
-        isVerified: hostelData.is_verified,
-        acceptingBookings: hostelData.accepting_bookings
-      });
+      // Immediate baseline room types so page renders without waiting for room availability check
+      const baseRoomTypes = (rawRoomTypes || []).map((rt: any) => ({
+        ...rt,
+        availableRooms: typeof rt.availableRooms === 'number' ? rt.availableRooms : (rt.available_rooms ?? 0),
+        totalRooms: typeof rt.totalRooms === 'number' ? rt.totalRooms : (rt.total_rooms ?? 0),
+      }));
 
-      console.log('Room types received:', roomTypes.length);
-
-      // Enhance room types with availability data
-      const roomTypesWithAvailability = await Promise.all(
-        roomTypes.map(async (roomType: any) => {
-          try {
-            const today = new Date();
-            const nextMonth = new Date();
-            nextMonth.setMonth(today.getMonth() + 1);
-            
-            const availability = await bookingService.checkRoomAvailability(
-              hostelId,
-              today.toISOString().split('T')[0],
-              nextMonth.toISOString().split('T')[0],
-              roomType.id
-            );
-            
-            const availableRoomsOfType = availability.rooms.filter(
-              (room: any) => room.roomType.id === roomType.id
-            ).length;
-            
-            return {
-              ...roomType,
-              availableRooms: availableRoomsOfType,
-              totalRooms: roomType.totalRooms || availableRoomsOfType
-            };
-          } catch (error) {
-            console.error(`Failed to check availability for room type ${roomType.id}:`, error);
-            return {
-              ...roomType,
-              availableRooms: roomType.availableRooms || 0,
-              totalRooms: roomType.totalRooms || 0
-            };
-          }
-        })
-      );
-
-      // Generate random rating and reviews (you can replace with actual data if available)
-      const rating = Math.round((Math.random() * 3 + 2) * 10) / 10;
-      const reviews = Math.floor(Math.random() * 100) + 10;
-
-      // Build the complete hostel object
-      const completeHostel = { 
+      // Build the initial hostel object
+      const initialHostel: Hostel = { 
         ...hostelData, 
         contact: contactInfo || hostelData.contact || {
           admin: 'Hostel Administrator',
           phone: hostelData.phone || 'Not available',
           email: hostelData.email || 'Not available'
         },
-        roomTypes: roomTypesWithAvailability, 
-        rating, 
-        reviews 
+        roomTypes: baseRoomTypes, 
+        rating: typeof hostelData.rating === 'number' ? hostelData.rating : 0, 
+        reviews: typeof hostelData.total_reviews === 'number' ? hostelData.total_reviews : (hostelData.reviews?.length || 0)
       };
 
-      console.log('Setting hostel state:', {
-        id: completeHostel.id,
-        name: completeHostel.name,
-        roomTypes: completeHostel.roomTypes.length,
-        contactAvailable: !!completeHostel.contact
-      });
+      if (!isMountedRef.current) return;
 
-      setHostel(completeHostel);
+      // Update state and cache immediately so the user sees all hostel data instantly
+      setHostel(initialHostel);
+      setLoading(false);
+      hostelCache.set(hostelId, { data: initialHostel, timestamp: Date.now() });
+
+      // In the background, asynchronously verify exact room availability if needed
+      if (rawRoomTypes.length > 0 && hostelData.accepting_bookings) {
+        Promise.all(
+          rawRoomTypes.map(async (roomType: any) => {
+            try {
+              const today = new Date();
+              const nextMonth = new Date();
+              nextMonth.setMonth(today.getMonth() + 1);
+              
+              const availability = await bookingService.checkRoomAvailability(
+                hostelId,
+                today.toISOString().split('T')[0],
+                nextMonth.toISOString().split('T')[0],
+                roomType.id
+              );
+              
+              const availableRoomsOfType = availability?.rooms ? availability.rooms.filter(
+                (room: any) => room.roomType.id === roomType.id
+              ).length : (roomType.availableRooms ?? 0);
+              
+              return {
+                ...roomType,
+                availableRooms: availableRoomsOfType,
+                totalRooms: roomType.totalRooms || availableRoomsOfType
+              };
+            } catch (err) {
+              return {
+                ...roomType,
+                availableRooms: roomType.availableRooms || 0,
+                totalRooms: roomType.totalRooms || 0
+              };
+            }
+          })
+        ).then((updatedRoomTypes) => {
+          if (!isMountedRef.current) return;
+          setHostel(prev => {
+            if (!prev) return null;
+            const updated = { ...prev, roomTypes: updatedRoomTypes };
+            hostelCache.set(hostelId, { data: updated, timestamp: Date.now() });
+            return updated;
+          });
+        }).catch(() => {
+          // Silent fallback to baseline room types
+        });
+      }
+
     } catch (err: any) {
       console.error('Error in fetchHostel:', err);
-      setError(err.message || 'Unable to fetch hostel details. Please try again.');
-    } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setError(err.message || 'Unable to fetch hostel details. Please try again.');
+        setLoading(false);
+      }
     }
   }, [hostelId, apiUrl]);
 
   useEffect(() => {
     if (hostelId) {
-      console.log('useHostel useEffect triggered for ID:', hostelId);
-      fetchHostel();
+      const entry = hostelCache.get(hostelId);
+      const valid = entry && (Date.now() - entry.timestamp < CACHE_TTL_MS);
+      if (valid) {
+        setHostel(entry.data);
+        setLoading(false);
+        // Stale-while-revalidate in background
+        fetchHostel(true);
+      } else {
+        fetchHostel(false);
+      }
     } else {
-      console.error('No hostel ID provided to useHostel hook');
       setError('Hostel ID is required');
       setLoading(false);
     }
   }, [hostelId, fetchHostel]);
 
   const refetch = useCallback(() => {
-    console.log('Refetching hostel data...');
-    fetchHostel();
+    fetchHostel(false);
   }, [fetchHostel]);
 
   return {

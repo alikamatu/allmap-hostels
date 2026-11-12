@@ -14,6 +14,8 @@ interface OnboardingData {
 
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  syncUser: () => User | null;
   register: (name: string, phone: string, email: string, password: string, role: string, termsAccepted: boolean, gender?: string) => Promise<void>;
   login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
@@ -53,15 +55,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
+  const syncUser = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        return parsed;
       } catch (e) {
         localStorage.removeItem('user');
+        setUser(null);
+        return null;
       }
+    } else {
+      setUser(null);
+      return null;
     }
+  };
+
+  useEffect(() => {
+    syncUser();
+
+    // Listen to storage events and custom auth-change events
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user' || e.key === 'access_token') {
+        syncUser();
+      }
+    };
+
+    const handleCustomAuthChange = () => {
+      syncUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-state-change', handleCustomAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-change', handleCustomAuthChange);
+    };
   }, []);
 
   const getAuthToken = () => {
@@ -109,7 +141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(loginData.user);
 
       // Check if onboarding is completed and profile is detailed
-      const isProfileComplete = !!(loginData.user.onboarding_completed && loginData.user.school_id && loginData.user.gender);
+      const onboardingCompleted = loginData.user.onboarding_completed ?? (loginData.user as any).onboardingCompleted;
+      const schoolId = loginData.user.school_id ?? (loginData.user as any).schoolId;
+      const isProfileComplete = !!(onboardingCompleted && schoolId && loginData.user.gender && loginData.user.phone);
       if (!isProfileComplete) {
         router.push('/onboarding');
       } else {
@@ -145,7 +179,7 @@ const logout = () => {
     gender?: string
   ) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register-student`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register-student`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +211,7 @@ const logout = () => {
   const completeOnboarding = async (data: OnboardingData) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/onboarding`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +247,7 @@ const logout = () => {
   const getOnboardingStatus = async (): Promise<OnboardingStatus> => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/onboarding/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/onboarding/status`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -280,6 +314,8 @@ const logout = () => {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      setUser,
+      syncUser,
       register, 
       login, 
       logout, 

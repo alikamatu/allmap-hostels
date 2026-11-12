@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import { useAuth } from '@repo/shared/context';
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiAlertTriangle } from 'react-icons/fi';
-import Link from 'next/link';
-import { Booking } from '@repo/types';
-import { useBookings } from '@/lib/hooks/useBookings';
-import WriteReviewModal from '@/_components/hostels/WriteReviewModal';
-import { BookingStats } from '@/_components/bookings/BookingStats';
-import { BookingList } from '@/_components/bookings/BookingList';
-import { QuickActions } from '@/_components/bookings/QuickActions';
-import { BookingDetailsModal } from '@/_components/bookings/BookingDetailsModal';
-import { CancelBookingModal } from '@/_components/bookings/CancelBookingModal';
+import { useAuth } from "@repo/shared/context";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FiAlertTriangle } from "react-icons/fi";
+import Link from "next/link";
+import { Booking } from "@repo/types";
+import { useBookings } from "@/lib/hooks/useBookings";
+import WriteReviewModal from "@/_components/hostels/WriteReviewModal";
+import { BookingStats } from "@/_components/bookings/BookingStats";
+import { BookingList } from "@/_components/bookings/BookingList";
+import { QuickActions } from "@/_components/bookings/QuickActions";
+import { BookingDetailsModal } from "@/_components/bookings/BookingDetailsModal";
+import { CancelBookingModal } from "@/_components/bookings/CancelBookingModal";
+import { BookingsPageSkeleton } from "@/_components/common/ui/PageSkeletons";
 
 export default function UserBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -22,13 +23,8 @@ export default function UserBookingsPage() {
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
   const { user } = useAuth();
-  const { 
-    bookings, 
-    loading, 
-    error, 
-    fetchUserBookings, 
-    cancelBooking, 
-  } = useBookings();
+  const { bookings, loading, error, fetchUserBookings, cancelBooking } =
+    useBookings();
 
   useEffect(() => {
     if (user?.id) {
@@ -68,7 +64,7 @@ export default function UserBookingsPage() {
     <div className="min-h-screen bg-white">
       {/* Modals */}
       {reviewBooking && (
-        <WriteReviewModal 
+        <WriteReviewModal
           isOpen={showReviewModal}
           onClose={() => {
             setShowReviewModal(false);
@@ -105,9 +101,9 @@ export default function UserBookingsPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <Header />
-        
+
         <BookingStats bookings={bookings} />
-        
+
         <BookingList
           bookings={bookings}
           onViewDetails={handleViewDetails}
@@ -115,10 +111,7 @@ export default function UserBookingsPage() {
         />
 
         {bookings.length > 0 && (
-          <QuickActions 
-            bookings={bookings} 
-            onRefresh={fetchUserBookings} 
-          />
+          <QuickActions bookings={bookings} onRefresh={fetchUserBookings} />
         )}
       </div>
     </div>
@@ -126,28 +119,21 @@ export default function UserBookingsPage() {
 }
 
 // Supporting components for the main page
-const LoadingState = () => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    className="h-[400px] sm:h-[600px] flex items-center justify-center"
-  >
-    <div className="relative flex w-64 animate-pulse gap-2 p-4">
-      <div className="h-12 w-12 bg-slate-400"></div>
-      <div className="flex-1">
-        <div className="mb-1 h-5 w-3/5 bg-slate-400 text-lg"></div>
-        <div className="h-5 w-[90%] bg-slate-400 text-sm"></div>
-      </div>
-      <div className="absolute bottom-5 right-0 h-4 w-4 bg-slate-400"></div>
-    </div>
-  </motion.div>
-);
+const LoadingState = () => <BookingsPageSkeleton />;
 
-const ErrorState = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+const ErrorState = ({
+  error,
+  onRetry,
+}: {
+  error: string;
+  onRetry: () => void;
+}) => (
   <div className="min-h-screen flex items-center justify-center bg-white">
     <div className="text-center">
       <FiAlertTriangle className="text-black text-5xl mx-auto mb-4" />
-      <h2 className="text-xl font-bold text-black mb-2">Error Loading Bookings</h2>
+      <h2 className="text-xl font-bold text-black mb-2">
+        Error Loading Bookings
+      </h2>
       <p className="text-gray-800 mb-4">{error}</p>
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -163,7 +149,9 @@ const ErrorState = ({ error, onRetry }: { error: string; onRetry: () => void }) 
 const AuthenticationRequired = () => (
   <div className="min-h-screen flex items-center justify-center bg-white">
     <div className="text-center">
-      <h2 className="text-xl font-bold text-black mb-2">Authentication Required</h2>
+      <h2 className="text-xl font-bold text-black mb-2">
+        Authentication Required
+      </h2>
       <p className="text-gray-800 mb-4">Please log in to view your bookings</p>
       <Link
         href="/auth/login"

@@ -1,56 +1,73 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { 
-  Alert, 
-  AlertDescription, 
-  Card, 
-  CardContent, 
-  Heading, 
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  Card,
+  CardContent,
+  Heading,
   Text,
-  cn
+  cn,
 } from "@repo/ui";
-import { LoginForm } from '@/_components/auth/LoginForm';
-import { SignupForm } from '@/_components/auth/SignupForm';
-import { ForgotPasswordModal } from '@/_components/auth/ForgotPasswordModal';
-import { BrandLogo, BRAND } from '@/_components/brand';
+import { LoginForm } from "@/_components/auth/LoginForm";
+import { SignupForm } from "@/_components/auth/SignupForm";
+import { ForgotPasswordModal } from "@/_components/auth/ForgotPasswordModal";
+import { BrandLogo, BRAND } from "@/_components/brand";
+import { AuthPageSkeleton } from "@/_components/common/ui/PageSkeletons";
 
 function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetToken, setResetToken] = useState('');
+  const [resetToken, setResetToken] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'destructive' | 'idle' }>({
-    message: '',
-    type: 'idle'
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "destructive" | "idle";
+  }>({
+    message: "",
+    type: "idle",
   });
 
   useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'signup' || tab === 'register') {
-      setActiveTab('signup');
+    const tab = searchParams.get("tab");
+    if (tab === "signup" || tab === "register") {
+      setActiveTab("signup");
     } else {
-      setActiveTab('login');
+      setActiveTab("login");
     }
 
-    const token = searchParams.get('resetToken');
+    const token = searchParams.get("resetToken");
     if (token) {
       setResetToken(token);
       setShowResetModal(true);
       setShowResetForm(true);
     }
+
+    const errorParam = searchParams.get("error");
+    if (errorParam === "auth_failed") {
+      setNotification({
+        message: "Google authentication failed. Please try again.",
+        type: "destructive",
+      });
+    } else if (errorParam === "missing_params") {
+      setNotification({
+        message: "Authentication session expired. Please sign in again.",
+        type: "destructive",
+      });
+    }
   }, [searchParams]);
 
   useEffect(() => {
-    if (notification.type !== 'idle') {
+    if (notification.type !== "idle") {
       const timer = setTimeout(() => {
-        setNotification({ message: '', type: 'idle' });
+        setNotification({ message: "", type: "idle" });
       }, 5000);
       return () => clearTimeout(timer);
     }
@@ -58,32 +75,32 @@ function AuthPageContent() {
 
   const handleAuthError = (message: string) => {
     if (!message) {
-      setNotification({ message: '', type: 'idle' });
+      setNotification({ message: "", type: "idle" });
       return;
     }
-    setNotification({ message, type: 'destructive' });
+    setNotification({ message, type: "destructive" });
   };
 
   const handleSignupSuccess = () => {
     setSignupSuccess(true);
-    setNotification({ 
-      message: 'Account created successfully! You can now sign in.', 
-      type: 'success' 
+    setNotification({
+      message: "Account created successfully! You can now sign in.",
+      type: "success",
     });
     // Optional: Switch to login after a delay
     setTimeout(() => {
       setSignupSuccess(false);
-      setActiveTab('login');
-      router.push('/login');
+      setActiveTab("login");
+      router.push("/login");
     }, 3000);
   };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 font-sans relative overflow-hidden">
       {/* Background patterns could go here */}
-      
+
       <AnimatePresence>
-        {notification.type !== 'idle' && (
+        {notification.type !== "idle" && (
           <motion.div
             initial={{ opacity: 0, y: -50, scale: 0.95 }}
             animate={{ opacity: 1, y: 20, scale: 1 }}
@@ -91,20 +108,24 @@ function AuthPageContent() {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4"
           >
-            <Alert 
-              variant={notification.type} 
+            <Alert
+              variant={notification.type}
               className={cn(
                 "shadow-xl border flex items-center py-4 px-5 gap-3 rounded-2xl backdrop-blur-xl",
-                notification.type === 'success' 
-                  ? "bg-green-50/95 border-green-200" 
-                  : "bg-red-50/95 border-red-200"
+                notification.type === "success"
+                  ? "bg-green-50/95 border-green-200"
+                  : "bg-red-50/95 border-red-200",
               )}
             >
-              <div className={cn(
-                "flex-shrink-0 p-2 rounded-full",
-                notification.type === 'success' ? "bg-green-100" : "bg-red-100"
-              )}>
-                {notification.type === 'success' ? (
+              <div
+                className={cn(
+                  "flex-shrink-0 p-2 rounded-full",
+                  notification.type === "success"
+                    ? "bg-green-100"
+                    : "bg-red-100",
+                )}
+              >
+                {notification.type === "success" ? (
                   <CheckCircle2 className="h-5 w-5 text-green-700" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-red-700" />
@@ -130,30 +151,37 @@ function AuthPageContent() {
               <div className="flex justify-center mb-4">
                 <BrandLogo size={44} showText={false} />
               </div>
-              <Heading variant="h2" className="text-black mb-2 font-bold tracking-tight">{BRAND.name}</Heading>
-              <Text className="text-black font-medium">Manage your stay with ease</Text>
+              <Heading
+                variant="h2"
+                className="text-black mb-2 font-bold tracking-tight"
+              >
+                {BRAND.name}
+              </Heading>
+              <Text className="text-black font-medium">
+                Manage your stay with ease
+              </Text>
             </div>
 
             {/* Tab Switcher */}
             <div className="flex border-b border-gray-200 mb-8 p-1 bg-gray-100 rounded-xl">
               <button
-                onClick={() => setActiveTab('login')}
+                onClick={() => setActiveTab("login")}
                 className={cn(
                   "flex-1 py-2.5 text-sm font-bold transition-all duration-300 rounded-lg",
-                  activeTab === 'login' 
-                    ? "bg-white text-black shadow-sm" 
-                    : "text-black hover:bg-gray-200"
+                  activeTab === "login"
+                    ? "bg-white text-black shadow-sm"
+                    : "text-black hover:bg-gray-200",
                 )}
               >
                 Sign In
               </button>
               <button
-                onClick={() => setActiveTab('signup')}
+                onClick={() => setActiveTab("signup")}
                 className={cn(
                   "flex-1 py-2.5 text-sm font-bold transition-all duration-300 rounded-lg",
-                  activeTab === 'signup' 
-                    ? "bg-white text-black shadow-sm" 
-                    : "text-black hover:bg-gray-200"
+                  activeTab === "signup"
+                    ? "bg-white text-black shadow-sm"
+                    : "text-black hover:bg-gray-200",
                 )}
               >
                 Create Account
@@ -162,7 +190,7 @@ function AuthPageContent() {
 
             <div className="relative min-h-[400px]">
               <AnimatePresence mode="wait">
-                {signupSuccess && activeTab === 'signup' ? (
+                {signupSuccess && activeTab === "signup" ? (
                   <motion.div
                     key="success"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -173,10 +201,15 @@ function AuthPageContent() {
                     <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
                       <CheckCircle2 className="h-10 w-10 text-green-600" />
                     </div>
-                    <Heading variant="h3" className="mb-2">Registration Successful!</Heading>
-                    <Text className="text-gray-500 mb-8">Your account has been created. We are redirecting you to the login page.</Text>
+                    <Heading variant="h3" className="mb-2">
+                      Registration Successful!
+                    </Heading>
+                    <Text className="text-gray-500 mb-8">
+                      Your account has been created. We are redirecting you to
+                      the login page.
+                    </Text>
                   </motion.div>
-                ) : activeTab === 'login' ? (
+                ) : activeTab === "login" ? (
                   <motion.div
                     key="login"
                     initial={{ opacity: 0, x: -20 }}
@@ -184,9 +217,9 @@ function AuthPageContent() {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <LoginForm 
-                      onForgotPassword={() => setShowResetModal(true)} 
-                      onError={handleAuthError} 
+                    <LoginForm
+                      onForgotPassword={() => setShowResetModal(true)}
+                      onError={handleAuthError}
                     />
                   </motion.div>
                 ) : (
@@ -197,9 +230,9 @@ function AuthPageContent() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <SignupForm 
-                      onSuccess={handleSignupSuccess} 
-                      onError={handleAuthError} 
+                    <SignupForm
+                      onSuccess={handleSignupSuccess}
+                      onError={handleAuthError}
                     />
                   </motion.div>
                 )}
@@ -215,8 +248,8 @@ function AuthPageContent() {
         </div>
       </motion.div>
 
-      <ForgotPasswordModal 
-        isOpen={showResetModal} 
+      <ForgotPasswordModal
+        isOpen={showResetModal}
         onClose={() => setShowResetModal(false)}
         initialToken={resetToken}
         initialShowResetForm={showResetForm}
@@ -227,7 +260,7 @@ function AuthPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><div className="animate-spin h-8 w-8 border-b-2 border-black"></div></div>}>
+    <Suspense fallback={<AuthPageSkeleton />}>
       <AuthPageContent />
     </Suspense>
   );

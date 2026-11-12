@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { School, OnboardingData } from '@repo/types';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+
 export const useOnboarding = () => {
   const [schools, setSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +22,7 @@ export const useOnboarding = () => {
         params.append('search', search);
       }
       
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/schools?${params.toString()}`;
+      const url = `${API_URL}/schools?${params.toString()}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -43,7 +45,7 @@ export const useOnboarding = () => {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       if (!token) return null;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
+      const response = await fetch(`${API_URL}/auth/user-profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -80,7 +82,7 @@ export const useOnboarding = () => {
       setError('');
 
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/onboarding`, {
+      const response = await fetch(`${API_URL}/auth/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +100,7 @@ export const useOnboarding = () => {
 
       // Update local storage with full updated profile
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const newUserData = { ...userData, ...updatedProfile };
+      const newUserData = { ...userData, ...data, ...updatedProfile };
       localStorage.setItem('user', JSON.stringify(newUserData));
 
       setOnboardingData(prev => ({ ...prev, ...data }));

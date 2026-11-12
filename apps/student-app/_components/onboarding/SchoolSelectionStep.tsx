@@ -1,153 +1,235 @@
-"use client"
+"use client";
 
-import { motion } from 'framer-motion';
-import { 
-  Building2, 
-  ChevronRight, 
-  CheckCircle2, 
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  GraduationCap,
+  ArrowRight,
   ArrowLeft,
-  Search
-} from 'lucide-react';
-import { School } from '@repo/types';
-import { Button, Input, Card } from '@repo/ui';
-import React from 'react';
-
-const formatLocation = (location: unknown): string => {
-  if (!location) return 'Unknown location';
-  if (typeof location === 'string') return location;
-  if (typeof location === 'object' && location !== null) {
-    const loc = location as { coordinates?: number[]; type?: string };
-    if (loc.coordinates?.length === 2) {
-      return `Lat: ${loc.coordinates[1].toFixed(3)}, Lng: ${loc.coordinates[0].toFixed(3)}`;
-    }
-    return loc.type || 'Invalid location';
-  }
-  return String(location);
-};
+  CheckCircle2,
+} from "lucide-react";
+import { FaSpinner } from "react-icons/fa";
+import { Button, Input, Text, cn } from "@repo/ui";
+import { School, OnboardingData } from "@repo/types";
+import { SchoolListSkeleton } from "@/_components/common/ui/PageSkeletons";
 
 interface SchoolSelectionStepProps {
   schools: School[];
   loadingSchools: boolean;
-  searchQuery: string;
-  selectedSchool: string;
-  onSearchChange: (query: string) => void;
-  onSchoolSelect: (schoolId: string) => void;
+  onFetchSchools: (search: string) => void;
   onNext: () => void;
   onBack: () => void;
-  error?: string;
+  submitOnboarding: (data: Partial<OnboardingData>) => Promise<boolean>;
+  initialSchoolId?: string;
+  isLoading: boolean;
+  onError: (error: string) => void;
 }
 
-export const SchoolSelectionStep: React.FC<SchoolSelectionStepProps> = ({
+const formatSchoolLocation = (location?: string) => {
+  if (
+    !location ||
+    location.startsWith("POINT(") ||
+    location.startsWith("0101")
+  ) {
+    return "Main Campus";
+  }
+  return location;
+};
+
+export const SchoolSelectionStep = ({
   schools,
   loadingSchools,
-  searchQuery,
-  selectedSchool,
-  onSearchChange,
-  onSchoolSelect,
+  onFetchSchools,
   onNext,
   onBack,
-  error,
-}) => {
+  submitOnboarding,
+  initialSchoolId,
+  isLoading,
+  onError,
+}: SchoolSelectionStepProps) => {
+  const [selectedSchool, setSelectedSchool] = useState(initialSchoolId || "");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      onFetchSchools(value);
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (initialSchoolId) {
+      setSelectedSchool(initialSchoolId);
+    }
+  }, [initialSchoolId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    onError("");
+
+    if (!selectedSchool) {
+      onError("Please select your university or college to continue");
+      return;
+    }
+
+    const success = await submitOnboarding({
+      school_id: selectedSchool,
+      last_onboarding_step: 3,
+    });
+
+    if (success) {
+      onNext();
+    }
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="space-y-8"
-    >
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-black rounded-lg">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <h2 className="text-2xl font-black tracking-tight uppercase">Select School</h2>
-        </div>
-        <p className="text-gray-500 font-medium">
-          Choose your institution to connect with relevant hostels.
-        </p>
-      </div>
-
-      <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="space-y-1"
+      >
         <Input
+          id="schoolSearch"
+          type="text"
+          label="Search Your University or College"
           icon={Search}
-          placeholder="Search schools by name or location..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="bg-gray-50 border-none rounded-2xl h-14 px-12"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleSearchChange(e.target.value)
+          }
+          className="bg-white border-b border-gray-200 focus:border-black rounded-none px-0 pl-10 h-11 sm:h-12"
+          placeholder="Type school name or domain..."
         />
+      </motion.div>
 
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-          {loadingSchools ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="w-8 h-8 border-2 border-black border-t-transparent rounded-full"
-              />
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading schools...</p>
-            </div>
-          ) : schools.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-400 font-medium italic">
-                {searchQuery ? 'No schools found matching your search.' : 'No schools available.'}
-              </p>
-            </div>
-          ) : (
-            schools.map((school) => {
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        {loadingSchools ? (
+          <SchoolListSkeleton />
+        ) : schools.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 px-4 border border-gray-200 rounded-xl bg-gray-50 text-center">
+            <GraduationCap className="h-8 w-8 text-gray-400 mb-2" />
+            <Text className="text-black font-semibold text-sm">
+              {searchQuery
+                ? "No matching schools found"
+                : "No schools available"}
+            </Text>
+            <Text variant="sm" className="text-gray-500 mt-1 text-xs">
+              {searchQuery
+                ? "Try searching with a different keyword"
+                : "Please check your connection and try again"}
+            </Text>
+          </div>
+        ) : (
+          <div className="max-h-[250px] overflow-y-auto space-y-2 pr-1">
+            {schools.map((school) => {
               const isSelected = selectedSchool === school.id;
               return (
-                <motion.button
+                <button
                   key={school.id}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  onClick={() => onSchoolSelect(school.id)}
-                  className={`w-full text-left transition-all duration-300 rounded-3xl p-6 border ${
-                    isSelected 
-                      ? 'bg-black border-black shadow-xl shadow-black/10' 
-                      : 'bg-white border-gray-100 hover:border-gray-300'
-                  }`}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSchool(school.id);
+                    onError("");
+                  }}
+                  className={cn(
+                    "w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between gap-3",
+                    isSelected
+                      ? "bg-black text-white border-black shadow-sm"
+                      : "bg-white text-black border-gray-200 hover:border-black hover:bg-gray-50",
+                  )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h3 className={`font-bold text-lg ${isSelected ? 'text-white' : 'text-gray-900'}`}>
-                        {school.name}
-                      </h3>
-                      <p className={`text-xs font-medium uppercase tracking-wider ${isSelected ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {formatLocation(school.location)} • {school.domain ?? 'General'}
-                      </p>
-                    </div>
-                    {isSelected && (
-                      <div className="bg-white/20 p-2 rounded-full">
-                        <CheckCircle2 className="w-5 h-5 text-white" />
-                      </div>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        "text-sm font-bold truncate",
+                        isSelected ? "text-white" : "text-black",
+                      )}
+                    >
+                      {school.name}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-xs truncate mt-0.5",
+                        isSelected ? "text-gray-300" : "text-gray-500",
+                      )}
+                    >
+                      {school.domain ? `${school.domain} • ` : ""}
+                      {formatSchoolLocation(school.location)}
+                    </p>
                   </div>
-                </motion.button>
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border",
+                      isSelected
+                        ? "border-white bg-white text-black"
+                        : "border-gray-300",
+                    )}
+                  >
+                    {isSelected && <CheckCircle2 className="h-4 w-4" />}
+                  </div>
+                </button>
               );
-            })
-          )}
-        </div>
-      </div>
+            })}
+          </div>
+        )}
+      </motion.div>
 
-      <div className="pt-6 flex flex-col sm:flex-row gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.15 }}
+        className="flex flex-col-reverse sm:flex-row gap-3 pt-2"
+      >
         <Button
+          type="button"
           onClick={onBack}
-          variant="outline"
-          className="h-14 px-8 rounded-2xl border-gray-200 font-bold flex items-center justify-center gap-2"
+          disabled={isLoading}
+          className="w-full sm:w-1/3 h-14 border border-gray-200 bg-white hover:bg-gray-50 text-black font-bold transition-all duration-300 rounded-xl flex items-center justify-center gap-2 shadow-sm"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
         </Button>
+
         <Button
-          onClick={onNext}
-          disabled={!selectedSchool}
-          className="flex-1 h-14 rounded-2xl bg-black text-white font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          type="submit"
+          disabled={!selectedSchool || isLoading}
+          className={cn(
+            "w-full sm:w-2/3 h-14 text-white font-medium transition-all duration-300 relative overflow-hidden bg-black hover:bg-gray-800",
+            (!selectedSchool || isLoading) && "bg-gray-400 opacity-70",
+          )}
         >
-          Continue
-          <ChevronRight className="w-4 h-4" />
+          {isLoading ? (
+            <div className="flex items-center justify-center">
+              <FaSpinner className="animate-spin mr-3 h-4 w-4" />
+              <span>Saving school...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center">
+              <span>Continue</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </div>
+          )}
         </Button>
-      </div>
-    </motion.div>
+      </motion.div>
+    </form>
   );
 };

@@ -1,17 +1,13 @@
 "use client";
 
-import { useAuth } from '@repo/shared/context';
+import { useAuth } from "@repo/shared/context";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import { FiCheckCircle } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
-import { 
-  Button, 
-  Input, 
-  cn 
-} from "@repo/ui";
+import { Button, Input, cn } from "@repo/ui";
 import { loginSchema } from "./auth-schemas";
 
 interface LoginFormProps {
@@ -28,7 +24,7 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
   const { login } = useAuth();
 
   const handleGoogleLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1000"}/auth/google`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,19 +43,19 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
       setLoading(true);
       await login(email, password, rememberMe);
     } catch (err: unknown) {
-      let errorMessage = 'Login failed. Please try again.';
-      if (err instanceof Error && err.message.includes('credentials')) {
-        errorMessage = 'Invalid email or password';
-      } else if (err instanceof Error && err.message.includes('verified')) {
-        errorMessage = 'Please verify your email first';
+      let errorMessage = "Login failed. Please try again.";
+      if (err instanceof Error && err.message.includes("credentials")) {
+        errorMessage = "Invalid email or password";
+      } else if (err instanceof Error && err.message.includes("verified")) {
+        errorMessage = "Please verify your email first";
       } else if (err instanceof Error && err.message) {
         errorMessage = err.message;
       }
       onError(errorMessage);
-      
-      form.classList.add('animate-shake');
+
+      form.classList.add("animate-shake");
       setTimeout(() => {
-        form.classList.remove('animate-shake');
+        form.classList.remove("animate-shake");
       }, 500);
     } finally {
       setLoading(false);
@@ -80,7 +76,9 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
           label="Email"
           icon={Mail}
           value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
           className="bg-white border-b border-gray-200 focus:border-black rounded-none px-0 pl-10 h-12"
           placeholder="your@email.com"
           required
@@ -99,7 +97,9 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
           label="Password"
           icon={Lock}
           value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setPassword(e.target.value)
+          }
           className="bg-white border-b border-gray-200 focus:border-black rounded-none px-0 pl-10 h-12"
           placeholder="••••••••"
           required
@@ -109,7 +109,11 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
               onClick={() => setShowPassword(!showPassword)}
               className="text-black hover:text-gray-700 transition-colors p-1"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           }
         />
@@ -121,7 +125,9 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
           onClick={() => setRememberMe(!rememberMe)}
           className="flex items-center space-x-2 text-black font-medium transition-colors group"
         >
-          <div className={`w-4 h-4 border border-black flex items-center justify-center ${rememberMe ? 'bg-black border-black' : ''}`}>
+          <div
+            className={`w-4 h-4 border border-black flex items-center justify-center ${rememberMe ? "bg-black border-black" : ""}`}
+          >
             {rememberMe && <FiCheckCircle className="h-3 w-3 text-white" />}
           </div>
           <span>Remember me</span>
@@ -145,22 +151,22 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
           disabled={loading}
           className={cn(
             "w-full h-14 text-white font-medium transition-all duration-300 relative overflow-hidden bg-black hover:bg-gray-800",
-            loading && "bg-gray-700"
+            loading && "bg-gray-700",
           )}
         >
           {loading && (
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700"
-              initial={{ x: '-100%' }}
-              animate={{ x: '100%' }}
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
             />
           )}
-          
+
           <span className="relative z-10 flex items-center justify-center">
             {loading ? (
               <>
@@ -183,7 +189,9 @@ export const LoginForm = ({ onForgotPassword, onError }: LoginFormProps) => {
           <span className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500 font-medium tracking-wider">Or continue with</span>
+          <span className="bg-white px-2 text-gray-500 font-medium tracking-wider">
+            Or continue with
+          </span>
         </div>
       </div>
 

@@ -1,58 +1,65 @@
 "use client";
 
-import { useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { FaSpinner } from 'react-icons/fa';
+import { useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  AuthPageSkeleton,
+  OnboardingPageSkeleton,
+} from "@/_components/common/ui/PageSkeletons";
 
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userStr = searchParams.get('user');
+    const token = searchParams.get("token");
+    const userStr = searchParams.get("user");
 
     if (token && userStr) {
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
-        
-        // Store auth data
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('user', JSON.stringify(user));
 
-        // Sync with any auth context if necessary (usually context reads from localStorage)
-        
-        // Redirect based on onboarding status and profile completeness
-        const isProfileComplete = !!(user.onboarding_completed && user.school_id && user.gender);
+        // Store auth data
+        localStorage.setItem("access_token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        if (user.id) {
+          localStorage.setItem("userId", user.id);
+        }
+
+        // Notify all contexts that auth state has updated
+        window.dispatchEvent(new Event("auth-state-change"));
+
+        // First-timers check: route to onboarding if profile/onboarding is incomplete
+        const onboardingCompleted =
+          user.onboarding_completed ?? user.onboardingCompleted;
+        const schoolId = user.school_id ?? user.schoolId;
+        const isProfileComplete = !!(
+          onboardingCompleted &&
+          schoolId &&
+          user.gender &&
+          user.phone
+        );
+
         if (isProfileComplete) {
-          router.push('/dashboard');
+          router.replace("/dashboard");
         } else {
-          router.push('/onboarding');
+          router.replace("/onboarding");
         }
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        router.push('/login?error=auth_failed');
+        console.error("Error parsing user data:", error);
+        router.replace("/login?error=auth_failed");
       }
     } else {
-      router.push('/login?error=missing_params');
+      router.replace("/login?error=missing_params");
     }
   }, [router, searchParams]);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <FaSpinner className="animate-spin h-10 w-10 text-black mb-4" />
-      <p className="text-gray-500 font-medium">Completing sign in...</p>
-    </div>
-  );
+  return <OnboardingPageSkeleton />;
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <FaSpinner className="animate-spin h-10 w-10 text-black" />
-      </div>
-    }>
+    <Suspense fallback={<AuthPageSkeleton />}>
       <CallbackContent />
     </Suspense>
   );

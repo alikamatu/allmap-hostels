@@ -1,11 +1,11 @@
 "use client";
 
-import { usePaywall } from '@repo/shared/context';
-import React from 'react';
-import { motion } from 'framer-motion';
-import { HostelCard } from '@repo/types';
-import { Lock, Eye } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePaywall } from "@repo/shared/context";
+import React, { useState } from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { HostelCard } from "@repo/types";
+import { useRouter } from "next/navigation";
 
 interface HostelListProps {
   hostels: HostelCard[];
@@ -13,83 +13,122 @@ interface HostelListProps {
 
 export const HostelList: React.FC<HostelListProps> = ({ hostels }) => {
   const { hasAccess, unlockAccess } = usePaywall();
-  const router = useRouter()
-  
+  const router = useRouter();
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+
   const canView = hasAccess;
 
   if (hostels.length === 0) {
     return (
-      <div className="col-span-full text-center py-12 border border-black">
-        <p className="text-gray-800 text-lg">No hostels match your filters</p>
-        <p className="text-gray-700 mt-2">Try adjusting your search criteria</p>
+      <div className="col-span-full text-center py-12 border border-gray-200 rounded-2xl bg-gray-50/50">
+        <p className="text-gray-900 font-medium text-lg">
+          No hostels match your filters
+        </p>
+        <p className="text-gray-500 text-sm mt-1">
+          Try adjusting your search or distance criteria
+        </p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-      {hostels.map((hostel, index) => (
-        <motion.div
-          key={hostel.id}
-          onClick={ ()=> router.push(`/dashboard/hostels/${hostel.id}`) }
-          className={"block overflow-hidden hover:scale-101 transition-all duration-800 cursor-pointer relative"}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-        >
-            <div className="relative aspect-square">
-              {hostel.imageUrl ? (
-                <img
+      {hostels.map((hostel, index) => {
+        const isPriority = index < 4;
+        const hasFailedImage = failedImages[hostel.id];
+
+        return (
+          <motion.div
+            key={hostel.id}
+            onClick={() => router.push(`/dashboard/hostels/${hostel.id}`)}
+            onMouseEnter={() =>
+              router.prefetch(`/dashboard/hostels/${hostel.id}`)
+            }
+            className="group block overflow-hidden cursor-pointer relative"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
+          >
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-100">
+              {hostel.imageUrl && !hasFailedImage ? (
+                <Image
                   src={hostel.imageUrl}
                   alt={hostel.name}
-                  className="w-full h-full object-cover rounded-2xl"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                  priority={isPriority}
+                  loading={isPriority ? "eager" : "lazy"}
+                  onError={() => {
+                    setFailedImages((prev) => ({ ...prev, [hostel.id]: true }));
+                  }}
                 />
               ) : (
-                <div className="bg-gray-100 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center">
-                  <span className="text-gray-800">No image</span>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-4 text-center">
+                  <span className="text-2xl mb-1">🏠</span>
+                  <span className="text-xs font-medium text-gray-500">
+                    No Image
+                  </span>
                 </div>
               )}
-              {!hostel.accepting_bookings && (
-                <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Not Accepting Bookings
-                </span>
-              )}
 
-              {hostel.accepting_bookings && (
-                <span className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Accepting Bookings
-                </span>
-              )}
+              {/* Status Badges */}
+              <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
+                {hostel.accepting_bookings ? (
+                  <span className="bg-emerald-600/90 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-sm">
+                    Accepting Bookings
+                  </span>
+                ) : (
+                  <span className="bg-rose-600/90 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-sm">
+                    Bookings Closed
+                  </span>
+                )}
+              </div>
 
               {!hostel.is_verified && (
-                <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                <span className="absolute top-2.5 right-2.5 bg-neutral-900/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-10">
                   Listed
                 </span>
               )}
             </div>
-            
-            <div className="pt-2">
-              <h2 className="text-lg text-gray-800 truncate">{hostel.name}</h2>
-              <p className="text-md font-thin text-gray-800 truncate">{hostel.address}</p>
-              <div className="flex justify-between mt-1">
-                <span className="text-sm font-medium text-red-600">
-                  {hostel.base_price ? `GHC${Number(hostel.base_price).toLocaleString()}` : 'Price not available'}
+
+            <div className="pt-2.5 px-0.5">
+              <h2 className="text-base font-semibold text-gray-900 truncate group-hover:text-black">
+                {hostel.name}
+              </h2>
+              <p className="text-xs text-gray-500 truncate mt-0.5">
+                {hostel.address || "Address on file"}
+              </p>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-sm font-bold text-gray-950">
+                  {hostel.base_price
+                    ? `GHC ${Number(hostel.base_price).toLocaleString()}`
+                    : "Price on request"}
+                  <span className="text-[11px] font-normal text-gray-500 ml-1">
+                    / sem
+                  </span>
                 </span>
-                {/* Always show distance if available */}
                 {hostel.distance != null && (
-                  <span className="text-xs bg-gray-100 px-2 py-1 text-red-600 rounded-full">
+                  <span className="text-[11px] font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
                     {Number(hostel.distance).toFixed(1)} km
                   </span>
                 )}
               </div>
             </div>
-            
+
             {/* Locked interaction */}
             {!canView && (
-              <div className="absolute inset-0 cursor-pointer" onClick={unlockAccess} />
+              <div
+                className="absolute inset-0 z-20 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  unlockAccess();
+                }}
+              />
             )}
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 };

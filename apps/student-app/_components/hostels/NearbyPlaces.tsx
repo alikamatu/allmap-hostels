@@ -1,7 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { FiMapPin, FiStar, FiPhone, FiExternalLink, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  FiMapPin,
+  FiStar,
+  FiPhone,
+  FiExternalLink,
+  FiChevronDown,
+  FiChevronUp,
+} from "react-icons/fi";
 
 interface NearbyPlace {
   name: string;
@@ -21,34 +29,43 @@ interface PlaceCategory {
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  'Restaurants': '🍽️',
-  'Supermarkets': '🛒',
-  'Schools & Universities': '🎓',
-  'Pharmacies': '💊',
-  'Transport': '🚌',
-  'Banks & ATMs': '🏧',
+  Restaurants: "🍽️",
+  Supermarkets: "🛒",
+  "Schools & Universities": "🎓",
+  Pharmacies: "💊",
+  Transport: "🚌",
+  "Banks & ATMs": "🏧",
 };
 
 function PlaceCard({ place }: { place: NearbyPlace }) {
   return (
     <div className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all">
       {place.thumbnail && (
-        <img
-          src={place.thumbnail}
-          alt={place.name}
-          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-        />
+        <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+          <Image
+            src={place.thumbnail}
+            alt={place.name}
+            fill
+            sizes="56px"
+            className="object-cover"
+            loading="lazy"
+          />
+        </div>
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="font-semibold text-sm text-gray-900 truncate">{place.name}</h4>
+          <h4 className="font-semibold text-sm text-gray-900 truncate">
+            {place.name}
+          </h4>
           {place.openNow !== undefined && (
             <span
               className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                place.openNow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                place.openNow
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-600"
               }`}
             >
-              {place.openNow ? 'Open' : 'Closed'}
+              {place.openNow ? "Open" : "Closed"}
             </span>
           )}
         </div>
@@ -56,9 +73,13 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
         {place.rating !== undefined && (
           <div className="flex items-center gap-1 mt-0.5">
             <FiStar className="text-yellow-400 fill-yellow-400 w-3 h-3" />
-            <span className="text-xs font-medium text-gray-700">{place.rating.toFixed(1)}</span>
+            <span className="text-xs font-medium text-gray-700">
+              {place.rating.toFixed(1)}
+            </span>
             {place.reviews && (
-              <span className="text-xs text-gray-400">({place.reviews.toLocaleString()})</span>
+              <span className="text-xs text-gray-400">
+                ({place.reviews.toLocaleString()})
+              </span>
             )}
           </div>
         )}
@@ -66,7 +87,9 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
         {place.address && (
           <div className="flex items-start gap-1 mt-1">
             <FiMapPin className="text-gray-400 w-3 h-3 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-gray-500 line-clamp-1">{place.address}</p>
+            <p className="text-xs text-gray-500 line-clamp-1">
+              {place.address}
+            </p>
           </div>
         )}
 
@@ -99,18 +122,20 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
 
 function CategorySection({ category, places }: PlaceCategory) {
   const [expanded, setExpanded] = useState(false);
-  const icon = CATEGORY_ICONS[category] ?? '📍';
+  const icon = CATEGORY_ICONS[category] ?? "📍";
   const visible = expanded ? places : places.slice(0, 3);
 
   return (
     <div className="border border-gray-100 rounded-2xl overflow-hidden">
       <button
-        onClick={() => setExpanded(v => !v)}
+        onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
       >
         <span className="font-semibold text-sm text-gray-800">
           {icon} {category}
-          <span className="ml-2 text-xs font-normal text-gray-400">({places.length})</span>
+          <span className="ml-2 text-xs font-normal text-gray-400">
+            ({places.length})
+          </span>
         </span>
         {expanded ? (
           <FiChevronUp className="text-gray-400 w-4 h-4" />
@@ -126,10 +151,10 @@ function CategorySection({ category, places }: PlaceCategory) {
 
         {places.length > 3 && (
           <button
-            onClick={() => setExpanded(v => !v)}
+            onClick={() => setExpanded((v) => !v)}
             className="w-full text-xs text-gray-500 hover:text-black font-medium py-1 transition-colors"
           >
-            {expanded ? 'Show less' : `Show ${places.length - 3} more`}
+            {expanded ? "Show less" : `Show ${places.length - 3} more`}
           </button>
         )}
       </div>
@@ -149,17 +174,18 @@ export function NearbyPlaces({ hostelId }: NearbyPlacesProps) {
   useEffect(() => {
     if (!hostelId) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1000";
     const accessToken =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('access_token') ?? sessionStorage.getItem('access_token')
+      typeof window !== "undefined"
+        ? (localStorage.getItem("access_token") ??
+          sessionStorage.getItem("access_token"))
         : null;
 
     fetch(`${apiUrl}/hostels/${hostelId}/nearby-places`, {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     })
-      .then(r => {
-        if (!r.ok) throw new Error('Failed');
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed");
         return r.json();
       })
       .then((json: PlaceCategory[]) => {
@@ -175,7 +201,7 @@ export function NearbyPlaces({ hostelId }: NearbyPlacesProps) {
   if (loading) {
     return (
       <div className="space-y-3 animate-pulse">
-        {[1, 2, 3].map(i => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="h-14 rounded-2xl bg-gray-100" />
         ))}
       </div>
@@ -192,10 +218,16 @@ export function NearbyPlaces({ hostelId }: NearbyPlacesProps) {
 
   return (
     <div className="space-y-3">
-      {data.map(cat => (
-        <CategorySection key={cat.category} category={cat.category} places={cat.places} />
+      {data.map((cat) => (
+        <CategorySection
+          key={cat.category}
+          category={cat.category}
+          places={cat.places}
+        />
       ))}
-      <p className="text-[10px] text-gray-400 text-center pt-1">Powered by Google Maps via SerpAPI</p>
+      <p className="text-[10px] text-gray-400 text-center pt-1">
+        Powered by Google Maps via SerpAPI
+      </p>
     </div>
   );
 }

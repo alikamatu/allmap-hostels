@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUser, FiMail, FiPhone, FiSave } from 'react-icons/fi';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiX, FiUser, FiMail, FiPhone, FiSave } from "react-icons/fi";
+import { CustomSelect } from "@repo/ui";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -14,14 +15,19 @@ interface EditProfileModalProps {
     phone: string;
     gender?: string;
   };
-  onUpdate: (updatedProfile: any) => void;
+  onUpdate: (updatedProfile: Record<string, unknown>) => void;
 }
 
-export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }: EditProfileModalProps) {
+export default function EditProfileModal({
+  isOpen,
+  onClose,
+  profile,
+  onUpdate,
+}: EditProfileModalProps) {
   const [formData, setFormData] = useState({
-    name: profile.name || '',
-    phone: profile.phone || '',
-    gender: profile.gender || '',
+    name: profile.name || "",
+    phone: profile.phone || "",
+    gender: profile.gender || "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,41 +38,46 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/update-profile`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/update-profile`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.name || null,
+            phone: formData.phone || null,
+            gender: formData.gender || null,
+          }),
         },
-        body: JSON.stringify({
-          name: formData.name || null,
-          phone: formData.phone || null,
-          gender: formData.gender || null,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
+        throw new Error(errorData.message || "Failed to update profile");
       }
 
       const updatedProfile = await response.json();
       onUpdate(updatedProfile);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -121,12 +132,17 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                     disabled
                     className="w-full px-3 py-2 border-b border-gray-200 bg-gray-50 text-gray-500 text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email cannot be changed
+                  </p>
                 </div>
 
                 {/* Full Name */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-black mb-2">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-black mb-2"
+                  >
                     <FiUser className="inline mr-2" />
                     Full Name
                   </label>
@@ -134,7 +150,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                     id="name"
                     type="text"
                     value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
+                    onChange={(e) => handleChange("name", e.target.value)}
                     className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                     placeholder="Enter your full name"
                   />
@@ -142,7 +158,10 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
 
                 {/* Phone */}
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-black mb-2">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-black mb-2"
+                  >
                     <FiPhone className="inline mr-2" />
                     Phone Number
                   </label>
@@ -150,7 +169,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => handleChange('phone', e.target.value)}
+                    onChange={(e) => handleChange("phone", e.target.value)}
                     className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                     placeholder="Enter your phone number"
                   />
@@ -158,23 +177,23 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
 
                 {/* Gender */}
                 <div>
-                  <label htmlFor="gender" className="block text-sm font-medium text-black mb-2">
-                    <FiUser className="inline mr-2" />
-                    Gender
-                  </label>
-                  <select
-                    disabled
+                  <CustomSelect
                     id="gender"
+                    label="Gender"
+                    disabled
                     value={formData.gender}
-                    onChange={(e) => handleChange('gender', e.target.value)}
-                    className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm appearance-none"
-                  >
-                    <option value="">Select gender (optional)</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="prefer_not_to_say">Prefer not to say</option>
-                  </select>
+                    onChange={(val) => handleChange("gender", val)}
+                    placeholder="Select gender (optional)"
+                    options={[
+                      { value: "male", label: "Male" },
+                      { value: "female", label: "Female" },
+                      { value: "other", label: "Other" },
+                      {
+                        value: "prefer_not_to_say",
+                        label: "Prefer not to say",
+                      },
+                    ]}
+                  />
                 </div>
 
                 {/* Action Buttons */}
@@ -193,9 +212,9 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                     type="submit"
                     disabled={loading}
                     className={`flex-1 px-4 py-2 font-medium text-white transition duration-200 ${
-                      loading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-black hover:bg-gray-800'
+                      loading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-black hover:bg-gray-800"
                     }`}
                   >
                     {loading ? (

@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUser, FiPhone, FiMail, FiSave, FiUserPlus } from 'react-icons/fi';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FiX,
+  FiUser,
+  FiPhone,
+  FiMail,
+  FiSave,
+  FiUserPlus,
+} from "react-icons/fi";
+import { CustomSelect } from "@repo/ui";
 
 interface EmergencyContact {
   name: string;
@@ -15,22 +23,29 @@ interface EditEmergencyContactModalProps {
   isOpen: boolean;
   onClose: () => void;
   emergencyContact: EmergencyContact;
-  onUpdate: (updatedProfile: any) => void;
+  onUpdate: (updatedProfile: Record<string, unknown>) => void;
 }
 
-const relationships = ['parent', 'guardian', 'sibling', 'spouse', 'friend', 'other'];
+const relationships = [
+  "parent",
+  "guardian",
+  "sibling",
+  "spouse",
+  "friend",
+  "other",
+];
 
-export default function EditEmergencyContactModal({ 
-  isOpen, 
-  onClose, 
-  emergencyContact, 
-  onUpdate 
+export default function EditEmergencyContactModal({
+  isOpen,
+  onClose,
+  emergencyContact,
+  onUpdate,
 }: EditEmergencyContactModalProps) {
   const [formData, setFormData] = useState({
-    emergency_contact_name: emergencyContact.name || '',
-    emergency_contact_phone: emergencyContact.phone || '',
-    emergency_contact_relationship: emergencyContact.relationship || '',
-    emergency_contact_email: emergencyContact.email || '',
+    emergency_contact_name: emergencyContact.name || "",
+    emergency_contact_phone: emergencyContact.phone || "",
+    emergency_contact_relationship: emergencyContact.relationship || "",
+    emergency_contact_email: emergencyContact.email || "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,28 +56,30 @@ export default function EditEmergencyContactModal({
 
     // Validation
     if (!formData.emergency_contact_name.trim()) {
-      setError('Contact name is required');
+      setError("Contact name is required");
       return;
     }
     if (!formData.emergency_contact_phone.trim()) {
-      setError('Contact phone is required');
+      setError("Contact phone is required");
       return;
     }
-    if (formData.emergency_contact_phone.replace(/\D/g, '').length !== 10) {
-      setError('Phone number must be exactly 10 digits');
+    if (formData.emergency_contact_phone.replace(/\D/g, "").length !== 10) {
+      setError("Phone number must be exactly 10 digits");
       return;
     }
     if (!formData.emergency_contact_relationship) {
-      setError('Relationship is required');
+      setError("Relationship is required");
       return;
     }
 
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
       const payload = {
@@ -72,27 +89,36 @@ export default function EditEmergencyContactModal({
         emergency_contact_email: formData.emergency_contact_email || undefined,
       };
 
-      console.log('Sending emergency contact update:', payload);
+      console.log("Sending emergency contact update:", payload);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/update-profile`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/update-profile`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update emergency contact');
+        throw new Error(
+          errorData.message || "Failed to update emergency contact",
+        );
       }
 
       const updatedProfile = await response.json();
       onUpdate(updatedProfile);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update emergency contact');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update emergency contact",
+      );
     } finally {
       setLoading(false);
     }
@@ -100,12 +126,12 @@ export default function EditEmergencyContactModal({
 
   const handleChange = (field: string, value: string) => {
     // Phone number validation - only digits, max 10
-    if (field === 'emergency_contact_phone') {
-      const digitsOnly = value.replace(/\D/g, '');
+    if (field === "emergency_contact_phone") {
+      const digitsOnly = value.replace(/\D/g, "");
       if (digitsOnly.length > 10) return;
-      setFormData(prev => ({ ...prev, [field]: digitsOnly }));
+      setFormData((prev) => ({ ...prev, [field]: digitsOnly }));
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
+      setFormData((prev) => ({ ...prev, [field]: value }));
     }
     if (error) setError(null);
   };
@@ -159,7 +185,10 @@ export default function EditEmergencyContactModal({
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Contact Name */}
                 <div>
-                  <label htmlFor="emergency_contact_name" className="block text-sm font-medium text-black mb-2">
+                  <label
+                    htmlFor="emergency_contact_name"
+                    className="block text-sm font-medium text-black mb-2"
+                  >
                     <FiUser className="inline mr-2" />
                     Full Name *
                   </label>
@@ -167,7 +196,9 @@ export default function EditEmergencyContactModal({
                     id="emergency_contact_name"
                     type="text"
                     value={formData.emergency_contact_name}
-                    onChange={(e) => handleChange('emergency_contact_name', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("emergency_contact_name", e.target.value)
+                    }
                     className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                     placeholder="John Doe"
                     required
@@ -176,7 +207,10 @@ export default function EditEmergencyContactModal({
 
                 {/* Contact Phone */}
                 <div>
-                  <label htmlFor="emergency_contact_phone" className="block text-sm font-medium text-black mb-2">
+                  <label
+                    htmlFor="emergency_contact_phone"
+                    className="block text-sm font-medium text-black mb-2"
+                  >
                     <FiPhone className="inline mr-2" />
                     Phone Number *
                   </label>
@@ -184,7 +218,9 @@ export default function EditEmergencyContactModal({
                     id="emergency_contact_phone"
                     type="tel"
                     value={formData.emergency_contact_phone}
-                    onChange={(e) => handleChange('emergency_contact_phone', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("emergency_contact_phone", e.target.value)
+                    }
                     className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                     placeholder="10-digit number"
                     required
@@ -196,29 +232,28 @@ export default function EditEmergencyContactModal({
 
                 {/* Relationship */}
                 <div>
-                  <label htmlFor="emergency_contact_relationship" className="block text-sm font-medium text-black mb-2">
-                    <FiUserPlus className="inline mr-2" />
-                    Relationship *
-                  </label>
-                  <select
+                  <CustomSelect
                     id="emergency_contact_relationship"
-                    value={formData.emergency_contact_relationship}
-                    onChange={(e) => handleChange('emergency_contact_relationship', e.target.value)}
-                    className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm appearance-none"
+                    label="Relationship"
                     required
-                  >
-                    <option value="">Select relationship</option>
-                    {relationships.map((rel) => (
-                      <option key={rel} value={rel}>
-                        {formatRelationship(rel)}
-                      </option>
-                    ))}
-                  </select>
+                    value={formData.emergency_contact_relationship}
+                    onChange={(val) =>
+                      handleChange("emergency_contact_relationship", val)
+                    }
+                    placeholder="Select relationship"
+                    options={relationships.map((rel) => ({
+                      value: rel,
+                      label: formatRelationship(rel),
+                    }))}
+                  />
                 </div>
 
                 {/* Contact Email (Optional) */}
                 <div>
-                  <label htmlFor="emergency_contact_email" className="block text-sm font-medium text-black mb-2">
+                  <label
+                    htmlFor="emergency_contact_email"
+                    className="block text-sm font-medium text-black mb-2"
+                  >
                     <FiMail className="inline mr-2" />
                     Email Address (Optional)
                   </label>
@@ -226,7 +261,9 @@ export default function EditEmergencyContactModal({
                     id="emergency_contact_email"
                     type="email"
                     value={formData.emergency_contact_email}
-                    onChange={(e) => handleChange('emergency_contact_email', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("emergency_contact_email", e.target.value)
+                    }
                     className="w-full px-3 py-2 border-b border-gray-200 focus:border-black outline-none bg-white text-sm"
                     placeholder="contact@example.com"
                   />
@@ -248,9 +285,9 @@ export default function EditEmergencyContactModal({
                     type="submit"
                     disabled={loading}
                     className={`flex-1 px-4 py-2 font-medium text-white transition duration-200 ${
-                      loading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-black hover:bg-gray-800'
+                      loading
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-black hover:bg-gray-800"
                     }`}
                   >
                     {loading ? (

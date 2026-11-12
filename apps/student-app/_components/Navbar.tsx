@@ -1,26 +1,67 @@
-'use client';
+"use client";
 
-import { useAuth } from '@repo/shared/context';
-import { useDepositBalance } from '@repo/shared/hooks';
-import { depositService } from '@repo/shared/service';
+import { useAuth } from "@repo/shared/context";
+import { useDepositBalance } from "@repo/shared/hooks";
+import { depositService } from "@repo/shared/service";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiHome, FiUser, FiLogOut, FiLogIn, FiUserPlus, FiMenu, FiX, FiSettings, FiCalendar, FiHelpCircle, FiSun, FiMoon, FiCreditCard, FiDollarSign } from "react-icons/fi";
+import {
+  FiHome,
+  FiUser,
+  FiLogOut,
+  FiLogIn,
+  FiUserPlus,
+  FiMenu,
+  FiX,
+  FiCalendar,
+  FiHelpCircle,
+  FiDollarSign,
+} from "react-icons/fi";
 import { DepositModal } from "./payment/DepositModal";
 import { BrandLogo } from "./brand";
+import { UserDropdown } from "./common/ui/UserDropdown";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const { balance, loading, error, refreshBalance } = useDepositBalance();
   const [isOpen, setIsOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const [localUser, setLocalUser] = useState<typeof authUser | null>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      try {
+        setLocalUser(JSON.parse(stored));
+      } catch {
+        setLocalUser(null);
+      }
+    }
+
+    const handleAuthChange = () => {
+      const updated = localStorage.getItem("user");
+      if (updated) {
+        try {
+          setLocalUser(JSON.parse(updated));
+        } catch {
+          setLocalUser(null);
+        }
+      } else {
+        setLocalUser(null);
+      }
+    };
+
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("auth-state-change", handleAuthChange);
+    return () => {
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("auth-state-change", handleAuthChange);
+    };
   }, []);
+
+  const user = authUser || localUser;
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -29,7 +70,10 @@ export default function Navbar() {
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -93,44 +137,28 @@ export default function Navbar() {
                   {/* Deposit Balance */}
                   <button
                     onClick={() => setShowDepositModal(true)}
-                    className="px-4 py-2 bg-black transition-all flex items-center space-x-2 text-white"
+                    className="px-4 py-2 bg-black transition-all flex items-center space-x-2 text-white rounded-xl shadow-sm hover:bg-gray-800"
                     title="Click to add funds to your account"
                   >
-                    <span className="flex items-center">
+                    <span className="flex items-center text-sm font-medium">
                       {loading ? (
-                        <span className="flex items-center">
-                          Loading...
-                        </span>
+                        <span className="flex items-center">Loading...</span>
                       ) : error ? (
-                        'Error'
+                        "Error"
                       ) : (
                         formatBalance(balance?.availableBalance || 0)
                       )}
                     </span>
                   </button>
 
-                  <div className="relative group">
-                    <button className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-medium">
-                        {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                      </div>
-                      <span className="text-black font-medium">{user.name || "User"}</span>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg py-2 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-gray-200">
-                      <Link
-                        href="/dashboard/profile"
-                        className="flex items-center px-4 py-2 text-black hover:bg-gray-100 transition"
-                      >
-                        <FiUser className="mr-2" /> Profile
-                      </Link>
-                      <button
-                        onClick={logout}
-                        className="w-full text-left flex items-center px-4 py-2 text-black hover:bg-gray-100 transition"
-                      >
-                        <FiLogOut className="mr-2" /> Logout
-                      </button>
-                    </div>
-                  </div>
+                  {/* Custom User Dropdown Component */}
+                  <UserDropdown
+                    user={{
+                      name: user.name,
+                      email: user.email,
+                    }}
+                    onLogout={logout}
+                  />
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
@@ -186,8 +214,12 @@ export default function Navbar() {
                         onClick={() => setIsOpen(false)}
                       >
                         {link.label === "Home" && <FiHome className="mr-3" />}
-                        {link.label === "Bookings" && <FiCalendar className="mr-3" />}
-                        {link.label === "Help" && <FiHelpCircle className="mr-3" />}
+                        {link.label === "Bookings" && (
+                          <FiCalendar className="mr-3" />
+                        )}
+                        {link.label === "Help" && (
+                          <FiHelpCircle className="mr-3" />
+                        )}
                         {link.label}
                       </Link>
                     </motion.div>
@@ -202,7 +234,10 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: navLinks.length * 0.1,
+                      }}
                     >
                       <button
                         onClick={() => {
@@ -215,7 +250,11 @@ export default function Navbar() {
                         <div className="text-left">
                           <div className="font-medium">Account Balance</div>
                           <div className="text-sm opacity-90">
-                            {loading ? 'Loading...' : error ? 'Error' : formatBalance(balance?.availableBalance || 0)}
+                            {loading
+                              ? "Loading..."
+                              : error
+                                ? "Error"
+                                : formatBalance(balance?.availableBalance || 0)}
                           </div>
                         </div>
                       </button>
@@ -224,15 +263,22 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length + 1) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: (navLinks.length + 1) * 0.1,
+                      }}
                     >
                       <div className="flex items-center px-4 py-3">
                         <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-medium mr-3">
                           {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                         </div>
                         <div>
-                          <div className="text-black font-medium">{user.name || "User"}</div>
-                          <div className="text-sm text-gray-600">{user.email}</div>
+                          <div className="text-black font-medium">
+                            {user.name || "User"}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {user.email}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -240,7 +286,10 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: (navLinks.length + 2) * 0.1,
+                      }}
                     >
                       <Link
                         href="/dashboard/profile"
@@ -254,7 +303,10 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length + 3) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: (navLinks.length + 3) * 0.1,
+                      }}
                     >
                       <button
                         onClick={() => {
@@ -272,7 +324,10 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length + 1) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: (navLinks.length + 1) * 0.1,
+                      }}
                     >
                       <Link
                         href="/"
@@ -285,7 +340,10 @@ export default function Navbar() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: (navLinks.length + 2) * 0.1 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: (navLinks.length + 2) * 0.1,
+                      }}
                     >
                       <Link
                         href="/login?tab=signup"
@@ -304,7 +362,7 @@ export default function Navbar() {
       </header>
 
       {/* Deposit Modal */}
-      <DepositModal 
+      <DepositModal
         isOpen={showDepositModal}
         onClose={() => setShowDepositModal(false)}
         onDepositSuccess={handleDepositSuccess}

@@ -31,7 +31,6 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { Response } from 'express';
 
 @Controller('auth')
-@UseInterceptors(CacheInterceptor)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -62,7 +61,6 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('user-profile')
-  @CacheTTL(300) // Cache for 5 minutes
   async getUserProfile(@CurrentUser() user: JwtUser) {
     try {
       return await this.authService.getUserProfile(user.id);

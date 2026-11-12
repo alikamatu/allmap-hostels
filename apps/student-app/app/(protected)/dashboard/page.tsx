@@ -1,17 +1,28 @@
-'use client';
+"use client";
 
-import { usePaywall } from '@repo/shared/context';
-import { useDistanceFilter, useFilteredHostels } from '@repo/shared/hooks';
-import { useUserSchoolName } from '@repo/shared/hooks';
-import { calculateDistance, parseLocation } from '@repo/shared';
-import { useEffect, useState, useCallback, memo } from 'react';
-import { HostelCard } from '@repo/types';
-import dynamic from 'next/dynamic';
-import { FilterPanel } from '@/_components/hostels/FilterPanel';
-import { HostelList } from '@/_components/hostels/HostelList';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiMap, FiList, FiAlertTriangle, FiFilter } from 'react-icons/fi';
-import { Lock } from 'lucide-react';
+import { usePaywall } from "@repo/shared/context";
+import { useDistanceFilter, useFilteredHostels } from "@repo/shared/hooks";
+import { useUserSchoolName } from "@repo/shared/hooks";
+import { calculateDistance, parseLocation } from "@repo/shared";
+import { useEffect, useState, useCallback, memo, useRef } from "react";
+import { HostelCard } from "@repo/types";
+import dynamic from "next/dynamic";
+import { FilterPanel } from "@/_components/hostels/FilterPanel";
+import { HostelList } from "@/_components/hostels/HostelList";
+import {
+  DashboardContentSkeleton,
+  DashboardPageSkeleton,
+  MapViewSkeleton,
+} from "@/_components/common/ui/PageSkeletons";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FiMap,
+  FiList,
+  FiAlertTriangle,
+  FiFilter,
+  FiMapPin,
+} from "react-icons/fi";
+import { Lock } from "lucide-react";
 
 interface ApiHostel {
   id: string;
@@ -32,34 +43,29 @@ interface ApiRoomType {
   pricePerWeek?: number;
 }
 
-const MapView = dynamic(() => import('@/_components/hostels/MapView'), {
+const MapView = dynamic(() => import("@/_components/hostels/MapView"), {
   ssr: false,
-  loading: () => (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="h-[400px] sm:h-[600px] flex items-center justify-center"
-    >
-      <div className="relative flex w-64 animate-pulse gap-2 p-4">
-        <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-        <div className="flex-1">
-          <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-          <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-        </div>
-        <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-      </div>
-    </motion.div>
-  ),
+  loading: () => <MapViewSkeleton />,
 });
 
 const MemoizedHostelList = memo(HostelList);
 const MemoizedMapView = memo(MapView);
 
+// Module-level cache for instant back-and-forth navigation
+let cachedHostelsData: HostelCard[] | null = null;
+let cachedHostelsTimestamp = 0;
+const DASHBOARD_CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+
 export default function HostelsPage() {
-  const [hostels, setHostels] = useState<HostelCard[]>([]);
+  const isCacheValid =
+    cachedHostelsData &&
+    Date.now() - cachedHostelsTimestamp < DASHBOARD_CACHE_TTL;
+  const [hostels, setHostels] = useState<HostelCard[]>(
+    () => cachedHostelsData || [],
+  );
   const [mounted, setMounted] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isCacheValid);
   const [error, setError] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const schoolCoords = useDistanceFilter();
@@ -67,79 +73,93 @@ export default function HostelsPage() {
   const { hasAccess, openPaywallModal } = usePaywall(); // Change from unlockAccess to openPaywallModal
 
   const canView = hasAccess;
-  
 
   // Initialize filters from localStorage
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    minPrice: '' as number | '',
-    maxPrice: '' as number | '',
+    searchTerm: "",
+    minPrice: "" as number | "",
+    maxPrice: "" as number | "",
     maxDistance: 10,
   });
 
   useEffect(() => {
     setMounted(true);
     // Restore filters and view preference from localStorage
-    const savedFilters = localStorage.getItem('hostelFilters');
-    const savedView = localStorage.getItem('hostelView');
+    const savedFilters = localStorage.getItem("hostelFilters");
+    const savedView = localStorage.getItem("hostelView");
     if (savedFilters) {
       setFilters(JSON.parse(savedFilters));
     }
     if (savedView) {
-      setShowMap(savedView === 'map');
+      setShowMap(savedView === "map");
     }
   }, []);
 
   // Save filters to localStorage on change
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('hostelFilters', JSON.stringify(filters));
+      localStorage.setItem("hostelFilters", JSON.stringify(filters));
     }
   }, [filters, mounted]);
 
   // Save view preference to localStorage
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('hostelView', showMap ? 'map' : 'list');
+      localStorage.setItem("hostelView", showMap ? "map" : "list");
     }
   }, [showMap, mounted]);
 
+  const hasFetchedRef = useRef(false);
+
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchHostels() {
-      setIsLoading(true);
+      // If we already have fetched data, don't flash loading again
+      if (!hasFetchedRef.current) {
+        setIsLoading(true);
+      }
       setError(null);
       try {
-        const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/hostels/all`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const accessToken =
+          localStorage.getItem("access_token") ||
+          sessionStorage.getItem("access_token");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1000"}/hostels/all`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
 
-        if (!res.ok) throw new Error(`Failed to fetch hostels: ${res.statusText}`);
+        if (!res.ok)
+          throw new Error(`Failed to fetch hostels: ${res.statusText}`);
 
         const data = await res.json();
-        
+
         const formatted: HostelCard[] = data.map((hostel: ApiHostel) => {
           const coords = parseLocation(hostel.location);
-          const prices = hostel.roomTypes?.map((rt: ApiRoomType) => rt.pricePerSemester) || [];
+          const prices =
+            hostel.roomTypes?.map((rt: ApiRoomType) => rt.pricePerSemester) ||
+            [];
           const lowestPrice = prices.length ? Math.min(...prices) : 0;
           const highestPrice = prices.length ? Math.max(...prices) : 0;
-          
+
           let distance = null;
           if (coords && schoolCoords) {
             distance = calculateDistance(
               schoolCoords[1], // school latitude
               schoolCoords[0], // school longitude
-              coords[1],       // hostel latitude
-              coords[0]        // hostel longitude
+              coords[1], // hostel latitude
+              coords[0], // hostel longitude
             );
           }
-          
+
           return {
             id: hostel.id,
             name: hostel.name,
             imageUrl: hostel.images?.[0] || null,
             description: hostel.description,
-            address: hostel.address || 'No address provided',
+            address: hostel.address || "No address provided",
             location: hostel.location,
             coords,
             lowestPrice,
@@ -151,40 +171,57 @@ export default function HostelsPage() {
           };
         });
 
-        setHostels(formatted);
+        if (isMounted) {
+          setHostels(formatted);
+          cachedHostelsData = formatted;
+          cachedHostelsTimestamp = Date.now();
+          hasFetchedRef.current = true;
+        }
       } catch (error: unknown) {
-        console.error('Error fetching hostels:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load hostels. Please try again.');
+        console.error("Error fetching hostels:", error);
+        if (isMounted) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load hostels. Please try again.",
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchHostels();
+
+    return () => {
+      isMounted = false;
+    };
   }, [schoolCoords]);
 
   // Memoized filter handlers
   const handleSearchChange = useCallback((term: string) => {
-    setFilters(prev => ({ ...prev, searchTerm: term }));
+    setFilters((prev) => ({ ...prev, searchTerm: term }));
   }, []);
 
-  const handleMinPriceChange = useCallback((price: number | '') => {
-    setFilters(prev => ({ ...prev, minPrice: price }));
+  const handleMinPriceChange = useCallback((price: number | "") => {
+    setFilters((prev) => ({ ...prev, minPrice: price }));
   }, []);
 
-  const handleMaxPriceChange = useCallback((price: number | '') => {
-    setFilters(prev => ({ ...prev, maxPrice: price }));
+  const handleMaxPriceChange = useCallback((price: number | "") => {
+    setFilters((prev) => ({ ...prev, maxPrice: price }));
   }, []);
 
   const handleMaxDistanceChange = useCallback((distance: number) => {
-    setFilters(prev => ({ ...prev, maxDistance: distance }));
+    setFilters((prev) => ({ ...prev, maxDistance: distance }));
   }, []);
 
   const handleResetFilters = useCallback(() => {
     setFilters({
-      searchTerm: '',
-      minPrice: '',
-      maxPrice: '',
+      searchTerm: "",
+      minPrice: "",
+      maxPrice: "",
       maxDistance: 10,
     });
   }, []);
@@ -192,76 +229,114 @@ export default function HostelsPage() {
   const filteredHostels = useFilteredHostels(hostels, schoolCoords, filters);
 
   // Separate verified and unverified hostels
-  const verifiedHostels = filteredHostels.filter(hostel => hostel.is_verified);
-  const unverifiedHostels = filteredHostels.filter(hostel => !hostel.is_verified);
+  const verifiedHostels = filteredHostels.filter(
+    (hostel) => hostel.is_verified,
+  );
+  const unverifiedHostels = filteredHostels.filter(
+    (hostel) => !hostel.is_verified,
+  );
 
   // Generate filter summary
   const filterSummary = () => {
     const parts: string[] = [];
-    
+
     if (verifiedHostels.length > 0) {
-      parts.push(`${verifiedHostels.length} verified hostel${verifiedHostels.length !== 1 ? 's' : ''}`);
+      parts.push(
+        `${verifiedHostels.length} verified hostel${verifiedHostels.length !== 1 ? "s" : ""}`,
+      );
     }
-    
+
     if (unverifiedHostels.length > 0) {
-      parts.push(`${unverifiedHostels.length} listed hostel${unverifiedHostels.length !== 1 ? 's' : ''}`);
+      parts.push(
+        `${unverifiedHostels.length} listed hostel${unverifiedHostels.length !== 1 ? "s" : ""}`,
+      );
     }
-    
+
     if (filteredHostels.length === 0) {
-      parts.push('No hostels found');
+      parts.push("No hostels found");
     }
-    
+
     if (filters.maxDistance) parts.push(`within ${filters.maxDistance} km`);
     if (filters.minPrice || filters.maxPrice) {
-      parts.push(`¢${filters.minPrice || '0'}–${filters.maxPrice || '∞'}`);
+      parts.push(`¢${filters.minPrice || "0"}–${filters.maxPrice || "∞"}`);
     }
     if (filters.searchTerm) parts.push(`matching "${filters.searchTerm}"`);
-    return parts.join(', ');
+    return parts.join(", ");
   };
+
+  if (!mounted) {
+    return <DashboardPageSkeleton />;
+  }
 
   return (
     <div className="bg-white font-sans min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl">
         {mounted && (
           <>
+            {/* Dashboard Header Banner with School Location */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-end mb-6"
+              transition={{ duration: 0.35 }}
+              className="mb-6 sm:mb-8 bg-gradient-to-br from-gray-50 via-white to-gray-50/80 border border-gray-200/80 rounded-2xl p-4 sm:p-6 shadow-sm"
             >
-              {canView && (              
-                <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowMap(!showMap)}
-                className="fixed bottom-4 right-4 sm:static bg-black text-white px-6 py-3 font-medium transition hover:bg-gray-800 flex items-center gap-2 z-10"
-                aria-label={showMap ? 'Show list view' : 'Show map view'}
-              >
-                {showMap ? <p className='flex items-center justify-center gap-2'><FiList /> List View</p> : <p className='flex items-center justify-center gap-2'><FiMap /> Map View</p>}
-              </motion.button>)}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 text-black text-xs font-semibold">
+                    <FiMapPin className="h-3.5 w-3.5 text-black" />
+                    <span>Campus Location</span>
+                  </div>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-black tracking-tight leading-snug break-words">
+                    Hostels near{" "}
+                    <span className="underline decoration-black/20 underline-offset-4">
+                      {schoolName || "your campus"}
+                    </span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                    Explore verified and listed accommodations within your
+                    campus radius
+                  </p>
+                </div>
 
-              {!canView && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={openPaywallModal} // Changed from unlockAccess to openPaywallModal
-                  className="fixed bottom-4 right-4 sm:static bg-black text-white px-6 py-3 font-medium transition hover:bg-gray-800 flex items-center gap-2 z-10"
-                  aria-label="Unlock access"
-                >
-                  <Lock size={18} />  Unlock for Map View
-                </motion.button>
-              )}
+                {/* View Switcher / Paywall CTA */}
+                <div className="flex-shrink-0 self-start sm:self-center">
+                  {canView && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowMap(!showMap)}
+                      className="w-full sm:w-auto bg-black text-white px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all hover:bg-gray-800 flex items-center justify-center gap-2 shadow-sm"
+                      aria-label={showMap ? "Show list view" : "Show map view"}
+                    >
+                      {showMap ? (
+                        <>
+                          <FiList className="h-4 w-4" />
+                          <span>List View</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiMap className="h-4 w-4" />
+                          <span>Map View</span>
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+
+                  {!canView && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={openPaywallModal}
+                      className="w-full sm:w-auto bg-black text-white px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all hover:bg-gray-800 flex items-center justify-center gap-2 shadow-sm"
+                      aria-label="Unlock access"
+                    >
+                      <Lock size={15} />
+                      <span>Unlock Map View</span>
+                    </motion.button>
+                  )}
+                </div>
+              </div>
             </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="text-xs md:text-2xl font-bold text-black mb-3 md:mb-8 text-left"
-            >
-              Hostels near {schoolName || 'your school'}
-            </motion.h1>
 
             {error && (
               <motion.div
@@ -288,38 +363,41 @@ export default function HostelsPage() {
 
             {isLoading && !error && (
               <motion.div
+                key="skeleton"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-[400px] sm:h-[600px] flex items-center justify-center"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <div className="relative flex w-64 animate-pulse gap-2 p-4">
-                  <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-                  <div className="flex-1">
-                    <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-                    <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-                  </div>
-                  <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-                </div>
+                <DashboardContentSkeleton />
               </motion.div>
             )}
 
             {!isLoading && !error && (
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {/* Desktop Filter Panel */}
+              <motion.div
+                key="content"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
+              >
+                {/* Desktop Sticky Filter Panel */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                  className="hidden md:block md:col-span-1 lg:sticky lg:top-4"
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                  className="hidden md:block md:col-span-1"
                 >
-                  <FilterPanel
-                    filters={filters}
-                    onSearchChange={handleSearchChange}
-                    onMinPriceChange={handleMinPriceChange}
-                    onMaxPriceChange={handleMaxPriceChange}
-                    onMaxDistanceChange={handleMaxDistanceChange}
-                    onResetFilters={handleResetFilters}
-                  />
+                  <div className="sticky top-24 self-start">
+                    <FilterPanel
+                      filters={filters}
+                      onSearchChange={handleSearchChange}
+                      onMinPriceChange={handleMinPriceChange}
+                      onMaxPriceChange={handleMaxPriceChange}
+                      onMaxDistanceChange={handleMaxDistanceChange}
+                      onResetFilters={handleResetFilters}
+                    />
+                  </div>
                 </motion.div>
 
                 {/* Mobile Filter Button */}
@@ -354,8 +432,13 @@ export default function HostelsPage() {
                         exit={{ opacity: 0 }}
                         className="text-center py-12"
                       >
-                        <p className="text-black text-lg mb-2">No hostels match your filters.</p>
-                        <p className="text-gray-800">Try adjusting or resetting the filters to see more options.</p>
+                        <p className="text-black text-lg mb-2">
+                          No hostels match your filters.
+                        </p>
+                        <p className="text-gray-800">
+                          Try adjusting or resetting the filters to see more
+                          options.
+                        </p>
                         <button
                           onClick={handleResetFilters}
                           className="mt-4 text-black hover:underline"
@@ -367,14 +450,17 @@ export default function HostelsPage() {
 
                     {filteredHostels.length > 0 && (
                       <motion.div
-                        key={showMap ? 'map' : 'list'}
+                        key={showMap ? "map" : "list"}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
                         {showMap ? (
-                          <MemoizedMapView hostels={filteredHostels} schoolCoords={schoolCoords} />
+                          <MemoizedMapView
+                            hostels={filteredHostels}
+                            schoolCoords={schoolCoords}
+                          />
                         ) : (
                           <div className="space-y-8">
                             {/* Verified Hostels Section */}
@@ -384,7 +470,8 @@ export default function HostelsPage() {
                                   Bookable Hostels ({verifiedHostels.length})
                                 </h2>
                                 <p className="text-sm text-gray-600 mb-4">
-                                  Verified hostels you can book directly on AllMap.
+                                  Verified hostels you can book directly on
+                                  AllMap.
                                 </p>
                                 <MemoizedHostelList hostels={verifiedHostels} />
                               </section>
@@ -394,12 +481,16 @@ export default function HostelsPage() {
                             {unverifiedHostels.length > 0 && (
                               <section>
                                 <h2 className="text-xl font-bold text-black">
-                                  Call-to-Book Hostels ({unverifiedHostels.length})
+                                  Call-to-Book Hostels (
+                                  {unverifiedHostels.length})
                                 </h2>
                                 <p className="text-sm text-gray-600 mb-4">
-                                  Hostels not yet onboarded. We help you contact them.
+                                  Hostels not yet onboarded. We help you contact
+                                  them.
                                 </p>
-                                <MemoizedHostelList hostels={unverifiedHostels} />
+                                <MemoizedHostelList
+                                  hostels={unverifiedHostels}
+                                />
                               </section>
                             )}
                           </div>
@@ -408,7 +499,7 @@ export default function HostelsPage() {
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Mobile Filter Modal */}
@@ -422,10 +513,10 @@ export default function HostelsPage() {
                   onClick={() => setIsFilterModalOpen(false)}
                 >
                   <motion.div
-                    initial={{ translateY: '100%' }}
+                    initial={{ translateY: "100%" }}
                     animate={{ translateY: 0 }}
-                    exit={{ translateY: '100%' }}
-                    transition={{ type: 'spring', damping: 25 }}
+                    exit={{ translateY: "100%" }}
+                    transition={{ type: "spring", damping: 25 }}
                     className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                   >

@@ -1,12 +1,25 @@
 "use client";
 
-import { useAuth } from '@repo/shared/context';
-import { useEffect, useState } from 'react';
-import { FiUser, FiMail, FiPhone, FiShield, FiCheckCircle, FiXCircle, FiEdit, FiMapPin, FiGlobe, FiLock, FiUserPlus } from 'react-icons/fi';
-import { motion } from 'framer-motion';
-import EditProfileModal from '@/_components/profile/EditProfileModal';
-import ChangePasswordModal from '@/_components/profile/ChangePasswordModal';
-import EditEmergencyContactModal from '@/_components/profile/EditEmergencyContactModal';
+import { useAuth } from "@repo/shared/context";
+import { useEffect, useState } from "react";
+import {
+  FiUser,
+  FiMail,
+  FiPhone,
+  FiShield,
+  FiCheckCircle,
+  FiXCircle,
+  FiEdit,
+  FiMapPin,
+  FiGlobe,
+  FiLock,
+  FiUserPlus,
+} from "react-icons/fi";
+import { motion } from "framer-motion";
+import EditProfileModal from "@/_components/profile/EditProfileModal";
+import ChangePasswordModal from "@/_components/profile/ChangePasswordModal";
+import EditEmergencyContactModal from "@/_components/profile/EditEmergencyContactModal";
+import { ProfilePageSkeleton } from "@/_components/common/ui/PageSkeletons";
 
 interface School {
   id: string;
@@ -38,7 +51,8 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [showEmergencyContactModal, setShowEmergencyContactModal] = useState(false);
+  const [showEmergencyContactModal, setShowEmergencyContactModal] =
+    useState(false);
 
   useEffect(() => {
     if (!authUser) {
@@ -50,25 +64,30 @@ export default function ProfilePage() {
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const token =
+          localStorage.getItem("access_token") ||
+          sessionStorage.getItem("access_token");
         if (!token) {
-          throw new Error('No authentication token found');
+          throw new Error("No authentication token found");
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/user-profile`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
         if (!response.ok) {
           if (response.status === 401) {
-            throw new Error('Authentication failed. Please log in again.');
+            throw new Error("Authentication failed. Please log in again.");
           }
           if (response.status === 404) {
-            throw new Error('Profile not found');
+            throw new Error("Profile not found");
           }
           throw new Error(`Failed to fetch profile: ${response.status}`);
         }
@@ -76,8 +95,10 @@ export default function ProfilePage() {
         const data = await response.json();
         setProfile(data);
       } catch (err) {
-        console.error('Profile fetch error:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        console.error("Profile fetch error:", err);
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred",
+        );
       } finally {
         setLoading(false);
       }
@@ -91,41 +112,26 @@ export default function ProfilePage() {
   };
 
   const formatGender = (gender?: string) => {
-    if (!gender) return 'Not specified';
-    
+    if (!gender) return "Not specified";
+
     const genderMap: { [key: string]: string } = {
-      'male': 'Male',
-      'female': 'Female',
-      'other': 'Other',
-      'prefer_not_to_say': 'Prefer not to say'
+      male: "Male",
+      female: "Female",
+      other: "Other",
+      prefer_not_to_say: "Prefer not to say",
     };
-    
+
     return genderMap[gender] || gender;
   };
 
   const formatRelationship = (relationship?: string) => {
-    if (!relationship) return '';
+    if (!relationship) return "";
     return relationship.charAt(0).toUpperCase() + relationship.slice(1);
   };
 
   // Loading state
   if (loading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="h-[400px] sm:h-[600px] flex items-center justify-center"
-      >
-        <div className="relative flex w-64 animate-pulse gap-2 p-4">
-          <div className="h-12 w-12 rounded-full bg-slate-400"></div>
-          <div className="flex-1">
-            <div className="mb-1 h-5 w-3/5 rounded-lg bg-slate-400 text-lg"></div>
-            <div className="h-5 w-[90%] rounded-lg bg-slate-400 text-sm"></div>
-          </div>
-          <div className="absolute bottom-5 right-0 h-4 w-4 rounded-full bg-slate-400"></div>
-        </div>
-      </motion.div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   // Error state
@@ -178,12 +184,16 @@ export default function ProfilePage() {
                 <div className="flex items-center space-x-4 mb-4">
                   <FiUser className="h-6 w-6" />
                   <div>
-                    <h2 className="text-2xl font-bold">{profile.name || 'User'}</h2>
+                    <h2 className="text-2xl font-bold">
+                      {profile.name || "User"}
+                    </h2>
                     <p className="text-base text-gray-800">{profile.email}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <FiShield className="h-4 w-4" />
-                    <span className="text-sm text-gray-800 capitalize">{profile.role.replace('_', ' ')}</span>
+                    <span className="text-sm text-gray-800 capitalize">
+                      {profile.role.replace("_", " ")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -195,15 +205,41 @@ export default function ProfilePage() {
                   Personal Information
                 </h3>
                 <div className="space-y-4">
-                  <InfoItem icon={<FiUser className="h-4 w-4" />} label="Full Name" value={profile.name || "Not provided"} />
-                  <InfoItem icon={<FiUser className="h-4 w-4" />} label="Gender" value={formatGender(profile.gender)} />
-                  <InfoItem icon={<FiMail className="h-4 w-4" />} label="Email" value={profile.email} />
-                  <InfoItem icon={<FiPhone className="h-4 w-4" />} label="Phone" value={profile.phone || "Not provided"} />
+                  <InfoItem
+                    icon={<FiUser className="h-4 w-4" />}
+                    label="Full Name"
+                    value={profile.name || "Not provided"}
+                  />
+                  <InfoItem
+                    icon={<FiUser className="h-4 w-4" />}
+                    label="Gender"
+                    value={formatGender(profile.gender)}
+                  />
+                  <InfoItem
+                    icon={<FiMail className="h-4 w-4" />}
+                    label="Email"
+                    value={profile.email}
+                  />
+                  <InfoItem
+                    icon={<FiPhone className="h-4 w-4" />}
+                    label="Phone"
+                    value={profile.phone || "Not provided"}
+                  />
                   <div className="flex items-center space-x-3">
-                    <div>{profile.is_verified ? <FiCheckCircle className="h-4 w-4" /> : <FiXCircle className="h-4 w-4" />}</div>
+                    <div>
+                      {profile.is_verified ? (
+                        <FiCheckCircle className="h-4 w-4" />
+                      ) : (
+                        <FiXCircle className="h-4 w-4" />
+                      )}
+                    </div>
                     <div>
                       <p className="text-sm">Verification Status</p>
-                      <p className="text-base">{profile.is_verified ? "Verified Account" : "Unverified Account"}</p>
+                      <p className="text-base">
+                        {profile.is_verified
+                          ? "Verified Account"
+                          : "Unverified Account"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -239,26 +275,28 @@ export default function ProfilePage() {
                 </h3>
                 {profile.emergency_contact_name ? (
                   <div className="space-y-4 bg-gray-50 rounded-lg p-6">
-                    <InfoItem 
-                      icon={<FiUser className="h-4 w-4" />} 
-                      label="Contact Name" 
-                      value={profile.emergency_contact_name} 
+                    <InfoItem
+                      icon={<FiUser className="h-4 w-4" />}
+                      label="Contact Name"
+                      value={profile.emergency_contact_name}
                     />
-                    <InfoItem 
-                      icon={<FiPhone className="h-4 w-4" />} 
-                      label="Contact Phone" 
-                      value={profile.emergency_contact_phone || 'Not provided'} 
+                    <InfoItem
+                      icon={<FiPhone className="h-4 w-4" />}
+                      label="Contact Phone"
+                      value={profile.emergency_contact_phone || "Not provided"}
                     />
-                    <InfoItem 
-                      icon={<FiUserPlus className="h-4 w-4" />} 
-                      label="Relationship" 
-                      value={formatRelationship(profile.emergency_contact_relationship)} 
+                    <InfoItem
+                      icon={<FiUserPlus className="h-4 w-4" />}
+                      label="Relationship"
+                      value={formatRelationship(
+                        profile.emergency_contact_relationship,
+                      )}
                     />
                     {profile.emergency_contact_email && (
-                      <InfoItem 
-                        icon={<FiMail className="h-4 w-4" />} 
-                        label="Contact Email" 
-                        value={profile.emergency_contact_email} 
+                      <InfoItem
+                        icon={<FiMail className="h-4 w-4" />}
+                        label="Contact Email"
+                        value={profile.emergency_contact_email}
                       />
                     )}
                     <motion.button
@@ -273,7 +311,9 @@ export default function ProfilePage() {
                 ) : (
                   <div className="bg-gray-50 rounded-lg p-6 text-center">
                     <FiUserPlus className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">No emergency contact added yet</p>
+                    <p className="text-gray-600 mb-4">
+                      No emergency contact added yet
+                    </p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
@@ -313,9 +353,13 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-start justify-between pt-4 border-t border-gray-200">
                     <div>
-                      <h4 className="font-semibold text-gray-900">Account Verification</h4>
+                      <h4 className="font-semibold text-gray-900">
+                        Account Verification
+                      </h4>
                       <p className="text-sm text-gray-600">
-                        {profile.is_verified ? "Your account is verified" : "Verify your account for enhanced security"}
+                        {profile.is_verified
+                          ? "Your account is verified"
+                          : "Verify your account for enhanced security"}
                       </p>
                     </div>
                     <div className="flex items-center">
@@ -347,15 +391,21 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h4 className="text-xl font-bold mb-2">{profile.school.name}</h4>
+                        <h4 className="text-xl font-bold mb-2">
+                          {profile.school.name}
+                        </h4>
                         <div className="flex items-center text-gray-800 mb-3">
                           <FiGlobe className="h-4 w-4 mr-2" />
-                          <span className="text-sm">{profile.school.domain}</span>
+                          <span className="text-sm">
+                            {profile.school.domain}
+                          </span>
                         </div>
                       </div>
                       <span className="text-sm">Connected</span>
                     </div>
-                    <div className="text-sm mb-4">School Campus View (Not Available)</div>
+                    <div className="text-sm mb-4">
+                      School Campus View (Not Available)
+                    </div>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
@@ -366,8 +416,12 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div>
-                    <h4 className="text-lg font-bold mb-2">No School Connected</h4>
-                    <p className="mb-4">You haven&apos;t been associated with a school yet</p>
+                    <h4 className="text-lg font-bold mb-2">
+                      No School Connected
+                    </h4>
+                    <p className="mb-4">
+                      You haven&apos;t been associated with a school yet
+                    </p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
@@ -406,10 +460,10 @@ export default function ProfilePage() {
                 isOpen={showEmergencyContactModal}
                 onClose={() => setShowEmergencyContactModal(false)}
                 emergencyContact={{
-                  name: profile.emergency_contact_name || '',
-                  phone: profile.emergency_contact_phone || '',
-                  relationship: profile.emergency_contact_relationship || '',
-                  email: profile.emergency_contact_email || '',
+                  name: profile.emergency_contact_name || "",
+                  phone: profile.emergency_contact_phone || "",
+                  relationship: profile.emergency_contact_relationship || "",
+                  email: profile.emergency_contact_email || "",
                 }}
                 onUpdate={handleProfileUpdate}
               />
@@ -422,13 +476,23 @@ export default function ProfilePage() {
 }
 
 // Reusable InfoItem component
-function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function InfoItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-start space-x-3">
       <div>{icon}</div>
       <div>
         <p className="text-sm">{label}</p>
-        <p className="text-base truncate" title={value}>{value}</p>
+        <p className="text-base truncate" title={value}>
+          {value}
+        </p>
       </div>
     </div>
   );

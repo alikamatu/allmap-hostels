@@ -1,57 +1,52 @@
-import { motion } from 'framer-motion';
-import { CheckIcon } from '@heroicons/react/24/outline';
-import React from 'react';
+"use client";
+
+import { CheckCircle2 } from "lucide-react";
+import { cn } from "@repo/ui";
 
 interface ProgressBarProps {
   currentStep: number;
-  steps: { number: number; label: string }[];
+  totalSteps: number;
+  onStepClick?: (step: number) => void;
 }
 
-export const ProgressBar: React.FC<ProgressBarProps> = ({ currentStep, steps }) => {
-  return (
-    <div className="mb-12">
-      <div className="relative">
-        {/* Background Line */}
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-100 -translate-y-1/2" />
-        
-        {/* Progress Line */}
-        <motion.div 
-          className="absolute top-1/2 left-0 h-0.5 bg-black -translate-y-1/2"
-          initial={{ width: '0%' }}
-          animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-        />
+const STEPS = [
+  { id: 1, label: "Profile" },
+  { id: 2, label: "School" },
+  { id: 3, label: "Safety" },
+];
 
-        {/* Steps */}
-        <div className="relative flex justify-between">
-          {steps.map((step) => (
-            <div key={step.number} className="flex flex-col items-center">
-              <motion.div
-                initial={false}
-                animate={{
-                  backgroundColor: currentStep >= step.number ? '#000000' : '#FFFFFF',
-                  borderColor: currentStep >= step.number ? '#000000' : '#E5E7EB',
-                  scale: currentStep === step.number ? 1.2 : 1,
-                }}
-                className={`w-4 h-4 rounded-full border-2 z-10 flex items-center justify-center transition-colors duration-300`}
-              >
-                {currentStep > step.number && (
-                  <CheckIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
-                )}
-              </motion.div>
-              <div className="absolute -bottom-8">
-                <span
-                  className={`text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-colors duration-300 ${
-                    currentStep >= step.number ? 'text-black' : 'text-gray-300'
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+export const ProgressBar = ({ currentStep, onStepClick }: ProgressBarProps) => {
+  return (
+    <div className="flex border-b border-gray-200 mb-6 sm:mb-8 p-1 bg-gray-100 rounded-xl">
+      {STEPS.map((step) => {
+        const isCompleted = currentStep > step.id;
+        const isCurrent = currentStep === step.id;
+        const isClickable = isCompleted && Boolean(onStepClick);
+
+        return (
+          <button
+            key={step.id}
+            type="button"
+            disabled={!isClickable}
+            onClick={() => isClickable && onStepClick?.(step.id)}
+            className={cn(
+              "flex-1 py-2.5 px-2 text-xs sm:text-sm font-bold transition-all duration-300 rounded-lg flex items-center justify-center gap-1.5",
+              isCurrent
+                ? "bg-white text-black shadow-sm"
+                : isCompleted
+                  ? "text-black hover:bg-gray-200 cursor-pointer"
+                  : "text-gray-400 cursor-default",
+            )}
+          >
+            {isCompleted ? (
+              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-black flex-shrink-0" />
+            ) : (
+              <span>{step.id}.</span>
+            )}
+            <span className="truncate">{step.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 };
