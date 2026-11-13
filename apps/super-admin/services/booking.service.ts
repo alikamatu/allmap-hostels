@@ -3,148 +3,145 @@ import {
   BookingStats,
   BookingFilters,
   BookingPagination,
-} from '@/types/booking.types';
+} from "@/types/booking.types";
 
-const apiService = {
-  async request<T>(options: {
-    method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
-    url: string;
-    params?: any;
-    headers?: any;
-  }): Promise<T> {
-    const token = localStorage.getItem('access_token');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}` + options.url, {
-      method: options.method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-      body: options.params && (options.method === 'POST' || options.method === 'PATCH')
-        ? JSON.stringify(options.params)
-        : undefined,
-    });
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1000";
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'API request failed');
+function buildQueryString(params?: object): string {
+  if (!params) return "";
+  const searchParams = new URLSearchParams();
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.append(key, String(v));
+        }
+      });
+    } else {
+      searchParams.set(key, String(value));
     }
-
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    return response.json();
-  },
-
-  async requestWithParams<T>(options: {
-    method: 'GET' | 'DELETE';
-    url: string;
-    params?: any;
-    headers?: any;
-  }): Promise<T> {
-    const token = localStorage.getItem('access_token');
-    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + options.url;
-    
-    if (options.params) {
-      const queryString = new URLSearchParams(options.params).toString();
-      fullUrl += `?${queryString}`;
-    }
-
-    const response = await fetch(fullUrl, {
-      method: options.method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'API request failed');
-    }
-
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    return response.json();
-  },
-};
+  });
+  return searchParams.toString();
+}
 
 class BookingService {
+  private getAccessToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token")
+    );
+  }
+
+  private getAuthHeaders(accept = "application/json") {
+    const token = this.getAccessToken();
+    return {
+      "Content-Type": "application/json",
+      Accept: accept,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  }
+
+  private handleUnauthorized() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("access_token");
+      sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem("user");
+      window.location.href = "/sign-in";
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+
+    if (response.status === 401) {
+      this.handleUnauthorized();
+      throw new Error("Unauthorized");
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const errorText =
+        errorData?.message || (await response.text().catch(() => ""));
+      throw new Error(errorText || `Request failed (${response.status})`);
+    }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+    return response.text() as unknown as T;
+  }
+
   async getBookings(filters?: BookingFilters): Promise<{
     bookings: BookingRecord[];
     pagination: BookingPagination;
   }> {
-    return apiService.requestWithParams<{
-      bookings: BookingRecord[];
-      pagination: BookingPagination;
-    }>({
-      method: 'GET',
-      url: '/admin/bookings',
-      params: filters,
-    });
+    const qs = buildQueryString(filters);
+    return this.request(`/admin/bookings${qs ? `?${qs}` : ""}`);
   }
 
   async getBookingStats(): Promise<BookingStats> {
-    return apiService.request<BookingStats>({
-      method: 'GET',
-      url: '/admin/bookings/stats',
-    });
+    return this.request<BookingStats>("/admin/bookings/stats");
   }
 
   async getBookingById(id: string): Promise<BookingRecord> {
-    return apiService.request<BookingRecord>({
-      method: 'GET',
-      url: `/admin/bookings/${id}`,
-    });
+    return this.request<BookingRecord>(`/admin/bookings/${id}`);
   }
 
   async getUpcomingCheckIns(days: number = 7): Promise<BookingRecord[]> {
-    return apiService.requestWithParams<BookingRecord[]>({
-      method: 'GET',
-      url: '/admin/bookings/upcoming/checkins',
-      params: { days },
-    });
+    const qs = buildQueryString({ days });
+    return this.request<BookingRecord[]>(
+      `/admin/bookings/upcoming/checkins?${qs}`,
+    );
   }
 
   async getUpcomingCheckOuts(days: number = 7): Promise<BookingRecord[]> {
-    return apiService.requestWithParams<BookingRecord[]>({
-      method: 'GET',
-      url: '/admin/bookings/upcoming/checkouts',
-      params: { days },
-    });
+    const qs = buildQueryString({ days });
+    return this.request<BookingRecord[]>(
+      `/admin/bookings/upcoming/checkouts?${qs}`,
+    );
   }
 
   async getOverdueBookings(): Promise<BookingRecord[]> {
-    return apiService.request<BookingRecord[]>({
-      method: 'GET',
-      url: '/admin/bookings/overdue',
-    });
+    return this.request<BookingRecord[]>("/admin/bookings/overdue");
   }
 
   async updateBookingStatus(
     id: string,
     status: string,
-    notes?: string
+    notes?: string,
   ): Promise<BookingRecord> {
-    return apiService.request<BookingRecord>({
-      method: 'PATCH',
-      url: `/admin/bookings/${id}/status`,
-      params: { status, notes },
+    return this.request<BookingRecord>(`/admin/bookings/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, notes }),
     });
   }
 
   async updatePaymentStatus(
     id: string,
-    paymentStatus: string
+    paymentStatus: string,
   ): Promise<BookingRecord> {
-    return apiService.request<BookingRecord>({
-      method: 'PATCH',
-      url: `/admin/bookings/${id}/payment-status`,
-      params: { paymentStatus },
+    return this.request<BookingRecord>(`/admin/bookings/${id}/payment-status`, {
+      method: "PATCH",
+      body: JSON.stringify({ paymentStatus }),
     });
   }
 
@@ -155,44 +152,29 @@ class BookingService {
       paymentMethod: string;
       transactionRef: string;
       notes?: string;
-    }
-  ): Promise<{ booking: BookingRecord; payment: any }> {
-    return apiService.request<{ booking: BookingRecord; payment: any }>({
-      method: 'POST',
-      url: `/admin/bookings/${id}/payments`,
-      params: data,
-    });
-  }
-
-  async getBookingPayments(id: string): Promise<any[]> {
-    return apiService.request<any[]>({
-      method: 'GET',
-      url: `/admin/bookings/${id}/payments`,
-    });
-  }
-
-  async exportBookings(filters?: BookingFilters): Promise<Blob> {
-    const token = localStorage.getItem('access_token');
-    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + '/admin/bookings/export/csv';
-    
-    if (filters) {
-      const queryString = new URLSearchParams(filters as any).toString();
-      fullUrl += `?${queryString}`;
-    }
-
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  ): Promise<{ booking: BookingRecord; payment: unknown }> {
+    return this.request<{ booking: BookingRecord; payment: unknown }>(
+      `/admin/bookings/${id}/payments`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
       },
-    });
+    );
+  }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Failed to export bookings');
-    }
+  async getBookingPayments(id: string): Promise<unknown[]> {
+    return this.request<unknown[]>(`/admin/bookings/${id}/payments`);
+  }
 
-    return response.blob();
+  async exportBookings(filters?: BookingFilters): Promise<string> {
+    const qs = buildQueryString(filters);
+    return this.request<string>(
+      `/admin/bookings/export/csv${qs ? `?${qs}` : ""}`,
+      {
+        headers: this.getAuthHeaders("text/csv"),
+      },
+    );
   }
 }
 

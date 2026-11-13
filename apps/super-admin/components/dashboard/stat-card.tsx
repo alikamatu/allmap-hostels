@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
+import { motion } from "framer-motion";
+import {
+  TrendingUp,
   TrendingDown,
   Users,
   Building,
@@ -11,9 +11,13 @@ import {
   UserPlus,
   Home,
   Clock,
-  CreditCard
-} from 'lucide-react';
-import { formatCurrency, formatNumber, formatPercentage } from '@/lib/formatters';
+  CreditCard,
+} from "lucide-react";
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercentage,
+} from "@/lib/formatters";
 
 interface StatCardProps {
   title: string;
@@ -22,10 +26,10 @@ interface StatCardProps {
   description: string;
   index?: number;
   icon?: string;
-  format?: 'currency' | 'number' | 'text';
+  format?: "currency" | "number" | "text";
 }
 
-const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
   Building,
   Calendar,
@@ -36,95 +40,82 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   CreditCard,
 };
 
-export default function StatCard({ 
-  title, 
-  value, 
+const toneMap: Record<string, { bg: string; text: string }> = {
+  Users: { bg: "bg-blue-50", text: "text-blue-600" },
+  UserPlus: { bg: "bg-indigo-50", text: "text-indigo-600" },
+  Building: { bg: "bg-emerald-50", text: "text-emerald-600" },
+  Home: { bg: "bg-teal-50", text: "text-teal-600" },
+  Calendar: { bg: "bg-purple-50", text: "text-purple-600" },
+  Clock: { bg: "bg-amber-50", text: "text-amber-600" },
+  DollarSign: { bg: "bg-orange-50", text: "text-[#ff7a00]" },
+  CreditCard: { bg: "bg-emerald-50", text: "text-emerald-600" },
+};
+
+export default function StatCard({
+  title,
+  value,
   change,
-  description, 
+  description,
   index = 0,
-  icon = 'Users',
-  format = 'text'
+  icon = "Users",
+  format = "text",
 }: StatCardProps) {
   const isPositive = change !== undefined ? change >= 0 : true;
   const Icon = iconMap[icon] || Users;
+  const tone = toneMap[icon] || { bg: "bg-gray-100", text: "text-gray-700" };
 
   let formattedValue = value;
-  if (typeof value === 'number') {
-    if (format === 'currency') {
+  if (typeof value === "number") {
+    if (format === "currency") {
       formattedValue = formatCurrency(value);
-    } else if (format === 'number') {
+    } else if (format === "number") {
       formattedValue = formatNumber(value);
     }
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.05 }}
-      whileHover={{ opacity: 0.9 }}
-      className="bg-white p-5"
+      transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.2) }}
+      className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-2xs hover:border-gray-300 transition-colors flex flex-col justify-between"
     >
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="text-11 font-medium text-gray-500 uppercase tracking-wide mb-1">
-            {title}
-          </h3>
-          <div className="flex items-baseline">
-            <span className="text-24 font-semibold text-gray-900 mr-2">
-              {formattedValue}
-            </span>
-            {change !== undefined && (
-              <div className="flex items-center">
-                {isPositive ? (
-                  <TrendingUp size={12} className="text-green-600 mr-1" />
-                ) : (
-                  <TrendingDown size={12} className="text-red-600 mr-1" />
-                )}
-                <span className={`text-11 font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatPercentage(change)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className={`p-2 ${getBackgroundColor(title)}`}>
-          <Icon className={getIconColor(title)} />
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+          {title}
+        </span>
+        <div
+          className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${tone.bg}`}
+        >
+          <Icon className={`w-4 h-4 ${tone.text}`} />
         </div>
       </div>
-      <p className="text-10 text-gray-400">{description}</p>
+
+      <div>
+        <div className="text-xl sm:text-2xl font-bold text-gray-950 tracking-tight truncate">
+          {formattedValue}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <span className="text-xs text-gray-500 truncate">{description}</span>
+          {change !== undefined && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0 ${
+                isPositive
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-rose-50 text-rose-600"
+              }`}
+            >
+              {isPositive ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              {formatPercentage(change)}
+            </span>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
-}
-
-function getBackgroundColor(title: string) {
-  const colors: Record<string, string> = {
-    'Total Users': 'bg-blue-50',
-    'New Users Today': 'bg-indigo-50',
-    'Verified Hostels': 'bg-green-50',
-    'Total Hostels': 'bg-teal-50',
-    'Active Bookings': 'bg-purple-50',
-    'Total Bookings': 'bg-violet-50',
-    'Monthly Revenue': 'bg-orange-50',
-    'Total Revenue': 'bg-amber-50',
-    'Pending Payments': 'bg-red-50',
-    'Completed Payments': 'bg-emerald-50',
-  };
-  return colors[title] || 'bg-gray-50';
-}
-
-function getIconColor(title: string) {
-  const colors: Record<string, string> = {
-    'Total Users': 'text-blue-600',
-    'New Users Today': 'text-indigo-600',
-    'Verified Hostels': 'text-green-600',
-    'Total Hostels': 'text-teal-600',
-    'Active Bookings': 'text-purple-600',
-    'Total Bookings': 'text-violet-600',
-    'Monthly Revenue': 'text-orange-600',
-    'Total Revenue': 'text-amber-600',
-    'Pending Payments': 'text-red-600',
-    'Completed Payments': 'text-emerald-600',
-  };
-  return colors[title] || 'text-gray-600';
 }

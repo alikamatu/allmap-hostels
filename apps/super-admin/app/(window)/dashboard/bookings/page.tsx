@@ -1,279 +1,433 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from "react";
 import {
-  Calendar,
+  Search,
   Download,
   Filter,
-  Search,
-  Home,
-  RefreshCw,
-  AlertCircle,
-  Bell,
+  Calendar,
   CalendarDays,
-} from 'lucide-react';
-import { useBookings } from '@/hooks/useBookings';
-import { BookingFilters, BookingStatus } from '@/types/booking.types';
-import BookingStats from '@/components/dashboard/bookings/booking-stats';
-import BookingTable from '@/components/dashboard/bookings/booking-table';
-import BookingsFiltersPanel from '@/components/dashboard/bookings/bookings-filters-panel';
-import BookingDetailsModal from '@/components/dashboard/bookings/booking-details-modal';
-import { BookingRecord } from '@/types/booking.types';
+  AlertCircle,
+  CheckCircle2,
+  Home,
+  X,
+} from "lucide-react";
+import TopBar from "@/components/dashboard/top-bar";
+import { useBookings } from "@/hooks/useBookings";
+import {
+  BookingFilters,
+  BookingRecord,
+  BookingStatus,
+  PaymentStatus,
+} from "@/types/booking.types";
+import BookingStats from "@/components/dashboard/bookings/booking-stats";
+import BookingTable from "@/components/dashboard/bookings/booking-table";
+import BookingsFiltersPanel from "@/components/dashboard/bookings/bookings-filters-panel";
+import BookingDetailsModal from "@/components/dashboard/bookings/booking-details-modal";
+import { CustomSelect, SelectOption } from "@/components/ui/custom-select";
+import { ConfirmDialog } from "@/components/ui/modal";
+
+type BookingTab = "all" | "checkins" | "checkouts" | "overdue";
+type SortOptionValue = "newest" | "oldest" | "amount_desc" | "checkin_asc";
+
+const SORT_OPTIONS: SelectOption<SortOptionValue>[] = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "amount_desc", label: "Highest Amount" },
+  { value: "checkin_asc", label: "Soonest Check-in" },
+];
 
 export default function BookingsPage() {
   const [filters, setFilters] = useState<BookingFilters>({
     page: 1,
     limit: 20,
+    sortBy: "createdAt",
+    sortOrder: "DESC",
   });
+  const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
-  const [showBookingDetails, setShowBookingDetails] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'overdue'>('all');
+  const [activeTab, setActiveTab] = useState<BookingTab>("all");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null,
+  );
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [pendingCancel, setPendingCancel] = useState<BookingRecord | null>(
+    null,
+  );
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [notice, setNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => {
+        const trimmed = searchQuery.trim() || undefined;
+        if (prev.search === trimmed) return prev;
+        return { ...prev, search: trimmed, page: 1 };
+      });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Auto-dismiss transient feedback notices
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   const {
     bookings,
     pagination,
     loading,
+    isRefreshing,
     error,
     stats,
     upcomingCheckIns,
     upcomingCheckOuts,
     overdueBookings,
     refetch,
-    refetchStats,
-    refetchUpcoming,
-    refetchOverdue,
     updateStatus,
+    updatePaymentStatus,
     exportBookings,
   } = useBookings(filters);
 
-  const handleFilterChange = (newFilters: Partial<BookingFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
-  };
-
-  const handleSearch = () => {
-    handleFilterChange({ search: searchTerm || undefined });
-  };
-
-  const handleExport = async () => {
-    const csv = await exportBookings(filters);
-    if (csv) {
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `bookings-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-    }
-  };
-
-  const handleRefresh = async () => {
-    await Promise.all([
-      refetch(filters),
-      refetchStats(),
-      refetchUpcoming(),
-      refetchOverdue(),
-    ]);
-  };
-
-  const handleStatusUpdate = async (id: string, status: BookingStatus) => {
-    await updateStatus(id, status);
-  };
-
-  const handleViewDetails = (booking: BookingRecord) => {
-    setSelectedBooking(booking);
-    setShowBookingDetails(true);
-  };
-
-  const getDisplayBookings = () => {
+  const displayedBookings = useMemo(() => {
     switch (activeTab) {
-      case 'upcoming':
+      case "checkins":
         return upcomingCheckIns;
-      case 'overdue':
+      case "checkouts":
+        return upcomingCheckOuts;
+      case "overdue":
         return overdueBookings;
       default:
         return bookings;
     }
+  }, [
+    activeTab,
+    bookings,
+    upcomingCheckIns,
+    upcomingCheckOuts,
+    overdueBookings,
+  ]);
+
+  const selectedBooking = useMemo(() => {
+    if (!selectedBookingId) return null;
+    return (
+      bookings.find((b) => b.id === selectedBookingId) ||
+      upcomingCheckIns.find((b) => b.id === selectedBookingId) ||
+      upcomingCheckOuts.find((b) => b.id === selectedBookingId) ||
+      overdueBookings.find((b) => b.id === selectedBookingId) ||
+      null
+    );
+  }, [
+    selectedBookingId,
+    bookings,
+    upcomingCheckIns,
+    upcomingCheckOuts,
+    overdueBookings,
+  ]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.status) count++;
+    if (filters.paymentStatus) count++;
+    if (filters.bookingType) count++;
+    if (filters.checkInFrom) count++;
+    if (filters.checkInTo) count++;
+    if (filters.overdueOnly) count++;
+    return count;
+  }, [filters]);
+
+  const currentSortValue: SortOptionValue = useMemo(() => {
+    if (filters.sortBy === "totalAmount" && filters.sortOrder === "DESC") {
+      return "amount_desc";
+    }
+    if (filters.sortBy === "checkInDate" && filters.sortOrder === "ASC") {
+      return "checkin_asc";
+    }
+    if (filters.sortBy === "createdAt" && filters.sortOrder === "ASC") {
+      return "oldest";
+    }
+    return "newest";
+  }, [filters.sortBy, filters.sortOrder]);
+
+  const handleSortChange = (val: SortOptionValue | "") => {
+    const next = val || "newest";
+    setFilters((prev) => {
+      switch (next) {
+        case "oldest":
+          return { ...prev, sortBy: "createdAt", sortOrder: "ASC", page: 1 };
+        case "amount_desc":
+          return { ...prev, sortBy: "totalAmount", sortOrder: "DESC", page: 1 };
+        case "checkin_asc":
+          return { ...prev, sortBy: "checkInDate", sortOrder: "ASC", page: 1 };
+        default:
+          return { ...prev, sortBy: "createdAt", sortOrder: "DESC", page: 1 };
+      }
+    });
   };
 
-  const getDisplayTitle = () => {
-    switch (activeTab) {
-      case 'upcoming':
-        return 'Upcoming Check-ins';
-      case 'overdue':
-        return 'Overdue Bookings';
-      default:
-        return 'All Bookings';
+  const handleFilterChange = (newFilters: Partial<BookingFilters>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }));
+    setActiveTab("all");
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
+
+  const handleStatusUpdate = async (
+    booking: BookingRecord,
+    nextStatus: BookingStatus,
+  ) => {
+    if (nextStatus === "cancelled") {
+      setPendingCancel(booking);
+      return;
+    }
+    const updated = await updateStatus(booking.id, nextStatus);
+    if (updated) {
+      setNotice({
+        type: "success",
+        text: `Booking status updated to ${nextStatus.replace("_", " ")}.`,
+      });
     }
   };
 
+  const handleConfirmCancel = async () => {
+    if (!pendingCancel) return;
+    setCancelLoading(true);
+    try {
+      const updated = await updateStatus(pendingCancel.id, "cancelled");
+      if (updated) {
+        setNotice({ type: "success", text: "Booking cancelled." });
+      }
+    } finally {
+      setCancelLoading(false);
+      setPendingCancel(null);
+    }
+  };
+
+  const handlePaymentStatusUpdate = async (
+    bookingId: string,
+    paymentStatus: PaymentStatus,
+  ) => {
+    const updated = await updatePaymentStatus(bookingId, paymentStatus);
+    if (updated) {
+      setNotice({
+        type: "success",
+        text: `Payment status updated to ${paymentStatus}.`,
+      });
+    }
+  };
+
+  const handleExport = async () => {
+    const csv = await exportBookings(filters);
+    if (!csv) return;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bookings-export-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    setNotice({ type: "success", text: "Bookings exported to CSV." });
+  };
+
+  const tabs: {
+    id: BookingTab;
+    label: string;
+    icon: typeof Home;
+    count?: number;
+    badgeClasses?: string;
+  }[] = [
+    { id: "all", label: "All Bookings", icon: Home, count: pagination.total },
+    {
+      id: "checkins",
+      label: "Check-ins (7d)",
+      icon: Calendar,
+      count: upcomingCheckIns.length,
+      badgeClasses: "bg-blue-50 text-blue-700",
+    },
+    {
+      id: "checkouts",
+      label: "Check-outs (7d)",
+      icon: CalendarDays,
+      count: upcomingCheckOuts.length,
+      badgeClasses: "bg-purple-50 text-purple-700",
+    },
+    {
+      id: "overdue",
+      label: "Overdue",
+      icon: AlertCircle,
+      count: overdueBookings.length,
+      badgeClasses: "bg-red-50 text-red-700",
+    },
+  ];
+
   return (
-    <div className="p-6 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-20 font-semibold text-gray-900">Bookings Management</h1>
-          <p className="text-12 text-gray-500">Manage hostel bookings, check-ins, and payments</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#f8f9fb] text-gray-900">
+      <TopBar
+        title="Bookings Management"
+        subtitle="Monitor reservations, check-ins, and payment statuses"
+        onRefresh={refetch}
+        isRefreshing={isRefreshing}
+      />
+
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 sm:py-6">
+        {/* Top Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
+              Reservations & Stays
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Tap any booking to inspect full stay timeline, payment breakdown,
+              and emergency contacts.
+            </p>
+          </div>
+
           <button
-            onClick={handleRefresh}
-            className="flex items-center gap-2 px-4 py-2 text-12 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            title="Refresh Data"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-          <button
+            type="button"
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 text-12 font-medium text-white bg-[#ff7a00] rounded-lg hover:bg-orange-600"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#ff7a00] text-white text-xs font-semibold hover:bg-orange-600 transition-colors shadow-2xs shrink-0"
           >
             <Download size={14} />
-            Export CSV
+            <span>Export CSV</span>
           </button>
         </div>
-      </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={14} className="text-red-600" />
-            <p className="text-11 font-medium text-red-600">{error}</p>
+        {/* KPI Stats */}
+        <BookingStats stats={stats} loading={loading} />
+
+        {/* Transient Notice / Error Banner */}
+        {(error || notice) && (
+          <div
+            className={`mb-4 px-4 py-3 rounded-2xl border flex items-center justify-between gap-3 text-xs font-medium ${
+              error || notice?.type === "error"
+                ? "bg-red-50 border-red-200 text-red-700"
+                : "bg-emerald-50 border-emerald-200 text-emerald-700"
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {error || notice?.type === "error" ? (
+                <AlertCircle size={15} className="shrink-0" />
+              ) : (
+                <CheckCircle2 size={15} className="shrink-0" />
+              )}
+              <span className="truncate">{error || notice?.text}</span>
+            </div>
+            {notice && (
+              <button
+                type="button"
+                onClick={() => setNotice(null)}
+                className="p-1 rounded-lg hover:bg-black/5 shrink-0"
+                aria-label="Dismiss notification"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Stats Cards */}
-      {stats && <BookingStats stats={stats} />}
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg verified_atborder border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-11 font-medium text-gray-500">Upcoming Check-ins</div>
-            <Calendar size={16} className="text-blue-600" />
+        {/* Segmented Tabs + Search + Filter Bar */}
+        <div className="bg-white border border-gray-200/80 rounded-2xl p-3.5 sm:p-4 mb-4 shadow-2xs space-y-3.5">
+          {/* Mobile-scrollable segmented tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+                    isActive
+                      ? "bg-orange-50 text-[#ff7a00] border border-orange-200/80"
+                      : "text-gray-600 hover:bg-gray-50 border border-transparent"
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span>{tab.label}</span>
+                  {typeof tab.count === "number" && tab.count > 0 && (
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                        isActive
+                          ? "bg-[#ff7a00] text-white"
+                          : tab.badgeClasses || "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-          <div className="text-20 font-semibold text-gray-900">{upcomingCheckIns.length}</div>
-          <div className="text-11 text-gray-500 mt-2">Next 7 days</div>
-        </div>
 
-        <div className="bg-white p-4 rounded-lg verified_atborder border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-11 font-medium text-gray-500">Upcoming Check-outs</div>
-            <CalendarDays size={16} className="text-purple-600" />
-          </div>
-          <div className="text-20 font-semibold text-gray-900">{upcomingCheckOuts.length}</div>
-          <div className="text-11 text-gray-500 mt-2">Next 7 days</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg verified_atborder border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-11 font-medium text-gray-500">Overdue Payments</div>
-            <Bell size={16} className="text-red-600" />
-          </div>
-          <div className="text-20 font-semibold text-gray-900">{overdueBookings.length}</div>
-          <div className="text-11 text-gray-500 mt-2">Requires attention</div>
-        </div>
-      </div>
-
-      {/* Main Content Card */}
-      <div className="bg-white rounded-lg verified_atborder border-gray-100">
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-6">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`py-3 px-1 text-12 font-medium border-b-2 ${
-                activeTab === 'all'
-                  ? 'border-[#ff7a00] text-[#ff7a00]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Home size={14} />
-                All Bookings
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`py-3 px-1 text-12 font-medium border-b-2 ${
-                activeTab === 'upcoming'
-                  ? 'border-[#ff7a00] text-[#ff7a00]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Calendar size={14} />
-                Upcoming
-                {upcomingCheckIns.length > 0 && (
-                  <span className="bg-blue-100 text-blue-800 text-10 font-medium px-2 py-0.5 rounded-full">
-                    {upcomingCheckIns.length}
-                  </span>
-                )}
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('overdue')}
-              className={`py-3 px-1 text-12 font-medium border-b-2 ${
-                activeTab === 'overdue'
-                  ? 'border-[#ff7a00] text-[#ff7a00]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <AlertCircle size={14} />
-                Overdue
-                {overdueBookings.length > 0 && (
-                  <span className="bg-red-100 text-red-800 text-10 font-medium px-2 py-0.5 rounded-full">
-                    {overdueBookings.length}
-                  </span>
-                )}
-              </div>
-            </button>
-          </nav>
-        </div>
-
-        {/* Filters Bar */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          {/* Search, Filters & Sort */}
+          {activeTab === "all" && (
+            <div className="flex flex-col md:flex-row md:items-center gap-3 pt-1 border-t border-gray-100">
+              <div className="relative flex-1 pt-2 md:pt-0">
+                <Search
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 mt-1 md:mt-0 text-gray-400"
+                />
                 <input
                   type="text"
-                  placeholder="Search by student name, email, phone, or hostel..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-2 text-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
+                  placeholder="Search by student, hostel, room, or reference..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2.5 text-xs sm:text-[13px] rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/15 transition-colors"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 mt-1 md:mt-0 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2.5">
                 <button
-                  onClick={handleSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-11 font-medium text-[#ff7a00] hover:text-orange-700"
+                  type="button"
+                  onClick={() => setShowFilters((prev) => !prev)}
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-medium transition-colors ${
+                    showFilters || activeFilterCount > 0
+                      ? "border-[#ff7a00] bg-orange-50/70 text-[#ff7a00]"
+                      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
-                  Search
+                  <Filter size={14} />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff7a00] text-white text-[10px] font-semibold">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </button>
+
+                <CustomSelect<SortOptionValue>
+                  value={currentSortValue}
+                  onChange={handleSortChange}
+                  options={SORT_OPTIONS}
+                  menuAlign="right"
+                  className="w-40 sm:w-44"
+                />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2 text-11 font-medium rounded-lg ${
-                  showFilters
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
-              >
-                <Filter size={14} />
-                Filters
-              </button>
-            </div>
-          </div>
+          )}
 
-          {/* Filters Panel */}
-          {showFilters && (
+          {showFilters && activeTab === "all" && (
             <BookingsFiltersPanel
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -282,54 +436,48 @@ export default function BookingsPage() {
           )}
         </div>
 
-        {/* Table */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-14 font-semibold text-gray-900">{getDisplayTitle()}</h3>
-            <div className="text-11 text-gray-500">
-              Showing {getDisplayBookings().length} bookings
-            </div>
-          </div>
+        {/* Minimal List / Table */}
+        <BookingTable
+          bookings={displayedBookings}
+          loading={loading}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          showPagination={activeTab === "all"}
+          onViewDetails={(booking) => {
+            setSelectedBookingId(booking.id);
+            setShowDetailsModal(true);
+          }}
+          onStatusUpdate={handleStatusUpdate}
+        />
+      </main>
 
-          {activeTab === 'all' ? (
-            <BookingTable
-              bookings={bookings}
-              loading={loading}
-              pagination={pagination}
-              onPageChange={(page) => handleFilterChange({ page })}
-              onStatusUpdate={handleStatusUpdate}
-              onViewDetails={handleViewDetails}
-            />
-          ) : activeTab === 'upcoming' ? (
-            <BookingTable
-              bookings={upcomingCheckIns}
-              loading={loading}
-              pagination={{ page: 1, limit: 20, total: upcomingCheckIns.length, totalPages: 1 }}
-              onPageChange={() => {}}
-              onStatusUpdate={handleStatusUpdate}
-              onViewDetails={handleViewDetails}
-            />
-          ) : (
-            <BookingTable
-              bookings={overdueBookings}
-              loading={loading}
-              pagination={{ page: 1, limit: 20, total: overdueBookings.length, totalPages: 1 }}
-              onPageChange={() => {}}
-              onStatusUpdate={handleStatusUpdate}
-              onViewDetails={handleViewDetails}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* BookingRecord Details Modal */}
+      {/* Full Details Modal */}
       <BookingDetailsModal
-        isOpen={showBookingDetails}
-        onClose={() => {
-          setShowBookingDetails(false);
-          setSelectedBooking(null);
-        }}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
         booking={selectedBooking}
+        onStatusUpdate={handleStatusUpdate}
+        onPaymentStatusUpdate={handlePaymentStatusUpdate}
+      />
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={pendingCancel !== null}
+        onClose={() => !cancelLoading && setPendingCancel(null)}
+        onConfirm={handleConfirmCancel}
+        loading={cancelLoading}
+        variant="danger"
+        title="Cancel Booking"
+        description={
+          pendingCancel
+            ? `Are you sure you want to cancel the booking for ${
+                pendingCancel.student?.name ||
+                pendingCancel.studentName ||
+                "this student"
+              } at ${pendingCancel.hostel?.name || "this hostel"}?`
+            : ""
+        }
+        confirmLabel="Cancel Booking"
       />
     </div>
   );

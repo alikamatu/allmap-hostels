@@ -1,102 +1,135 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatusEnum } from '@prisma/client';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { RecentActivityDto } from './dto/recent-activity.dto';
+
+export interface TimeseriesPoint {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  bookings: number;
+  users: number;
+}
+
+export interface AnalyticsTimeseriesDto {
+  days: number;
+  startDate: string;
+  endDate: string;
+  series: TimeseriesPoint[];
+  totals: {
+    revenue: number;
+    bookings: number;
+    users: number;
+  };
+}
 
 @Injectable()
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDashboardStats(): Promise<DashboardStatsDto> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
 
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfPreviousMonth = new Date(
-      today.getFullYear(),
-      today.getMonth() - 1,
+      now.getFullYear(),
+      now.getMonth() - 1,
       1,
     );
     const endOfPreviousMonth = new Date(
-      today.getFullYear(),
-      today.getMonth(),
+      now.getFullYear(),
+      now.getMonth(),
       0,
+      23,
+      59,
+      59,
+      999,
     );
 
     const [
       totalUsers,
       newUsersToday,
+      usersThisMonth,
+      usersPreviousMonth,
       totalHostels,
       verifiedHostels,
       totalBookings,
+      bookingsThisMonth,
+      bookingsPreviousMonth,
       activeBookings,
-      payments,
+      completedPayments,
+      pendingPayments,
+      allTimePaymentSum,
+      monthPaymentSum,
+      prevMonthPaymentSum,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({
-        where: { createdAt: { gt: yesterday } },
+        where: { createdAt: { gte: startOfToday, lte: now } },
+      }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: startOfMonth, lte: now } },
+      }),
+      this.prisma.user.count({
+        where: {
+          createdAt: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
+        },
       }),
       this.prisma.hostel.count(),
       this.prisma.hostel.count({ where: { isVerified: true } }),
       this.prisma.booking.count(),
       this.prisma.booking.count({
-        where: { status: BookingStatus.checked_in },
+        where: { createdAt: { gte: startOfMonth, lte: now } },
       }),
-      this.prisma.payment.findMany({
+      this.prisma.booking.count({
         where: {
-          paymentDate: { gte: startOfMonth, lte: today },
+          createdAt: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
         },
+      }),
+      this.prisma.booking.count({
+        where: {
+          status: { in: [BookingStatus.confirmed, BookingStatus.checked_in] },
+        },
+      }),
+      this.prisma.payment.count(),
+      this.prisma.booking.count({
+        where: {
+          paymentStatus: {
+            in: [
+              PaymentStatusEnum.pending,
+              PaymentStatusEnum.partial,
+              PaymentStatusEnum.overdue,
+            ],
+          },
+        },
+      }),
+      this.prisma.payment.aggregate({
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { paymentDate: { gte: startOfMonth, lte: now } },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          paymentDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
+        },
+        _sum: { amount: true },
       }),
     ]);
 
-    const totalRevenue = payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
+    const totalRevenue = Number(allTimePaymentSum._sum.amount ?? 0);
+    const revenueThisMonth = Number(monthPaymentSum._sum.amount ?? 0);
+    const previousMonthRevenue = Number(prevMonthPaymentSum._sum.amount ?? 0);
 
-    const previousMonthPayments = await this.prisma.payment.findMany({
-      where: {
-        paymentDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
-      },
-    });
-
-    const previousMonthRevenue = previousMonthPayments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-
-    const revenueThisMonth = totalRevenue;
-    const revenueGrowth =
-      previousMonthRevenue > 0
-        ? ((totalRevenue - previousMonthRevenue) / previousMonthRevenue) * 100
-        : 100;
-
-    const usersPreviousMonth = await this.prisma.user.count({
-      where: {
-        createdAt: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
-      },
-    });
-
-    const userGrowth =
-      usersPreviousMonth > 0
-        ? ((totalUsers - usersPreviousMonth) / usersPreviousMonth) * 100
-        : 100;
-
-    const bookingsPreviousMonth = await this.prisma.booking.count({
-      where: {
-        createdAt: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
-      },
-    });
-
-    const bookingGrowth =
-      bookingsPreviousMonth > 0
-        ? ((totalBookings - bookingsPreviousMonth) / bookingsPreviousMonth) *
-          100
-        : 100;
+    const calcGrowth = (current: number, previous: number): number => {
+      if (previous > 0) {
+        return Math.round(((current - previous) / previous) * 1000) / 10;
+      }
+      return current > 0 ? 100 : 0;
+    };
 
     return {
       totalUsers,
@@ -107,9 +140,98 @@ export class AdminService {
       activeBookings,
       totalRevenue,
       revenueThisMonth,
-      userGrowth: Math.round(userGrowth * 10) / 10,
-      bookingGrowth: Math.round(bookingGrowth * 10) / 10,
-      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+      completedPayments,
+      pendingPayments,
+      userGrowth: calcGrowth(usersThisMonth, usersPreviousMonth),
+      bookingGrowth: calcGrowth(bookingsThisMonth, bookingsPreviousMonth),
+      revenueGrowth: calcGrowth(revenueThisMonth, previousMonthRevenue),
+    };
+  }
+
+  async getAnalyticsTimeseries(
+    daysParam: number = 30,
+  ): Promise<AnalyticsTimeseriesDto> {
+    const days = Math.min(Math.max(Math.floor(daysParam) || 30, 1), 365);
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
+
+    const [payments, bookings, users] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: { paymentDate: { gte: startDate, lte: now } },
+        select: { paymentDate: true, amount: true },
+      }),
+      this.prisma.booking.findMany({
+        where: { createdAt: { gte: startDate, lte: now } },
+        select: { createdAt: true },
+      }),
+      this.prisma.user.findMany({
+        where: { createdAt: { gte: startDate, lte: now } },
+        select: { createdAt: true },
+      }),
+    ]);
+
+    const toDateKey = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const buckets = new Map<string, TimeseriesPoint>();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const key = toDateKey(d);
+      buckets.set(key, { date: key, revenue: 0, bookings: 0, users: 0 });
+    }
+
+    let totalRevenue = 0;
+    let totalBookings = 0;
+    let totalUsers = 0;
+
+    for (const p of payments) {
+      const key = toDateKey(new Date(p.paymentDate));
+      const bucket = buckets.get(key);
+      const amt = Number(p.amount);
+      if (bucket) {
+        bucket.revenue += amt;
+        totalRevenue += amt;
+      }
+    }
+
+    for (const b of bookings) {
+      const key = toDateKey(new Date(b.createdAt));
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.bookings += 1;
+        totalBookings += 1;
+      }
+    }
+
+    for (const u of users) {
+      if (!u.createdAt) continue;
+      const key = toDateKey(new Date(u.createdAt));
+      const bucket = buckets.get(key);
+      if (bucket) {
+        bucket.users += 1;
+        totalUsers += 1;
+      }
+    }
+
+    const series = Array.from(buckets.values());
+
+    return {
+      days,
+      startDate: toDateKey(startDate),
+      endDate: toDateKey(now),
+      series,
+      totals: {
+        revenue: Math.round(totalRevenue * 100) / 100,
+        bookings: totalBookings,
+        users: totalUsers,
+      },
     };
   }
 

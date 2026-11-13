@@ -1,171 +1,372 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { useState, useMemo } from "react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
+import { format, parseISO } from "date-fns";
+import { BarChart3, TrendingUp } from "lucide-react";
+import { AnalyticsTimeseries } from "@/types/dashboard";
+import { AnalyticsDays } from "@/hooks/useDashboardOverview";
+import { formatCurrency, formatNumber } from "@/lib/formatters";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface ChartData {
-  date: string;
-  revenue: number;
-  bookings: number;
-  users: number;
+interface AnalyticsChartProps {
+  timeseries: AnalyticsTimeseries | null;
+  days: AnalyticsDays;
+  onDaysChange: (days: AnalyticsDays) => void;
+  isLoading: boolean;
+  isChartLoading: boolean;
 }
 
-export default function AnalyticsChart() {
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'bookings' | 'users'>('revenue');
+type MetricKey = "revenue" | "bookings" | "users";
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchChartData = async () => {
-      setIsLoading(true);
-      
-      // Generate mock data for demonstration
-      const mockData: ChartData[] = [];
-      const today = new Date();
-      
-      for (let i = 29; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        
-        mockData.push({
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          revenue: Math.floor(Math.random() * 10000) + 2000,
-          bookings: Math.floor(Math.random() * 20) + 5,
-          users: Math.floor(Math.random() * 15) + 3,
-        });
-      }
-      
-      setTimeout(() => {
-        setChartData(mockData);
-        setIsLoading(false);
-      }, 500);
-    };
+const PERIOD_OPTIONS: { value: AnalyticsDays; label: string }[] = [
+  { value: 7, label: "7D" },
+  { value: 14, label: "14D" },
+  { value: 30, label: "30D" },
+  { value: 90, label: "90D" },
+];
 
-    fetchChartData();
-  }, []);
+const METRIC_META: Record<
+  MetricKey,
+  { label: string; color: string; gradientId: string }
+> = {
+  revenue: {
+    label: "Revenue",
+    color: "#ff7a00",
+    gradientId: "revenueGradient",
+  },
+  bookings: {
+    label: "Bookings",
+    color: "#2563eb",
+    gradientId: "bookingsGradient",
+  },
+  users: {
+    label: "New Users",
+    color: "#059669",
+    gradientId: "usersGradient",
+  },
+};
 
-  const calculateStats = () => {
-    if (chartData.length === 0) return { total: 0, change: 0 };
-    
-    const values = chartData.map(d => d[selectedMetric]);
-    const total = values.reduce((sum, val) => sum + val, 0);
-    const firstHalf = values.slice(0, 15).reduce((sum, val) => sum + val, 0);
-    const secondHalf = values.slice(15).reduce((sum, val) => sum + val, 0);
-    const change = firstHalf > 0 ? ((secondHalf - firstHalf) / firstHalf) * 100 : 0;
-    
-    return { total, change: Math.round(change * 10) / 10 };
-  };
+export default function AnalyticsChart({
+  timeseries,
+  days,
+  onDaysChange,
+  isLoading,
+  isChartLoading,
+}: AnalyticsChartProps) {
+  const [selectedMetric, setSelectedMetric] = useState<MetricKey>("revenue");
+  const [chartType, setChartType] = useState<"area" | "bar">("area");
 
-  const stats = calculateStats();
-  const maxValue = chartData.length > 0 
-    ? Math.max(...chartData.map(d => d[selectedMetric]))
-    : 0;
+  const chartData = useMemo(() => {
+    if (!timeseries?.series) return [];
+    return timeseries.series.map((point) => {
+      const parsed = parseISO(point.date);
+      return {
+        ...point,
+        shortDate: format(parsed, "MMM d"),
+        fullDate: format(parsed, "EEE, MMM d, yyyy"),
+      };
+    });
+  }, [timeseries]);
+
+  const dateRangeLabel = useMemo(() => {
+    if (!timeseries?.startDate || !timeseries?.endDate) return "";
+    return `${format(parseISO(timeseries.startDate), "MMM d, yyyy")} – ${format(
+      parseISO(timeseries.endDate),
+      "MMM d, yyyy",
+    )}`;
+  }, [timeseries]);
+
+  const periodTotal = useMemo(() => {
+    if (!timeseries?.totals) return 0;
+    return timeseries.totals[selectedMetric];
+  }, [timeseries, selectedMetric]);
+
+  const meta = METRIC_META[selectedMetric];
 
   if (isLoading) {
     return (
-      <div className="h-64 bg-white p-4">
-        <div className="h-full flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-11 text-gray-500 mb-2">Loading chart...</div>
-            <div className="text-10 text-gray-400">Fetching analytics data</div>
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-3 w-56" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-36 rounded-xl" />
+            <Skeleton className="h-8 w-28 rounded-xl" />
           </div>
         </div>
+        <Skeleton className="h-64 sm:h-72 w-full rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-4">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-6 shadow-2xs">
+      {/* Header Row */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
         <div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSelectedMetric('revenue')}
-              className={`text-11 font-medium px-3 py-1 rounded ${
-                selectedMetric === 'revenue'
-                  ? 'bg-[#ff7a00] text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              Revenue
-            </button>
-            <button
-              onClick={() => setSelectedMetric('bookings')}
-              className={`text-11 font-medium px-3 py-1 rounded ${
-                selectedMetric === 'bookings'
-                  ? 'bg-[#ff7a00] text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              Bookings
-            </button>
-            <button
-              onClick={() => setSelectedMetric('users')}
-              className={`text-11 font-medium px-3 py-1 rounded ${
-                selectedMetric === 'users'
-                  ? 'bg-[#ff7a00] text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              Users
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-sm sm:text-base font-bold text-gray-950">
+              {meta.label} Over Time
+            </h2>
+            {dateRangeLabel && (
+              <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                {dateRangeLabel}
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-bold text-gray-950 tracking-tight">
+              {selectedMetric === "revenue"
+                ? formatCurrency(periodTotal)
+                : formatNumber(periodTotal)}
+            </span>
+            <span className="text-xs text-gray-500">
+              {selectedMetric === "revenue"
+                ? `collected in last ${days} days`
+                : selectedMetric === "bookings"
+                  ? `bookings in last ${days} days`
+                  : `registrations in last ${days} days`}
+            </span>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-20 font-semibold text-gray-900">
-            {selectedMetric === 'revenue' ? '₵' : ''}
-            {stats.total.toLocaleString('en-US')}
-            {selectedMetric === 'revenue' ? '' : selectedMetric === 'bookings' ? ' bookings' : ' users'}
+
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Metric Switcher */}
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            {(["revenue", "bookings", "users"] as MetricKey[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSelectedMetric(key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  selectedMetric === key
+                    ? "bg-white text-gray-950 shadow-2xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {METRIC_META[key].label}
+              </button>
+            ))}
           </div>
-          <div className={`flex items-center text-10 ${stats.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {stats.change >= 0 ? (
-              <TrendingUp size={10} className="mr-1" />
-            ) : (
-              <TrendingDown size={10} className="mr-1" />
-            )}
-            {stats.change >= 0 ? '+' : ''}{stats.change.toFixed(1)}% from previous period
+
+          {/* Days Selector */}
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onDaysChange(opt.value)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  days === opt.value
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Chart Type Toggle */}
+          <div className="inline-flex bg-gray-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setChartType("area")}
+              className={`p-1.5 rounded-lg transition-all ${
+                chartType === "area"
+                  ? "bg-white text-gray-950 shadow-2xs"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+              title="Area chart"
+              aria-label="Area chart"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType("bar")}
+              className={`p-1.5 rounded-lg transition-all ${
+                chartType === "bar"
+                  ? "bg-white text-gray-950 shadow-2xs"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+              title="Bar chart"
+              aria-label="Bar chart"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="h-48 relative">
-        <div className="absolute inset-0 flex items-end gap-1">
-          {chartData.map((data, index) => {
-            const height = maxValue > 0 ? (data[selectedMetric] / maxValue) * 100 : 0;
-            const isToday = index === chartData.length - 1;
-            
-            return (
-              <motion.div
-                key={index}
-                initial={{ height: 0 }}
-                animate={{ height: `${height}%` }}
-                transition={{ duration: 0.5, delay: index * 0.01 }}
-                className={`flex-1 relative group ${
-                  isToday ? 'bg-[#ff7a00]' : 'bg-gray-300'
-                } hover:bg-opacity-90 transition-colors`}
+      {/* Chart Area */}
+      <div
+        className={`h-64 sm:h-72 w-full transition-opacity ${isChartLoading ? "opacity-50" : "opacity-100"}`}
+      >
+        {chartData.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-xs text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            No data recorded for this date range.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {chartType === "area" ? (
+              <AreaChart
+                data={chartData}
+                margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-gray-900 text-white text-10 px-2 py-1 rounded whitespace-nowrap">
-                    <div className="font-medium">
-                      {selectedMetric === 'revenue' ? '₵' : ''}
-                      {data[selectedMetric].toLocaleString('en-US')}
-                    </div>
-                    <div className="text-gray-300">{data.date}</div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-        
-        {/* X-axis labels */}
-        <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-10 text-gray-400">
-          <span>{chartData[0]?.date}</span>
-          <span>{chartData[Math.floor(chartData.length / 2)]?.date}</span>
-          <span>{chartData[chartData.length - 1]?.date}</span>
-        </div>
+                <defs>
+                  <linearGradient
+                    id={meta.gradientId}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={meta.color}
+                      stopOpacity={0.22}
+                    />
+                    <stop offset="95%" stopColor={meta.color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="shortDate"
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  tickFormatter={(val) =>
+                    selectedMetric === "revenue"
+                      ? val >= 1000
+                        ? `₵${(val / 1000).toFixed(1)}k`
+                        : `₵${val}`
+                      : String(val)
+                  }
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const item = payload[0]
+                      .payload as (typeof chartData)[number];
+                    const val = item[selectedMetric];
+                    return (
+                      <div className="bg-gray-950 text-white px-3 py-2 rounded-xl shadow-lg text-xs">
+                        <div className="text-gray-300 font-medium mb-0.5">
+                          {item.fullDate}
+                        </div>
+                        <div className="font-bold text-sm">
+                          {selectedMetric === "revenue"
+                            ? formatCurrency(val)
+                            : `${formatNumber(val)} ${
+                                selectedMetric === "bookings"
+                                  ? "bookings"
+                                  : "users"
+                              }`}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={selectedMetric}
+                  stroke={meta.color}
+                  strokeWidth={2.2}
+                  fill={`url(#${meta.gradientId})`}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                />
+              </AreaChart>
+            ) : (
+              <BarChart
+                data={chartData}
+                margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="shortDate"
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  tickFormatter={(val) =>
+                    selectedMetric === "revenue"
+                      ? val >= 1000
+                        ? `₵${(val / 1000).toFixed(1)}k`
+                        : `₵${val}`
+                      : String(val)
+                  }
+                />
+                <Tooltip
+                  cursor={{ fill: "#f8fafc" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const item = payload[0]
+                      .payload as (typeof chartData)[number];
+                    const val = item[selectedMetric];
+                    return (
+                      <div className="bg-gray-950 text-white px-3 py-2 rounded-xl shadow-lg text-xs">
+                        <div className="text-gray-300 font-medium mb-0.5">
+                          {item.fullDate}
+                        </div>
+                        <div className="font-bold text-sm">
+                          {selectedMetric === "revenue"
+                            ? formatCurrency(val)
+                            : `${formatNumber(val)} ${
+                                selectedMetric === "bookings"
+                                  ? "bookings"
+                                  : "users"
+                              }`}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar
+                  dataKey={selectedMetric}
+                  fill={meta.color}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={32}
+                />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

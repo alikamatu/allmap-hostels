@@ -9,6 +9,8 @@ export class DashboardStatsDto {
   @ApiProperty() activeBookings: number;
   @ApiProperty() totalRevenue: number;
   @ApiProperty() revenueThisMonth: number;
+  @ApiProperty() completedPayments: number;
+  @ApiProperty() pendingPayments: number;
   @ApiProperty() userGrowth: number;
   @ApiProperty() bookingGrowth: number;
   @ApiProperty() revenueGrowth: number;

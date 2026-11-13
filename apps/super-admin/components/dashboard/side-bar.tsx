@@ -1,187 +1,211 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Home,
-  BarChart3,
+  LayoutDashboard,
   Users,
-  Building,
-  Calendar,
-  CreditCard,
-  Star,
-  MessageSquare,
-  Shield,
-  Settings,
-  LogOut,
-  ChevronRight,
-  Wallet,
+  CalendarCheck,
   ClipboardCheck,
-} from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+  CreditCard,
+  Wallet,
+  MessageSquare,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
+import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
-  { id: '', icon: Home, label: 'Overview' },
-  { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-  { id: 'users', icon: Users, label: 'Users' },
-  { id: 'hostels', icon: Building, label: 'Hostels' },
-  { id: 'bookings', icon: Calendar, label: 'Bookings' },
-  { id: 'verify', icon: ClipboardCheck, label: 'Verifications' },
-  { id: 'payments', icon: CreditCard, label: 'Payments' },
-  { id: 'payouts', icon: Wallet, label: 'Agent Payouts' },
-  { id: 'reviews', icon: Star, label: 'Reviews' },
-  { id: 'feedback', icon: MessageSquare, label: 'Support' },
-  { id: 'admins', icon: Shield, label: 'Admins' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
+  { href: "/dashboard/users", icon: Users, label: "Users" },
+  { href: "/dashboard/bookings", icon: CalendarCheck, label: "Bookings" },
+  { href: "/dashboard/verify", icon: ClipboardCheck, label: "Verifications" },
+  { href: "/dashboard/payments", icon: CreditCard, label: "Payments" },
+  { href: "/dashboard/payouts", icon: Wallet, label: "Agent Payouts" },
+  { href: "/dashboard/feedback", icon: MessageSquare, label: "Support" },
 ];
 
 export default function Sidebar() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
+  const { mobileOpen, setMobileOpen, isCollapsed, toggleCollapsed } =
+    useSidebar();
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth < 1024) {
-        setIsCollapsed(true);
-      }
-    };
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "SA";
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const renderNavLinks = (isMobileDrawer: boolean) => (
+    <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      {navItems.map((item) => {
+        const isActive =
+          item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : pathname.startsWith(item.href);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => {
+              if (isMobileDrawer) setMobileOpen(false);
+            }}
+            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              isActive
+                ? "bg-[#ff7a00]/10 text-[#ff7a00]"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            } ${!isMobileDrawer && isCollapsed ? "justify-center px-2" : ""}`}
+            title={!isMobileDrawer && isCollapsed ? item.label : undefined}
+          >
+            <item.icon
+              className={`w-4 h-4 flex-shrink-0 ${
+                isActive
+                  ? "text-[#ff7a00]"
+                  : "text-gray-500 group-hover:text-gray-900"
+              }`}
+            />
+            {(isMobileDrawer || !isCollapsed) && (
+              <span className="truncate">{item.label}</span>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 
-  const sidebarVariants = {
-    open: { width: 240 },
-    closed: { width: isMobile ? 0 : 60 },
-  };
-
-  const itemVariants = {
-    hover: { x: 4 },
-    tap: { x: 0 },
-  };
+  const renderUserFooter = (isMobileDrawer: boolean) => (
+    <div className="border-t border-gray-100 p-3">
+      <div
+        className={`flex items-center ${
+          !isMobileDrawer && isCollapsed
+            ? "justify-center"
+            : "justify-between gap-2"
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
+            {initials}
+          </div>
+          {(isMobileDrawer || !isCollapsed) && (
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-900 truncate">
+                {user?.name || "Super Admin"}
+              </p>
+              <p className="text-[11px] text-gray-500 truncate">
+                {user?.email || "Admin Session"}
+              </p>
+            </div>
+          )}
+        </div>
+        {(isMobileDrawer || !isCollapsed) && (
+          <button
+            type="button"
+            onClick={logout}
+            className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <motion.aside
-        initial={false}
-        animate={isCollapsed ? 'closed' : 'open'}
-        variants={sidebarVariants}
-        transition={{ duration: 0.2 }}
-        className="h-screen bg-white flex-shrink-0 overflow-hidden relative"
+      {/* Desktop Sticky Sidebar */}
+      <aside
+        className={`hidden lg:flex flex-col sticky top-0 h-screen bg-white border-r border-gray-200/80 transition-all duration-200 flex-shrink-0 ${
+          isCollapsed ? "w-[70px]" : "w-60"
+        }`}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-100">
-          <motion.div
-            animate={{ opacity: isCollapsed ? 0 : 1 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center"
-          >
-            <div className="w-6 h-6 bg-[#ff7a00] mr-3"></div>
-            <span className="text-13 font-semibold text-gray-900">ALLMAP ADMIN</span>
-          </motion.div>
-          <motion.div
-            animate={{ opacity: isCollapsed ? 1 : 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-1/2 transform -translate-x-1/2"
-          >
-            <div className="w-6 h-6 bg-[#ff7a00]"></div>
-          </motion.div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="py-6 px-3">
-          {navItems.map((item) => {
-            const isActive = pathname.includes(item.id);
-            return (
-              <motion.div
-                key={item.id}
-                variants={itemVariants}
-                whileHover="hover"
-                whileTap="tap"
-                transition={{ duration: 0.15 }}
-              >
-                <Link
-                  href={`/dashboard/${item.id}`}
-                  className={`flex items-center h-10 px-3 mb-1 relative ${
-                    isActive ? 'text-[#ff7a00]' : 'text-gray-600'
-                  } hover:text-gray-900`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute left-0 w-[2px] h-full bg-[#ff7a00]"
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-                  <item.icon size={16} className="flex-shrink-0" />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="ml-3 text-12 font-medium whitespace-nowrap"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
-
-        {/* User Section */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-gray-100">
-          <div className="h-16 flex items-center justify-between px-3">
-            {!isCollapsed ? (
-              <>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-11 font-semibold text-gray-700">SA</span>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-12 font-medium text-gray-900">Super Admin</p>
-                    <p className="text-10 text-gray-500">info@allmaphostels.com</p>
-                  </div>
-                </div>
-                <button className="text-gray-500 hover:text-gray-900">
-                  <LogOut size={16} />
-                </button>
-              </>
-            ) : (
-              <div className="w-full flex justify-center">
-                <div className="w-8 h-8 bg-gray-200 flex items-center justify-center">
-                  <span className="text-11 font-semibold text-gray-700">SA</span>
-                </div>
-              </div>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+          <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-[#ff7a00] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+              A
+            </div>
+            {!isCollapsed && (
+              <span className="text-sm font-bold tracking-tight text-gray-900 truncate">
+                ALLMAP ADMIN
+              </span>
             )}
-          </div>
+          </Link>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
-        {/* Toggle Button */}
-        <button
-          onClick={toggleSidebar}
-          className="absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-200 flex items-center justify-center"
-        >
-          <motion.div
-            animate={{ rotate: isCollapsed ? 0 : 180 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronRight size={12} />
-          </motion.div>
-        </button>
-      </motion.aside>
+        {renderNavLinks(false)}
+        {renderUserFooter(false)}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-40 lg:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white z-50 flex flex-col shadow-xl lg:hidden"
+            >
+              <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-[#ff7a00] flex items-center justify-center text-white font-bold text-xs">
+                    A
+                  </div>
+                  <span className="text-sm font-bold tracking-tight text-gray-900">
+                    ALLMAP ADMIN
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                  aria-label="Close navigation menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {renderNavLinks(true)}
+              {renderUserFooter(true)}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

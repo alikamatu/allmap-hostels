@@ -1,325 +1,348 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { 
-  X, 
-  Mail, 
-  Phone, 
-  User, 
-  School, 
-  Calendar, 
-  Shield, 
-  Building, 
+import {
+  Mail,
+  Phone,
   GraduationCap,
-  CheckCircle,
+  Calendar,
+  CheckCircle2,
   XCircle,
-  Clock,
-  AlertCircle,
-  PhoneCall,
-  UserCheck
-} from 'lucide-react';
-import { User as UserType } from '@/types/user.types';
-import { formatDate } from '@/lib/formatters';
+  User as UserIcon,
+  Shield,
+  Edit,
+  Trash2,
+  Send,
+  Building2,
+  BookOpen,
+} from "lucide-react";
+import { User, UserRole } from "@/types/user.types";
+import { Modal } from "@/components/ui/modal";
+import { CustomSelect, SelectOption } from "@/components/ui/custom-select";
+import { UserAvatar, RoleBadge, StatusBadge } from "./user-badges";
 
 interface UserDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserType;
+  user: User;
+  onEdit: () => void;
+  onVerify: () => void;
+  onSendVerification: () => void;
+  onRoleChange: (role: UserRole) => void;
+  onDelete: () => void;
 }
 
-export default function UserDetailsModal({ isOpen, onClose, user }: UserDetailsModalProps) {
-  if (!isOpen) return null;
+const ROLE_OPTIONS: SelectOption<UserRole>[] = [
+  { value: "student", label: "Student" },
+  { value: "hostel_admin", label: "Hostel Admin" },
+  { value: "super_admin", label: "Super Admin" },
+];
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'student':
-        return GraduationCap;
-      case 'hostel_admin':
-        return Building;
-      case 'super_admin':
-        return Shield;
-      default:
-        return User;
-    }
-  };
+function formatDateTime(dateString?: string | null) {
+  if (!dateString) return "Not available";
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return "Not available";
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
-  const getStatusIcon = (status: string, isVerified: boolean) => {
-    if (isVerified) {
-      return CheckCircle;
-    } else if (status === 'pending') {
-      return Clock;
-    } else {
-      return XCircle;
-    }
-  };
+function DetailItem({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon?: typeof Mail;
+}) {
+  return (
+    <div className="p-3 rounded-xl bg-gray-50/80 border border-gray-100">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+        {Icon && <Icon size={12} className="text-gray-400 shrink-0" />}
+        <span>{label}</span>
+      </div>
+      <div className="text-xs sm:text-[13px] font-medium text-gray-900 mt-1 break-words">
+        {value}
+      </div>
+    </div>
+  );
+}
 
-  const getStatusColor = (status: string, isVerified: boolean) => {
-    if (isVerified) {
-      return 'text-green-600';
-    } else if (status === 'pending') {
-      return 'text-yellow-600';
-    } else {
-      return 'text-red-600';
-    }
-  };
-
-  const RoleIcon = getRoleIcon(user.role);
-  const StatusIcon = getStatusIcon(user.status, user.is_verified);
-  const statusColor = getStatusColor(user.status, user.is_verified);
+export default function UserDetailsModal({
+  isOpen,
+  onClose,
+  user,
+  onEdit,
+  onVerify,
+  onSendVerification,
+  onRoleChange,
+  onDelete,
+}: UserDetailsModalProps) {
+  const hasEmergencyContact = Boolean(
+    user.emergency_contact_name ||
+    user.emergency_contact_phone ||
+    user.emergency_contact_relationship ||
+    user.emergency_contact_email,
+  );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white w-full max-w-2xl rounded max-h-[90vh] overflow-y-auto"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-16 font-semibold text-gray-700">
-                {user.name?.charAt(0) || user.email.charAt(0)}
-              </span>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="lg"
+      headerContent={
+        <div className="flex items-center gap-3.5 min-w-0">
+          <UserAvatar name={user.name} email={user.email} size="lg" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                {user.name || "Unnamed User"}
+              </h2>
+              <RoleBadge role={user.role} />
+              <StatusBadge status={user.status} isVerified={user.is_verified} />
             </div>
-            <div>
-              <h2 className="text-18 font-semibold text-gray-900">{user.name || 'Unnamed User'}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${statusColor} bg-opacity-10`}>
-                  <StatusIcon size={10} />
-                  <span className="text-10 font-medium capitalize">
-                    {user.is_verified ? 'Verified' : user.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-blue-600 bg-blue-50">
-                  <RoleIcon size={10} />
-                  <span className="text-10 font-medium capitalize">
-                    {user.role.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
+            <p className="text-xs text-gray-500 truncate mt-0.5">
+              {user.email}
+            </p>
+          </div>
+        </div>
+      }
+      footer={
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100/80 transition-colors"
+          >
+            <Trash2 size={14} />
+            <span>Delete User</span>
+          </button>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {!user.is_verified && (
+              <>
+                <button
+                  type="button"
+                  onClick={onSendVerification}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <Send size={13} />
+                  <span>Send Verification</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onVerify}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                >
+                  <CheckCircle2 size={14} />
+                  <span>Verify Account</span>
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-white bg-[#ff7a00] hover:bg-orange-600 transition-colors"
+            >
+              <Edit size={14} />
+              <span>Edit Profile</span>
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-6">
+        {/* Role Management & ID */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-orange-50/60 border border-orange-100">
+          <div className="min-w-0">
+            <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+              User ID
+            </div>
+            <div className="text-xs font-mono text-gray-800 truncate mt-0.5">
+              {user.id}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <X size={20} />
-          </button>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="text-xs font-medium text-gray-700">Role:</span>
+            <CustomSelect<UserRole>
+              size="sm"
+              value={user.role}
+              onChange={(val) => val && onRoleChange(val as UserRole)}
+              options={ROLE_OPTIONS}
+              menuAlign="right"
+              className="w-40"
+            />
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <div>
-              <h3 className="text-14 font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                Personal Information
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail size={14} className="text-gray-400" />
-                  <div>
-                    <div className="text-11 text-gray-500">Email</div>
-                    <div className="text-12 font-medium text-gray-900">{user.email}</div>
-                  </div>
+        {/* Contact & Personal Information */}
+        <section>
+          <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Personal & Contact Details
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <DetailItem label="Email Address" value={user.email} icon={Mail} />
+            <DetailItem
+              label="Phone Number"
+              value={user.phone || "Not provided"}
+              icon={Phone}
+            />
+            <DetailItem
+              label="Gender"
+              value={
+                user.gender
+                  ? user.gender
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase())
+                  : "Not specified"
+              }
+              icon={UserIcon}
+            />
+            <DetailItem
+              label="School / Campus"
+              value={
+                user.school?.name ||
+                (user.school_id
+                  ? `School ID: ${user.school_id}`
+                  : "Not assigned")
+              }
+              icon={GraduationCap}
+            />
+          </div>
+        </section>
+
+        {/* Activity Stats (when available) */}
+        {user.stats && (
+          <section>
+            <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+              Platform Activity
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <DetailItem
+                label="Total Bookings"
+                value={String(user.stats.totalBookings ?? 0)}
+                icon={BookOpen}
+              />
+              <DetailItem
+                label="Active Bookings"
+                value={String(user.stats.activeBookings ?? 0)}
+                icon={BookOpen}
+              />
+              <DetailItem
+                label="Managed Hostels"
+                value={String(user.stats.totalHostels ?? 0)}
+                icon={Building2}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Verification & Onboarding Compliance */}
+        <section>
+          <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Verification & Onboarding
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] font-medium text-gray-500">
+                  Email Verification
                 </div>
-                {user.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone size={14} className="text-gray-400" />
-                    <div>
-                      <div className="text-11 text-gray-500">Phone</div>
-                      <div className="text-12 font-medium text-gray-900">{user.phone}</div>
-                    </div>
-                  </div>
-                )}
-                {user.gender && (
-                  <div className="flex items-center gap-3">
-                    <User size={14} className="text-gray-400" />
-                    <div>
-                      <div className="text-11 text-gray-500">Gender</div>
-                      <div className="text-12 font-medium text-gray-900 capitalize">{user.gender}</div>
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <Calendar size={14} className="text-gray-400" />
-                  <div>
-                    <div className="text-11 text-gray-500">Joined</div>
-                    <div className="text-12 font-medium text-gray-900">
-                      {formatDate(user.created_at)}
-                    </div>
-                  </div>
+                <div className="text-xs font-medium text-gray-900 mt-0.5">
+                  {user.is_verified ? "Verified" : "Not verified"}
                 </div>
                 {user.verified_at && (
-                  <div className="flex items-center gap-3">
-                    <UserCheck size={14} className="text-gray-400" />
-                    <div>
-                      <div className="text-11 text-gray-500">Verified On</div>
-                      <div className="text-12 font-medium text-gray-900">
-                        {formatDate(user.verified_at)}
-                      </div>
-                    </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">
+                    {formatDateTime(user.verified_at)}
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* School Information */}
-            <div>
-              <h3 className="text-14 font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                School Information
-              </h3>
-              {user.school ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <School size={14} className="text-gray-400" />
-                    <div>
-                      <div className="text-11 text-gray-500">School</div>
-                      <div className="text-12 font-medium text-gray-900">{user.school.name}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Mail size={14} className="text-gray-400" />
-                    <div>
-                      <div className="text-11 text-gray-500">Domain</div>
-                      <div className="text-12 font-medium text-gray-900">{user.school.domain}</div>
-                    </div>
-                  </div>
-                </div>
+              {user.is_verified ? (
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
               ) : (
-                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
-                  <AlertCircle size={14} className="text-gray-400" />
-                  <span className="text-11 text-gray-500">No school information available</span>
-                </div>
+                <XCircle size={18} className="text-red-500 shrink-0" />
               )}
             </div>
 
-            {/* Emergency Contact */}
-            {(user.emergency_contact_name || user.emergency_contact_phone) && (
-              <div className="md:col-span-2">
-                <h3 className="text-14 font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                  Emergency Contact
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {user.emergency_contact_name && (
-                    <div className="flex items-center gap-3">
-                      <User size={14} className="text-gray-400" />
-                      <div>
-                        <div className="text-11 text-gray-500">Name</div>
-                        <div className="text-12 font-medium text-gray-900">{user.emergency_contact_name}</div>
-                      </div>
-                    </div>
-                  )}
-                  {user.emergency_contact_phone && (
-                    <div className="flex items-center gap-3">
-                      <PhoneCall size={14} className="text-gray-400" />
-                      <div>
-                        <div className="text-11 text-gray-500">Phone</div>
-                        <div className="text-12 font-medium text-gray-900">{user.emergency_contact_phone}</div>
-                      </div>
-                    </div>
-                  )}
-                  {user.emergency_contact_relationship && (
-                    <div className="flex items-center gap-3">
-                      <UserCheck size={14} className="text-gray-400" />
-                      <div>
-                        <div className="text-11 text-gray-500">Relationship</div>
-                        <div className="text-12 font-medium text-gray-900">{user.emergency_contact_relationship}</div>
-                      </div>
-                    </div>
-                  )}
-                  {user.emergency_contact_email && (
-                    <div className="flex items-center gap-3">
-                      <Mail size={14} className="text-gray-400" />
-                      <div>
-                        <div className="text-11 text-gray-500">Email</div>
-                        <div className="text-12 font-medium text-gray-900">{user.emergency_contact_email}</div>
-                      </div>
-                    </div>
-                  )}
+            <div className="p-3 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] font-medium text-gray-500">
+                  Onboarding Status
+                </div>
+                <div className="text-xs font-medium text-gray-900 mt-0.5">
+                  {user.onboarding_completed ? "Completed" : "Incomplete"}
                 </div>
               </div>
-            )}
-
-            {/* User Statistics */}
-            {user.stats && (
-              <div className="md:col-span-2">
-                <h3 className="text-14 font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                  User Statistics
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="text-16 font-semibold text-gray-900">{user.stats.totalBookings || 0}</div>
-                    <div className="text-11 text-gray-500">Total Bookings</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="text-16 font-semibold text-gray-900">{user.stats.activeBookings || 0}</div>
-                    <div className="text-11 text-gray-500">Active Bookings</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="text-16 font-semibold text-gray-900">{user.stats.totalHostels || 0}</div>
-                    <div className="text-11 text-gray-500">Hostels Managed</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Account Status */}
-            <div className="md:col-span-2">
-              <h3 className="text-14 font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                Account Status
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1 rounded ${user.is_verified ? 'bg-green-100' : 'bg-gray-100'}`}>
-                    <StatusIcon size={12} className={user.is_verified ? 'text-green-600' : 'text-gray-600'} />
-                  </div>
-                  <div>
-                    <div className="text-11 text-gray-500">Verification</div>
-                    <div className="text-12 font-medium text-gray-900">
-                      {user.is_verified ? 'Verified' : 'Not Verified'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded bg-blue-100">
-                    <UserCheck size={12} className="text-blue-600" />
-                  </div>
-                  <div>
-                    <div className="text-11 text-gray-500">Onboarding</div>
-                    <div className="text-12 font-medium text-gray-900">
-                      {user.onboarding_completed ? 'Completed' : 'Pending'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded bg-purple-100">
-                    <Shield size={12} className="text-purple-600" />
-                  </div>
-                  <div>
-                    <div className="text-11 text-gray-500">Terms</div>
-                    <div className="text-12 font-medium text-gray-900">
-                      {user.terms_accepted ? 'Accepted' : 'Pending'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded bg-orange-100">
-                    <Building size={12} className="text-orange-600" />
-                  </div>
-                  <div>
-                    <div className="text-11 text-gray-500">Role</div>
-                    <div className="text-12 font-medium text-gray-900 capitalize">
-                      {user.role.replace('_', ' ')}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {user.onboarding_completed ? (
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+              ) : (
+                <XCircle size={18} className="text-gray-400 shrink-0" />
+              )}
             </div>
+
+            <div className="p-3 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] font-medium text-gray-500">
+                  Terms & Conditions
+                </div>
+                <div className="text-xs font-medium text-gray-900 mt-0.5">
+                  {user.terms_accepted ? "Accepted" : "Not accepted"}
+                </div>
+              </div>
+              <Shield
+                size={18}
+                className={
+                  user.terms_accepted
+                    ? "text-emerald-600 shrink-0"
+                    : "text-gray-400 shrink-0"
+                }
+              />
+            </div>
+
+            <DetailItem
+              label="Account Joined"
+              value={formatDateTime(user.created_at)}
+              icon={Calendar}
+            />
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </section>
+
+        {/* Emergency Contact */}
+        <section>
+          <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Emergency Contact
+          </h3>
+          {hasEmergencyContact ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <DetailItem
+                label="Contact Name"
+                value={user.emergency_contact_name || "Not provided"}
+              />
+              <DetailItem
+                label="Relationship"
+                value={user.emergency_contact_relationship || "Not provided"}
+              />
+              <DetailItem
+                label="Phone Number"
+                value={user.emergency_contact_phone || "Not provided"}
+              />
+              <DetailItem
+                label="Email Address"
+                value={user.emergency_contact_email || "Not provided"}
+              />
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-gray-50/70 border border-dashed border-gray-200 text-xs text-gray-500">
+              No emergency contact information has been added by this user.
+            </div>
+          )}
+        </section>
+      </div>
+    </Modal>
   );
 }

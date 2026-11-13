@@ -1,152 +1,274 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { userService } from '@/services/user.service';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { userService } from "@/services/user.service";
 import {
   User,
   UserFilters,
   UserStats,
+  UserPagination,
   CreateUserData,
   UpdateUserData,
-} from '@/types/user.types';
+  UserRole,
+  UserStatus,
+} from "@/types/user.types";
 
-interface UseUsersReturn {
+interface UsersCacheEntry {
   users: User[];
-  stats: UserStats | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-  createUser: (data: CreateUserData) => Promise<User | null>;
-  updateUser: (id: string, data: UpdateUserData) => Promise<User | null>;
-  updateUserStatus: (id: string, status: 'unverified' | 'pending' | 'verified') => Promise<boolean>;
-  verifyUser: (id: string) => Promise<boolean>;
-  updateUserRole: (id: string, role: 'student' | 'hostel_admin' | 'super_admin') => Promise<boolean>;
-  deleteUser: (id: string) => Promise<boolean>;
-  sendVerificationEmail: (id: string) => Promise<boolean>;
-  bulkVerifyUsers: (userIds: string[]) => Promise<{ verified: number; failed: string[] }>;
-  bulkDeleteUsers: (userIds: string[]) => Promise<{ deleted: number; failed: string[] }>;
-  exportUsers: (filters?: UserFilters) => Promise<string | null>;
+  pagination: UserPagination;
+  timestamp: number;
 }
 
-export function useUsers(filters?: UserFilters): UseUsersReturn {
-  const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
+const CACHE_TTL_MS = 45_000;
+const usersCache = new Map<string, UsersCacheEntry>();
+let statsCache: { data: UserStats; timestamp: number } | null = null;
+
+function getFiltersCacheKey(filters: UserFilters): string {
+  return JSON.stringify({
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+    search: filters.search || "",
+    role: filters.role || "",
+    status: filters.status || "",
+    is_verified: filters.is_verified ?? "",
+    school_id: filters.school_id || "",
+    sortBy: filters.sortBy || "created_at",
+    sortOrder: filters.sortOrder || "DESC",
   });
-  const [loading, setLoading] = useState(true);
+}
+
+function invalidateUsersCache() {
+  usersCache.clear();
+  statsCache = null;
+}
+
+export function useUsers(filters: UserFilters = {}) {
+  const cacheKey = getFiltersCacheKey(filters);
+  const initialCached = usersCache.get(cacheKey);
+
+  const [users, setUsers] = useState<User[]>(initialCached?.users ?? []);
+  const [stats, setStats] = useState<UserStats | null>(
+    statsCache?.data ?? null,
+  );
+  const [pagination, setPagination] = useState<UserPagination>(
+    initialCached?.pagination ?? {
+      page: filters.page ?? 1,
+      limit: filters.limit ?? 20,
+      total: 0,
+      totalPages: 0,
+    },
+  );
+  const [loading, setLoading] = useState(!initialCached);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await userService.getUsers(filters);
-      setUsers(response.users);
-      setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch users');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
+  const fetchUsers = useCallback(
+    async (force = false) => {
+      const currentRequestId = ++requestIdRef.current;
+      const cached = usersCache.get(cacheKey);
+      const now = Date.now();
+
+      if (cached) {
+        setUsers(cached.users);
+        setPagination(cached.pagination);
+        setLoading(false);
+        if (!force && now - cached.timestamp < CACHE_TTL_MS) {
+          return;
+        }
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      try {
+        setError(null);
+        const response = await userService.getUsers(filters);
+        if (currentRequestId !== requestIdRef.current) return;
+
+        usersCache.set(cacheKey, {
+          users: response.users,
+          pagination: response.pagination,
+          timestamp: Date.now(),
+        });
+        setUsers(response.users);
+        setPagination(response.pagination);
+      } catch (err) {
+        if (currentRequestId !== requestIdRef.current) return;
+        const message =
+          err instanceof Error ? err.message : "Failed to fetch users";
+        setError(message);
+      } finally {
+        if (currentRequestId === requestIdRef.current) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cacheKey],
+  );
+
+  const fetchStats = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && statsCache && now - statsCache.timestamp < CACHE_TTL_MS) {
+      setStats(statsCache.data);
+      return;
     }
-  }, [filters]);
 
-  const fetchStats = useCallback(async () => {
     try {
-      const data = await userService.getUserStats();
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching user stats:', err);
+      const statsData = await userService.getUserStats();
+      statsCache = { data: statsData, timestamp: Date.now() };
+      setStats(statsData);
+    } catch {
+      // Keep previous stats if background refresh fails
     }
   }, []);
 
-  const refetch = useCallback(async () => {
-    await Promise.all([fetchUsers(), fetchStats()]);
-  }, [fetchUsers, fetchStats]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    fetchStats();
+  }, [fetchStats]);
+
+  const refetch = useCallback(async () => {
+    invalidateUsersCache();
+    await Promise.all([fetchUsers(true), fetchStats(true)]);
+  }, [fetchUsers, fetchStats]);
 
   const createUser = async (data: CreateUserData): Promise<User | null> => {
     try {
       setError(null);
-      const user = await userService.createUser(data);
-      await refetch();
-      return user;
-    } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+      const newUser = await userService.createUser(data);
+      invalidateUsersCache();
+      await Promise.all([fetchUsers(true), fetchStats(true)]);
+      return newUser;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
       return null;
     }
   };
 
-  const updateUser = async (id: string, data: UpdateUserData): Promise<User | null> => {
+  const updateUser = async (
+    id: string,
+    data: UpdateUserData,
+  ): Promise<User | null> => {
     try {
       setError(null);
-      const user = await userService.updateUser(id, data);
-      await refetch();
-      return user;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user');
+      const updatedUser = await userService.updateUser(id, data);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, ...updatedUser } : u)),
+      );
+      invalidateUsersCache();
+      return updatedUser;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update user");
       return null;
     }
   };
 
-  const updateUserStatus = async (id: string, status: 'unverified' | 'pending' | 'verified'): Promise<boolean> => {
+  const updateUserStatus = async (
+    id: string,
+    status: UserStatus,
+  ): Promise<User | null> => {
+    const previous = users;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id
+          ? {
+              ...u,
+              status,
+              is_verified: status === "verified" ? true : u.is_verified,
+            }
+          : u,
+      ),
+    );
     try {
       setError(null);
-      await userService.updateUserStatus(id, status);
-      await refetch();
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user status');
-      return false;
+      const updatedUser = await userService.updateUserStatus(id, status);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, ...updatedUser } : u)),
+      );
+      invalidateUsersCache();
+      fetchStats(true);
+      return updatedUser;
+    } catch (err) {
+      setUsers(previous);
+      setError(
+        err instanceof Error ? err.message : "Failed to update user status",
+      );
+      return null;
     }
   };
 
-  const verifyUser = async (id: string): Promise<boolean> => {
+  const verifyUser = async (id: string): Promise<User | null> => {
+    const previous = users;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id
+          ? {
+              ...u,
+              is_verified: true,
+              status: "verified",
+              verified_at: new Date().toISOString(),
+            }
+          : u,
+      ),
+    );
     try {
       setError(null);
-      await userService.verifyUser(id);
-      await refetch();
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to verify user');
-      return false;
+      const updatedUser = await userService.verifyUser(id);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, ...updatedUser } : u)),
+      );
+      invalidateUsersCache();
+      fetchStats(true);
+      return updatedUser;
+    } catch (err) {
+      setUsers(previous);
+      setError(err instanceof Error ? err.message : "Failed to verify user");
+      return null;
     }
   };
 
-  const updateUserRole = async (id: string, role: 'student' | 'hostel_admin' | 'super_admin'): Promise<boolean> => {
+  const updateUserRole = async (
+    id: string,
+    role: UserRole,
+  ): Promise<User | null> => {
+    const previous = users;
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
     try {
       setError(null);
-      await userService.updateUserRole(id, role);
-      await refetch();
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user role');
-      return false;
+      const updatedUser = await userService.updateUserRole(id, role);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, ...updatedUser } : u)),
+      );
+      invalidateUsersCache();
+      fetchStats(true);
+      return updatedUser;
+    } catch (err) {
+      setUsers(previous);
+      setError(
+        err instanceof Error ? err.message : "Failed to update user role",
+      );
+      return null;
     }
   };
 
   const deleteUser = async (id: string): Promise<boolean> => {
+    const previous = users;
+    setUsers((prev) => prev.filter((u) => u.id !== id));
     try {
       setError(null);
       await userService.deleteUser(id);
-      await refetch();
+      invalidateUsersCache();
+      fetchStats(true);
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
+    } catch (err) {
+      setUsers(previous);
+      setError(err instanceof Error ? err.message : "Failed to delete user");
       return false;
     }
   };
@@ -156,43 +278,56 @@ export function useUsers(filters?: UserFilters): UseUsersReturn {
       setError(null);
       await userService.sendVerificationEmail(id);
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Failed to send verification email');
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to send verification email",
+      );
       return false;
     }
   };
 
-  const bulkVerifyUsers = async (userIds: string[]): Promise<{ verified: number; failed: string[] }> => {
+  const bulkVerifyUsers = async (
+    userIds: string[],
+  ): Promise<{ verified: number; failed: string[] }> => {
     try {
       setError(null);
       const result = await userService.bulkVerifyUsers(userIds);
       await refetch();
       return result;
-    } catch (err: any) {
-      setError(err.message || 'Failed to bulk verify users');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to bulk verify users",
+      );
       return { verified: 0, failed: userIds };
     }
   };
 
-  const bulkDeleteUsers = async (userIds: string[]): Promise<{ deleted: number; failed: string[] }> => {
+  const bulkDeleteUsers = async (
+    userIds: string[],
+  ): Promise<{ deleted: number; failed: string[] }> => {
     try {
       setError(null);
       const result = await userService.bulkDeleteUsers(userIds);
       await refetch();
       return result;
-    } catch (err: any) {
-      setError(err.message || 'Failed to bulk delete users');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to bulk delete users",
+      );
       return { deleted: 0, failed: userIds };
     }
   };
 
-  const exportUsers = async (filters?: UserFilters): Promise<string | null> => {
+  const exportUsers = async (
+    exportFilters?: UserFilters,
+  ): Promise<string | null> => {
     try {
       setError(null);
-      const csv = await userService.exportUsers(filters);
-      return csv;
-    } catch (err: any) {
-      setError(err.message || 'Failed to export users');
+      return await userService.exportUsers(exportFilters);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to export users");
       return null;
     }
   };
@@ -202,6 +337,7 @@ export function useUsers(filters?: UserFilters): UseUsersReturn {
     stats,
     pagination,
     loading,
+    isRefreshing,
     error,
     refetch,
     createUser,

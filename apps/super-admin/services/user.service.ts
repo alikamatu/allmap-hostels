@@ -5,153 +5,174 @@ import {
   UserResponse,
   CreateUserData,
   UpdateUserData,
-} from '@/types/user.types';
+  UserRole,
+  UserStatus,
+} from "@/types/user.types";
 
-const apiService = {
-  async request<T>(options: {
-    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    url: string;
-    params?: Record<string, any>;
-    data?: any;
-    headers?: Record<string, string>;
-  }): Promise<T> {
-    const { method, url, params, data, headers } = options;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1000";
 
-    const token = localStorage.getItem('access_token');
-    const fetchHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...headers,
-    };
-    if (token) {
-      fetchHeaders['Authorization'] = `Bearer ${token}`;
+function buildQueryString(params?: object): string {
+  if (!params) return "";
+  const searchParams = new URLSearchParams();
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, String(value));
     }
-
-    let fullUrl = `${process.env.NEXT_PUBLIC_API_URL}` + url;
-    if (params) {
-      const queryString = new URLSearchParams(params).toString();
-      fullUrl += `?${queryString}`;
-    }
-
-    const response = await fetch(fullUrl, {
-      method,
-      headers: fetchHeaders,
-      body: data ? JSON.stringify(data) : undefined,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'API request failed');
-    }
-
-    if (response.status === 204) {
-      // No Content
-      return {} as T;
-    }
-
-    return response.json() as Promise<T>;
-  },
-};
+  });
+  return searchParams.toString();
+}
 
 class UserService {
-  async getUsers(filters?: UserFilters): Promise<UserResponse> {
-    return apiService.request<UserResponse>({
-      method: 'GET',
-      url: '/admin/users',
-      params: filters,
+  private getAccessToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token")
+    );
+  }
+
+  private getAuthHeaders(accept = "application/json") {
+    const token = this.getAccessToken();
+    return {
+      "Content-Type": "application/json",
+      Accept: accept,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  }
+
+  private handleUnauthorized() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("access_token");
+      sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem("user");
+      window.location.href = "/sign-in";
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...(options.headers || {}),
+      },
     });
+
+    if (response.status === 401) {
+      this.handleUnauthorized();
+      throw new Error("Unauthorized");
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Request failed (${response.status})`,
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+    return response.text() as unknown as T;
+  }
+
+  async getUsers(filters: UserFilters = {}): Promise<UserResponse> {
+    const qs = buildQueryString(filters);
+    return this.request<UserResponse>(`/admin/users${qs ? `?${qs}` : ""}`);
   }
 
   async getUserStats(): Promise<UserStats> {
-    return apiService.request<UserStats>({
-      method: 'GET',
-      url: '/admin/users/stats',
-    });
+    return this.request<UserStats>("/admin/users/stats");
   }
 
   async getUserById(id: string): Promise<User> {
-    return apiService.request<User>({
-      method: 'GET',
-      url: `/admin/users/${id}`,
-    });
+    return this.request<User>(`/admin/users/${id}`);
   }
 
   async createUser(data: CreateUserData): Promise<User> {
-    return apiService.request<User>({
-      method: 'POST',
-      url: '/admin/users',
-      data,
+    return this.request<User>("/admin/users", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
   async updateUser(id: string, data: UpdateUserData): Promise<User> {
-    return apiService.request<User>({
-      method: 'PUT',
-      url: `/admin/users/${id}`,
-      data,
+    return this.request<User>(`/admin/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
     });
   }
 
-  async updateUserStatus(id: string, status: 'unverified' | 'pending' | 'verified'): Promise<User> {
-    return apiService.request<User>({
-      method: 'PATCH',
-      url: `/admin/users/${id}/status`,
-      data: { status },
+  async updateUserStatus(id: string, status: UserStatus): Promise<User> {
+    return this.request<User>(`/admin/users/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
     });
   }
 
   async verifyUser(id: string): Promise<User> {
-    return apiService.request<User>({
-      method: 'PATCH',
-      url: `/admin/users/${id}/verify`,
+    return this.request<User>(`/admin/users/${id}/verify`, {
+      method: "PATCH",
     });
   }
 
-  async updateUserRole(id: string, role: 'student' | 'hostel_admin' | 'super_admin'): Promise<User> {
-    return apiService.request<User>({
-      method: 'PATCH',
-      url: `/admin/users/${id}/role`,
-      data: { role },
+  async updateUserRole(id: string, role: UserRole): Promise<User> {
+    return this.request<User>(`/admin/users/${id}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
     });
   }
 
   async deleteUser(id: string): Promise<{ message: string }> {
-    return apiService.request<{ message: string }>({
-      method: 'DELETE',
-      url: `/admin/users/${id}`,
+    return this.request<{ message: string }>(`/admin/users/${id}`, {
+      method: "DELETE",
     });
   }
 
   async sendVerificationEmail(id: string): Promise<{ message: string }> {
-    return apiService.request<{ message: string }>({
-      method: 'POST',
-      url: `/admin/users/${id}/send-verification`,
-    });
-  }
-
-  async bulkVerifyUsers(userIds: string[]): Promise<{ verified: number; failed: string[] }> {
-    return apiService.request<{ verified: number; failed: string[] }>({
-      method: 'POST',
-      url: '/admin/users/bulk-verify',
-      data: { userIds },
-    });
-  }
-
-  async bulkDeleteUsers(userIds: string[]): Promise<{ deleted: number; failed: string[] }> {
-    return apiService.request<{ deleted: number; failed: string[] }>({
-      method: 'POST',
-      url: '/admin/users/bulk-delete',
-      data: { userIds },
-    });
-  }
-
-  async exportUsers(filters?: UserFilters): Promise<string> {
-    return apiService.request<string>({
-      method: 'GET',
-      url: '/admin/users/export',
-      params: filters,
-      headers: {
-        'Accept': 'text/csv',
+    return this.request<{ message: string }>(
+      `/admin/users/${id}/send-verification`,
+      {
+        method: "POST",
       },
+    );
+  }
+
+  async bulkVerifyUsers(
+    userIds: string[],
+  ): Promise<{ verified: number; failed: string[] }> {
+    return this.request<{ verified: number; failed: string[] }>(
+      "/admin/users/bulk-verify",
+      {
+        method: "POST",
+        body: JSON.stringify({ userIds }),
+      },
+    );
+  }
+
+  async bulkDeleteUsers(
+    userIds: string[],
+  ): Promise<{ deleted: number; failed: string[] }> {
+    return this.request<{ deleted: number; failed: string[] }>(
+      "/admin/users/bulk-delete",
+      {
+        method: "POST",
+        body: JSON.stringify({ userIds }),
+      },
+    );
+  }
+
+  async exportUsers(filters: UserFilters = {}): Promise<string> {
+    const qs = buildQueryString(filters);
+    return this.request<string>(`/admin/users/export${qs ? `?${qs}` : ""}`, {
+      headers: this.getAuthHeaders("text/csv"),
     });
   }
 }

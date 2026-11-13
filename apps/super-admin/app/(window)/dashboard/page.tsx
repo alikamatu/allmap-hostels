@@ -1,11 +1,5 @@
-import DashboardContent from '@/components/dashboard/dashboard-content';
-import TopBar from '@/components/dashboard/top-bar';
+import DashboardContent from "@/components/dashboard/dashboard-content";
 
 export default function DashboardPage() {
-  return (
-    <div className="h-screen flex flex-col">
-      <TopBar />
-      <DashboardContent />
-    </div>
-  );
+  return <DashboardContent />;
 }

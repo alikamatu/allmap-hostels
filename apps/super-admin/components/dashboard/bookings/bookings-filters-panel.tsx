@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { BookingFilters, BookingStatus, PaymentStatus, BookingType } from '@/types/booking.types';
-import { X, Filter, Calendar, Search } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { RotateCcw } from "lucide-react";
+import {
+  BookingFilters,
+  BookingStatus,
+  PaymentStatus,
+  BookingType,
+} from "@/types/booking.types";
+import { CustomSelect, SelectOption } from "@/components/ui/custom-select";
 
 interface BookingsFiltersPanelProps {
   filters: BookingFilters;
@@ -11,29 +17,29 @@ interface BookingsFiltersPanelProps {
   onClose: () => void;
 }
 
-const STATUS_OPTIONS: { value: BookingStatus | '', label: string }[] = [
-  { value: '', label: 'All Status' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'checked_in', label: 'Checked In' },
-  { value: 'checked_out', label: 'Checked Out' },
-  { value: 'cancelled', label: 'Cancelled' },
+const STATUS_OPTIONS: SelectOption<"" | BookingStatus>[] = [
+  { value: "", label: "All Statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "checked_in", label: "Checked In" },
+  { value: "checked_out", label: "Checked Out" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
-const PAYMENT_STATUS_OPTIONS: { value: PaymentStatus | '', label: string }[] = [
-  { value: '', label: 'All Payment Status' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'partial', label: 'Partial' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'overdue', label: 'Overdue' },
+const PAYMENT_STATUS_OPTIONS: SelectOption<"" | PaymentStatus>[] = [
+  { value: "", label: "All Payments" },
+  { value: "pending", label: "Pending" },
+  { value: "partial", label: "Partial" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
 ];
 
-const BOOKING_TYPE_OPTIONS: { value: BookingType | '', label: string }[] = [
-  { value: '', label: 'All Types' },
-  { value: 'semester', label: 'Semester' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'daily', label: 'Daily' },
+const BOOKING_TYPE_OPTIONS: SelectOption<"" | BookingType>[] = [
+  { value: "", label: "All Types" },
+  { value: "semester", label: "Semester" },
+  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Weekly" },
+  { value: "daily", label: "Daily" },
 ];
 
 export default function BookingsFiltersPanel({
@@ -41,19 +47,12 @@ export default function BookingsFiltersPanel({
   onFilterChange,
   onClose,
 }: BookingsFiltersPanelProps) {
-  const [localFilters, setLocalFilters] = useState<Partial<BookingFilters>>({
-    status: filters.status,
-    paymentStatus: filters.paymentStatus,
-    bookingType: filters.bookingType,
-    checkInFrom: filters.checkInFrom,
-    checkInTo: filters.checkInTo,
-    search: filters.search,
-    overdueOnly: filters.overdueOnly,
-  });
+  const [localFilters, setLocalFilters] =
+    useState<Partial<BookingFilters>>(filters);
 
-  const handleChange = (key: keyof BookingFilters, value: BookingFilters[keyof BookingFilters]) => {
-    setLocalFilters(prev => ({ ...prev, [key]: value }));
-  };
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
 
   const handleApply = () => {
     onFilterChange(localFilters);
@@ -61,13 +60,12 @@ export default function BookingsFiltersPanel({
   };
 
   const handleReset = () => {
-    const resetFilters = {
+    const resetFilters: Partial<BookingFilters> = {
       status: undefined,
       paymentStatus: undefined,
       bookingType: undefined,
       checkInFrom: undefined,
       checkInTo: undefined,
-      search: undefined,
       overdueOnly: undefined,
     };
     setLocalFilters(resetFilters);
@@ -75,157 +73,119 @@ export default function BookingsFiltersPanel({
     onClose();
   };
 
+  const selectedStatus = Array.isArray(localFilters.status)
+    ? localFilters.status[0] || ""
+    : localFilters.status || "";
+
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="overflow-hidden"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.15 }}
+      className="mt-4 pt-4 border-t border-gray-100"
     >
-      <div className="mt-4 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Filter size={16} />
-            <span className="text-14 font-medium text-gray-900">Filter Bookings</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <X size={16} className="text-gray-600" />
-          </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <CustomSelect<"" | BookingStatus>
+          label="Booking Status"
+          value={selectedStatus}
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              status: val ? (val as BookingStatus) : undefined,
+            }))
+          }
+          options={STATUS_OPTIONS}
+        />
+
+        <CustomSelect<"" | PaymentStatus>
+          label="Payment Status"
+          value={localFilters.paymentStatus || ""}
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              paymentStatus: val ? (val as PaymentStatus) : undefined,
+            }))
+          }
+          options={PAYMENT_STATUS_OPTIONS}
+        />
+
+        <CustomSelect<"" | BookingType>
+          label="Booking Type"
+          value={localFilters.bookingType || ""}
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              bookingType: val ? (val as BookingType) : undefined,
+            }))
+          }
+          options={BOOKING_TYPE_OPTIONS}
+        />
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            Check-in From
+          </label>
+          <input
+            type="date"
+            value={localFilters.checkInFrom || ""}
+            onChange={(e) =>
+              setLocalFilters((prev) => ({
+                ...prev,
+                checkInFrom: e.target.value || undefined,
+              }))
+            }
+            className="w-full px-3.5 py-2.5 text-xs sm:text-[13px] min-h-[40px] rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/15"
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Search */}
-          <div className="lg:col-span-3">
-            <label className="block text-12 font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                type="text"
-                placeholder="Search by student name, email, phone, or hostel..."
-                value={localFilters.search || ''}
-                onChange={(e) => handleChange('search', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <label className="block text-12 font-medium text-gray-700 mb-2">
-              Booking Status
-            </label>
-            <select
-              value={localFilters.status || ''}
-              onChange={(e) => handleChange('status', e.target.value || undefined)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-12 focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Payment Status Filter */}
-          <div>
-            <label className="block text-12 font-medium text-gray-700 mb-2">
-              Payment Status
-            </label>
-            <select
-              value={localFilters.paymentStatus || ''}
-              onChange={(e) => handleChange('paymentStatus', e.target.value || undefined)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-12 focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-            >
-              {PAYMENT_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Booking Type Filter */}
-          <div>
-            <label className="block text-12 font-medium text-gray-700 mb-2">
-              Booking Type
-            </label>
-            <select
-              value={localFilters.bookingType || ''}
-              onChange={(e) => handleChange('bookingType', e.target.value || undefined)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-12 focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-            >
-              {BOOKING_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="lg:col-span-2">
-            <label className="block text-12 font-medium text-gray-700 mb-2">
-              Check-in Date Range
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    value={localFilters.checkInFrom || ''}
-                    onChange={(e) => handleChange('checkInFrom', e.target.value || undefined)}
-                    className="w-full pl-10 pr-3 py-2 text-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-                  />
-                </div>
-                <div className="text-11 text-gray-500 mt-1">From</div>
-              </div>
-              <div>
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    value={localFilters.checkInTo || ''}
-                    onChange={(e) => handleChange('checkInTo', e.target.value || undefined)}
-                    className="w-full pl-10 pr-3 py-2 text-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:border-transparent"
-                  />
-                </div>
-                <div className="text-11 text-gray-500 mt-1">To</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Overdue Only */}
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={localFilters.overdueOnly || false}
-                onChange={(e) => handleChange('overdueOnly', e.target.checked)}
-                className="rounded border-gray-300 text-[#ff7a00] focus:ring-[#ff7a00]"
-              />
-              <span className="text-12 font-medium text-gray-700">Show Overdue Only</span>
-            </label>
-          </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+            Check-in To
+          </label>
+          <input
+            type="date"
+            value={localFilters.checkInTo || ""}
+            onChange={(e) =>
+              setLocalFilters((prev) => ({
+                ...prev,
+                checkInTo: e.target.value || undefined,
+              }))
+            }
+            className="w-full px-3.5 py-2.5 text-xs sm:text-[13px] min-h-[40px] rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/15"
+          />
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-3.5 border-t border-gray-100">
+        <label className="inline-flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={Boolean(localFilters.overdueOnly)}
+            onChange={(e) =>
+              setLocalFilters((prev) => ({
+                ...prev,
+                overdueOnly: e.target.checked ? true : undefined,
+              }))
+            }
+            className="h-4 w-4 rounded border-gray-300 text-[#ff7a00] focus:ring-[#ff7a00]"
+          />
+          <span>Show overdue payments only</span>
+        </label>
+
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
           <button
+            type="button"
             onClick={handleReset}
-            className="px-4 py-2 text-12 font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
           >
-            Clear All
+            <RotateCcw size={13} />
+            <span>Reset Filters</span>
           </button>
           <button
+            type="button"
             onClick={handleApply}
-            className="px-4 py-2 text-12 font-medium text-white bg-[#ff7a00] hover:bg-orange-600 rounded-lg"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-medium bg-[#ff7a00] text-white hover:bg-orange-600 transition-colors"
           >
             Apply Filters
           </button>

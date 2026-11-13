@@ -1,399 +1,421 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
 import {
-  Mail,
-  Phone,
-  Building,
-  GraduationCap,
-  Shield,
-  CheckCircle,
-  XCircle,
-  Clock,
-  MoreVertical,
+  Eye,
   Edit,
   Trash2,
-  Eye,
-  AlertCircle,
-} from 'lucide-react';
-import { User, UserRole, UserStatus } from '@/types/user.types';
-import { formatDate } from '@/lib/formatters';
+  CheckCircle2,
+  Mail,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Users as UsersIcon,
+} from "lucide-react";
+import { User, UserPagination } from "@/types/user.types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar, RoleBadge, StatusBadge } from "./user-badges";
 
 interface UserTableProps {
   users: User[];
   loading: boolean;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  selectedUsers: Set<string>;
-  onSelectAll: () => void;
+  selectedUsers: string[];
   onSelectUser: (userId: string) => void;
-  onPageChange: (page: number) => void;
-  onViewUser: (user: User) => void;
+  onSelectAll: () => void;
+  onViewDetails: (user: User) => void;
   onEditUser: (user: User) => void;
   onVerifyUser: (userId: string) => void;
-  onUpdateRole: (userId: string, role: UserRole) => void;
-  onDeleteUser: (userId: string) => void;
+  onDeleteUser: (user: User) => void;
+  onSendVerification: (userId: string) => void;
+  pagination: UserPagination;
+  onPageChange: (page: number) => void;
+}
+
+function formatShortDate(dateString?: string | null) {
+  if (!dateString) return "—";
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function UserTable({
-  users = [],
-  loading = false,
-  pagination,
-  selectedUsers = new Set(),
-  onSelectAll,
+  users,
+  loading,
+  selectedUsers,
   onSelectUser,
-  onPageChange,
-  onViewUser,
+  onSelectAll,
+  onViewDetails,
   onEditUser,
   onVerifyUser,
-  onUpdateRole,
   onDeleteUser,
+  onSendVerification,
+  pagination,
+  onPageChange,
 }: UserTableProps) {
-  const [expandedUser] = useState<string | null>(null);
-  const [actionMenu, setActionMenu] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // Default pagination values
-  const defaultPagination = {
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-  };
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuContainerRef.current &&
+        !menuContainerRef.current.contains(e.target as Node)
+      ) {
+        setOpenMenuId(null);
+      }
+    };
+    if (openMenuId) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenuId]);
 
-  const safePagination = pagination || defaultPagination;
+  const allSelected =
+    users.length > 0 && users.every((u) => selectedUsers.includes(u.id));
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
-      <div className="bg-white">
-        <div className="p-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff7a00]"></div>
-          <p className="mt-2 text-12 text-gray-500">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!users || users.length === 0) {
-    return (
-      <div className="bg-white p-8 text-center">
-        <AlertCircle size={32} className="mx-auto text-gray-300 mb-3" />
-        <h3 className="text-14 font-medium text-gray-900 mb-1">No users found</h3>
-        <p className="text-12 text-gray-500">Try adjusting your filters or search terms</p>
-      </div>
-    );
-  }
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'student':
-        return GraduationCap;
-      case 'hostel_admin':
-        return Building;
-      case 'super_admin':
-        return Shield;
-      default:
-        return GraduationCap;
-    }
-  };
-
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case 'student':
-        return 'text-purple-600 bg-purple-50';
-      case 'hostel_admin':
-        return 'text-orange-600 bg-orange-50';
-      case 'super_admin':
-        return 'text-indigo-600 bg-indigo-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStatusIcon = (status: UserStatus, isVerified: boolean) => {
-    if (isVerified) {
-      return CheckCircle;
-    } else if (status === 'pending') {
-      return Clock;
-    } else {
-      return XCircle;
-    }
-  };
-
-  const getStatusColor = (status: UserStatus, isVerified: boolean) => {
-    if (isVerified) {
-      return 'text-green-600 bg-green-50';
-    } else if (status === 'pending') {
-      return 'text-yellow-600 bg-yellow-50';
-    } else {
-      return 'text-red-600 bg-red-50';
-    }
-  };
-
-  return (
-    <div className="bg-white">
-      {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 p-4 border-b border-gray-200 bg-gray-50 text-11 font-medium text-gray-700">
-        <div className="col-span-1">
-          <input
-            type="checkbox"
-            checked={selectedUsers.size === users.length && users.length > 0}
-            onChange={onSelectAll}
-            className="h-4 w-4 text-[#ff7a00] focus:ring-[#ff7a00] border-gray-300 rounded"
-          />
-        </div>
-        <div className="col-span-3">User</div>
-        <div className="col-span-2">Role</div>
-        <div className="col-span-2">Status</div>
-        <div className="col-span-2">Joined</div>
-        <div className="col-span-2">Actions</div>
-      </div>
-
-      {/* Table Rows */}
-      <div className="divide-y divide-gray-100">
-        {users.map((user, index) => {
-          const RoleIcon = getRoleIcon(user.role);
-          const StatusIcon = getStatusIcon(user.status, user.is_verified);
-          const isSelected = selectedUsers.has(user.id);
-          const isExpanded = expandedUser === user.id;
-
-          return (
-            <motion.div
-              key={user.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.03 }}
-              className={`hover:bg-gray-50 ${isExpanded ? 'bg-gray-50' : ''}`}
-            >
-              {/* Main Row */}
-              <div className="grid grid-cols-12 gap-4 p-4 items-center">
-                {/* Checkbox */}
-                <div className="col-span-1">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => onSelectUser(user.id)}
-                    className="h-4 w-4 text-[#ff7a00] focus:ring-[#ff7a00] border-gray-300 rounded"
-                  />
-                </div>
-
-                {/* User Info */}
-                <div className="col-span-3">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-11 font-semibold text-gray-700">
-                        {user.name?.charAt(0) || user.email.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-12 font-medium text-gray-900">
-                        {user.name || 'Unnamed User'}
-                      </div>
-                      <div className="text-11 text-gray-500 flex items-center gap-1">
-                        <Mail size={10} />
-                        {user.email}
-                      </div>
-                      {user.phone && (
-                        <div className="text-11 text-gray-500 flex items-center gap-1">
-                          <Phone size={10} />
-                          {user.phone}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div className="col-span-2">
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${getRoleColor(user.role)}`}>
-                    <RoleIcon size={12} />
-                    <span className="text-11 font-medium capitalize">
-                      {user.role.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="col-span-2">
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${getStatusColor(user.status, user.is_verified)}`}>
-                    <StatusIcon size={12} />
-                    <span className="text-11 font-medium capitalize">
-                      {user.is_verified ? 'Verified' : user.status}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Joined Date */}
-                <div className="col-span-2">
-                  <div className="text-11 text-gray-900">
-                    {formatDate(user.created_at)}
-                  </div>
-                  <div className="text-10 text-gray-500">
-                    {user.school?.name || 'No school'}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-2">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => onViewUser(user)}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="View Details"
-                    >
-                      <Eye size={14} className="text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => onEditUser(user)}
-                      className="p-1 hover:bg-gray-200 rounded"
-                      title="Edit"
-                    >
-                      <Edit size={14} className="text-blue-600" />
-                    </button>
-                    {!user.is_verified && (
-                      <button
-                        onClick={() => onVerifyUser(user.id)}
-                        className="p-1 hover:bg-gray-200 rounded"
-                        title="Verify User"
-                      >
-                        <CheckCircle size={14} className="text-green-600" />
-                      </button>
-                    )}
-                    <div className="relative">
-                      <button
-                        onClick={() => setActionMenu(actionMenu === user.id ? null : user.id)}
-                        className="p-1 hover:bg-gray-200 rounded"
-                        title="More Actions"
-                      >
-                        <MoreVertical size={14} className="text-gray-600" />
-                      </button>
-                      
-                      {actionMenu === user.id && (
-                        <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 shadow-lg rounded z-10">
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                onUpdateRole(user.id, 'student');
-                                setActionMenu(null);
-                              }}
-                              className="flex items-center gap-2 w-full px-3 py-2 text-11 text-gray-700 hover:bg-gray-100"
-                            >
-                              <GraduationCap size={12} />
-                              Set as Student
-                            </button>
-                            <button
-                              onClick={() => {
-                                onUpdateRole(user.id, 'hostel_admin');
-                                setActionMenu(null);
-                              }}
-                              className="flex items-center gap-2 w-full px-3 py-2 text-11 text-gray-700 hover:bg-gray-100"
-                            >
-                              <Building size={12} />
-                              Set as Hostel Admin
-                            </button>
-                            <div className="border-t border-gray-100 my-1"></div>
-                            <button
-                              onClick={() => {
-                                if (confirm('Are you sure you want to delete this user?')) {
-                                  onDeleteUser(user.id);
-                                }
-                                setActionMenu(null);
-                              }}
-                              className="flex items-center gap-2 w-full px-3 py-2 text-11 text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 size={12} />
-                              Delete User
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-2xs overflow-hidden">
+        {/* Mobile skeleton */}
+        <div className="divide-y divide-gray-100 md:hidden">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <div key={idx} className="p-4 flex items-center gap-3">
+              <Skeleton className="w-4 h-4 rounded" />
+              <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="h-3 w-44" />
+                <div className="flex gap-2 pt-0.5">
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
                 </div>
               </div>
+            </div>
+          ))}
+        </div>
+        {/* Desktop skeleton */}
+        <div className="hidden md:block p-4 space-y-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between gap-4 py-2 border-b border-gray-100 last:border-0"
+            >
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-4 h-4 rounded" />
+                <Skeleton className="w-9 h-9 rounded-xl" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3.5 w-36" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-8 w-20 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-              {/* Expanded Stats */}
-              {isExpanded && user.stats && (
-                <div className="px-4 pb-4">
-                  <div className="grid grid-cols-3 gap-4 p-3 bg-gray-100 rounded">
-                    <div className="text-center">
-                      <div className="text-14 font-semibold text-gray-900">
-                        {user.stats.totalBookings || 0}
-                      </div>
-                      <div className="text-11 text-gray-500">Total Bookings</div>
+  if (users.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200/80 rounded-2xl p-10 text-center shadow-2xs">
+        <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-3">
+          <UsersIcon size={22} />
+        </div>
+        <h3 className="text-sm font-semibold text-gray-900">No users found</h3>
+        <p className="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
+          Try adjusting your search query or clearing active filters to see more
+          users.
+        </p>
+      </div>
+    );
+  }
+
+  const startItem = (pagination.page - 1) * pagination.limit + 1;
+  const endItem = Math.min(
+    pagination.page * pagination.limit,
+    pagination.total,
+  );
+
+  return (
+    <div
+      ref={menuContainerRef}
+      className="bg-white border border-gray-200/80 rounded-2xl shadow-2xs overflow-hidden"
+    >
+      {/* Mobile-first minimal card list */}
+      <div className="divide-y divide-gray-100 md:hidden">
+        {users.map((user) => {
+          const isSelected = selectedUsers.includes(user.id);
+          return (
+            <div
+              key={user.id}
+              className={`p-4 transition-colors ${
+                isSelected ? "bg-orange-50/40" : "hover:bg-gray-50/60"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => onSelectUser(user.id)}
+                  aria-label={`Select ${user.name || user.email}`}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-[#ff7a00] focus:ring-[#ff7a00]"
+                />
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(user)}
+                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                >
+                  <UserAvatar name={user.name} email={user.email} size="md" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-gray-900 truncate">
+                      {user.name || "Unnamed User"}
                     </div>
-                    <div className="text-center">
-                      <div className="text-14 font-semibold text-gray-900">
-                        {user.stats.activeBookings || 0}
-                      </div>
-                      <div className="text-11 text-gray-500">Active Bookings</div>
+                    <div className="text-xs text-gray-500 truncate mt-0.5">
+                      {user.email}
                     </div>
-                    <div className="text-center">
-                      <div className="text-14 font-semibold text-gray-900">
-                        {user.stats.totalHostels || 0}
-                      </div>
-                      <div className="text-11 text-gray-500">Hostels Managed</div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                      <RoleBadge role={user.role} />
+                      <StatusBadge
+                        status={user.status}
+                        isVerified={user.is_verified}
+                      />
                     </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(user)}
+                  className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-gray-700 bg-gray-100/80 hover:bg-gray-200/80 transition-colors"
+                >
+                  <Eye size={13} />
+                  <span>View</span>
+                </button>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      {/* Pagination - Only show if totalPages > 1 */}
-      {safePagination.totalPages > 1 && (
-        <div className="flex items-center justify-between p-4 border-t border-gray-200">
-          <div className="text-11 text-gray-500">
-            Showing {((safePagination.page - 1) * safePagination.limit) + 1} to{' '}
-            {Math.min(safePagination.page * safePagination.limit, safePagination.total)} of{' '}
-            {safePagination.total} users
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onPageChange(safePagination.page - 1)}
-              disabled={safePagination.page === 1}
-              className="px-3 py-1 text-11 font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            {Array.from({ length: Math.min(5, safePagination.totalPages) }, (_, i) => {
-              let pageNum;
-              if (safePagination.totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (safePagination.page <= 3) {
-                pageNum = i + 1;
-              } else if (safePagination.page >= safePagination.totalPages - 2) {
-                pageNum = safePagination.totalPages - 4 + i;
-              } else {
-                pageNum = safePagination.page - 2 + i;
-              }
+      {/* Desktop minimal table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50/70 border-b border-gray-200/80">
+              <th className="w-11 pl-5 pr-2 py-3.5">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={onSelectAll}
+                  aria-label="Select all users"
+                  className="h-4 w-4 rounded border-gray-300 text-[#ff7a00] focus:ring-[#ff7a00]"
+                />
+              </th>
+              <th className="px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                User
+              </th>
+              <th className="px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-4 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Joined
+              </th>
+              <th className="pl-4 pr-5 py-3.5 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {users.map((user) => {
+              const isSelected = selectedUsers.includes(user.id);
+              const isMenuOpen = openMenuId === user.id;
 
               return (
-                <button
-                  key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
-                  className={`px-3 py-1 text-11 font-medium ${
-                    safePagination.page === pageNum
-                      ? 'bg-[#ff7a00] text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                <tr
+                  key={user.id}
+                  className={`group transition-colors ${
+                    isSelected ? "bg-orange-50/40" : "hover:bg-gray-50/70"
                   }`}
                 >
-                  {pageNum}
-                </button>
+                  <td className="pl-5 pr-2 py-3.5">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => onSelectUser(user.id)}
+                      aria-label={`Select ${user.name || user.email}`}
+                      className="h-4 w-4 rounded border-gray-300 text-[#ff7a00] focus:ring-[#ff7a00]"
+                    />
+                  </td>
+
+                  <td className="px-4 py-3.5">
+                    <button
+                      type="button"
+                      onClick={() => onViewDetails(user)}
+                      className="flex items-center gap-3 text-left min-w-0 group/user"
+                    >
+                      <UserAvatar
+                        name={user.name}
+                        email={user.email}
+                        size="md"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-gray-900 group-hover/user:text-[#ff7a00] transition-colors truncate">
+                          {user.name || "Unnamed User"}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {user.email}
+                        </div>
+                      </div>
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <RoleBadge role={user.role} />
+                  </td>
+
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <StatusBadge
+                      status={user.status}
+                      isVerified={user.is_verified}
+                    />
+                  </td>
+
+                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-gray-500">
+                    {formatShortDate(user.created_at)}
+                  </td>
+
+                  <td className="pl-4 pr-5 py-3.5 whitespace-nowrap text-right">
+                    <div className="inline-flex items-center justify-end gap-1.5 relative">
+                      <button
+                        type="button"
+                        onClick={() => onViewDetails(user)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-gray-700 bg-gray-100/80 hover:bg-orange-50 hover:text-[#ff7a00] transition-colors"
+                      >
+                        <Eye size={13} />
+                        <span>View</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenMenuId(isMenuOpen ? null : user.id)
+                        }
+                        aria-label="More actions"
+                        className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <MoreVertical size={15} />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl border border-gray-200/90 bg-white shadow-lg py-1.5 z-30 text-left">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onEditUser(user);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <Edit size={14} className="text-gray-400" />
+                            <span>Edit User</span>
+                          </button>
+
+                          {!user.is_verified && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  onVerifyUser(user.id);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-emerald-700 hover:bg-emerald-50/70 transition-colors"
+                              >
+                                <CheckCircle2 size={14} />
+                                <span>Verify User</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  onSendVerification(user.id);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Mail size={14} className="text-gray-400" />
+                                <span>Send Verification</span>
+                              </button>
+                            </>
+                          )}
+
+                          <div className="my-1 border-t border-gray-100" />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onDeleteUser(user);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-red-600 hover:bg-red-50/80 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete User</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-t border-gray-100 bg-gray-50/50">
+          <div className="text-xs text-gray-500">
+            Showing{" "}
+            <span className="font-semibold text-gray-800">{startItem}</span>–
+            <span className="font-semibold text-gray-800">{endItem}</span> of{" "}
+            <span className="font-semibold text-gray-800">
+              {pagination.total}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => onPageChange(safePagination.page + 1)}
-              disabled={safePagination.page === safePagination.totalPages}
-              className="px-3 py-1 text-11 font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => onPageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Next
+              <ChevronLeft size={14} />
+              <span className="hidden sm:inline">Prev</span>
+            </button>
+
+            <span className="px-3 py-1.5 text-xs font-medium text-gray-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => onPageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>

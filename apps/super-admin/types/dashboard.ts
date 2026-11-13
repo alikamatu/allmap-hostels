@@ -16,7 +16,7 @@ export interface DashboardStats {
 
 export interface RecentActivity {
   id: string;
-  type: 'user' | 'booking' | 'hostel' | 'payment';
+  type: "user" | "booking" | "hostel" | "payment";
   action: string;
   description: string;
   timestamp: string;
@@ -25,7 +25,7 @@ export interface RecentActivity {
     name: string;
     email: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UsersOverview {
@@ -59,7 +59,26 @@ export interface RevenueOverview {
   growth: number;
   byMethod: Record<string, number>;
   byStatus: Record<string, number>;
-  period: 'daily' | 'weekly' | 'monthly';
+  period: "daily" | "weekly" | "monthly";
+}
+
+export interface TimeseriesPoint {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  bookings: number;
+  users: number;
+}
+
+export interface AnalyticsTimeseries {
+  days: number;
+  startDate: string;
+  endDate: string;
+  series: TimeseriesPoint[];
+  totals: {
+    revenue: number;
+    bookings: number;
+    users: number;
+  };
 }
 
 export interface ApiResponse<T> {

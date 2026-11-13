@@ -69,4 +69,17 @@ export class AdminController {
   ) {
     return await this.adminService.getRevenueOverview(period || 'monthly');
   }
+
+  @Get('dashboard/analytics/timeseries')
+  @Roles(UserRole.super_admin)
+  @ApiOperation({
+    summary:
+      'Get real daily time-series analytics for revenue, bookings, and users',
+  })
+  async getAnalyticsTimeseries(@Query('days') days?: string) {
+    const parsedDays = days ? parseInt(days, 10) : 30;
+    return await this.adminService.getAnalyticsTimeseries(
+      Number.isFinite(parsedDays) ? parsedDays : 30,
+    );
+  }
 }

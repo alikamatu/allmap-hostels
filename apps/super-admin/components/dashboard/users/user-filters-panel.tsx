@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { UserFilters } from '@/types/user.types';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { RotateCcw } from "lucide-react";
+import { UserFilters, UserRole, UserStatus } from "@/types/user.types";
+import { CustomSelect, SelectOption } from "@/components/ui/custom-select";
 
 interface UserFiltersPanelProps {
   filters: UserFilters;
@@ -10,8 +12,37 @@ interface UserFiltersPanelProps {
   onClose: () => void;
 }
 
-export default function UserFiltersPanel({ filters, onFilterChange, onClose }: UserFiltersPanelProps) {
-  const [localFilters, setLocalFilters] = useState<Partial<UserFilters>>(filters);
+const ROLE_OPTIONS: SelectOption<"" | UserRole>[] = [
+  { value: "", label: "All Roles" },
+  { value: "student", label: "Student" },
+  { value: "hostel_admin", label: "Hostel Admin" },
+  { value: "super_admin", label: "Super Admin" },
+];
+
+const STATUS_OPTIONS: SelectOption<"" | UserStatus>[] = [
+  { value: "", label: "All Statuses" },
+  { value: "verified", label: "Verified" },
+  { value: "pending", label: "Pending" },
+  { value: "unverified", label: "Unverified" },
+];
+
+const VERIFICATION_OPTIONS: SelectOption<"" | "true" | "false">[] = [
+  { value: "", label: "Any Verification" },
+  { value: "true", label: "Verified Only" },
+  { value: "false", label: "Unverified Only" },
+];
+
+export default function UserFiltersPanel({
+  filters,
+  onFilterChange,
+  onClose,
+}: UserFiltersPanelProps) {
+  const [localFilters, setLocalFilters] =
+    useState<Partial<UserFilters>>(filters);
+
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
 
   const handleApply = () => {
     onFilterChange(localFilters);
@@ -19,12 +50,11 @@ export default function UserFiltersPanel({ filters, onFilterChange, onClose }: U
   };
 
   const handleReset = () => {
-    const resetFilters = {
+    const resetFilters: Partial<UserFilters> = {
       role: undefined,
       status: undefined,
       is_verified: undefined,
       school_id: undefined,
-      search: undefined,
     };
     setLocalFilters(resetFilters);
     onFilterChange(resetFilters);
@@ -33,77 +63,69 @@ export default function UserFiltersPanel({ filters, onFilterChange, onClose }: U
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="mt-4 pt-4 border-t border-gray-200"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.15 }}
+      className="mt-4 pt-4 border-t border-gray-100"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Role Filter */}
-        <div>
-          <label className="block text-11 font-medium text-gray-700 mb-1">Role</label>
-          <select
-            value={localFilters.role || ''}
-            onChange={(e) => setLocalFilters(prev => ({ 
-              ...prev, 
-              role: (e.target.value || undefined) as UserFilters['role']
-            }))}
-            className="w-full px-3 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00]"
-          >
-            <option value="">All Roles</option>
-            <option value="student">Student</option>
-            <option value="hostel_admin">Hostel Admin</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <CustomSelect<"" | UserRole>
+          label="Role"
+          value={localFilters.role || ""}
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              role: val ? (val as UserRole) : undefined,
+            }))
+          }
+          options={ROLE_OPTIONS}
+        />
 
-        {/* Status Filter */}
-        <div>
-          <label className="block text-11 font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={localFilters.status || ''}
-            onChange={(e) => setLocalFilters(prev => ({ 
-              ...prev, 
-              status: (e.target.value || undefined) as UserFilters['status']
-            }))}
-            className="w-full px-3 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00]"
-          >
-            <option value="">All Status</option>
-            <option value="verified">Verified</option>
-            <option value="pending">Pending</option>
-            <option value="unverified">Unverified</option>
-          </select>
-        </div>
+        <CustomSelect<"" | UserStatus>
+          label="Account Status"
+          value={localFilters.status || ""}
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              status: val ? (val as UserStatus) : undefined,
+            }))
+          }
+          options={STATUS_OPTIONS}
+        />
 
-        {/* Verification Filter */}
-        <div>
-          <label className="block text-11 font-medium text-gray-700 mb-1">Verification</label>
-          <select
-            value={localFilters.is_verified === undefined ? '' : localFilters.is_verified ? 'true' : 'false'}
-            onChange={(e) => setLocalFilters(prev => ({ 
-              ...prev, 
-              is_verified: e.target.value === '' ? undefined : e.target.value === 'true' 
-            }))}
-            className="w-full px-3 py-2 text-12 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#ff7a00]"
-          >
-            <option value="">All</option>
-            <option value="true">Verified</option>
-            <option value="false">Unverified</option>
-          </select>
-        </div>
+        <CustomSelect<"" | "true" | "false">
+          label="Verification"
+          value={
+            localFilters.is_verified === undefined
+              ? ""
+              : localFilters.is_verified
+                ? "true"
+                : "false"
+          }
+          onChange={(val) =>
+            setLocalFilters((prev) => ({
+              ...prev,
+              is_verified: val === "" ? undefined : val === "true",
+            }))
+          }
+          options={VERIFICATION_OPTIONS}
+        />
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 mt-4 pt-3.5 border-t border-gray-100">
         <button
+          type="button"
           onClick={handleReset}
-          className="px-4 py-2 text-11 font-medium text-gray-700 hover:bg-gray-100"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
         >
-          Reset
+          <RotateCcw size={13} />
+          <span>Reset Filters</span>
         </button>
         <button
+          type="button"
           onClick={handleApply}
-          className="px-4 py-2 text-11 font-medium bg-[#ff7a00] text-white hover:bg-orange-600"
+          className="inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-medium bg-[#ff7a00] text-white hover:bg-orange-600 transition-colors"
         >
           Apply Filters
         </button>
